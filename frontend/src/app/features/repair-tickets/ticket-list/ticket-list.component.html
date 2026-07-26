@@ -1,0 +1,93 @@
+<div class="space-y-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold">งานแจ้งซ่อม</h1>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} รายการ</p>
+    </div>
+    <button mat-flat-button color="primary" *khdHasPermission="'ticket:create'" (click)="openCreateForm()">
+      <khd-icon name="plus" [size]="18" class="!mr-1" />
+      แจ้งซ่อมใหม่
+    </button>
+  </div>
+
+  <div class="khd-card !p-3 flex flex-col sm:flex-row gap-3">
+    <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
+      <mat-label>ค้นหา (เลขที่ / รายละเอียด)</mat-label>
+      <input matInput [(ngModel)]="keyword" (ngModelChange)="onKeywordChange()" />
+      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="!mr-2 text-neutral-400" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="sm:w-48 !mb-[-1.25em]">
+      <mat-label>ความเร่งด่วน</mat-label>
+      <mat-select [(ngModel)]="urgency" (ngModelChange)="onFilterChange()">
+        <mat-option value="">ทั้งหมด</mat-option>
+        @for (u of ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']; track u) {
+          <mat-option [value]="u">{{ urgencyLabels[u] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="khd-card !p-0 overflow-x-auto">
+    <table mat-table [dataSource]="tickets()" class="w-full">
+      <ng-container matColumnDef="ticketNumber">
+        <th mat-header-cell *matHeaderCellDef>เลขที่</th>
+        <td mat-cell *matCellDef="let t">
+          <button class="text-brand-primary font-medium hover:underline" (click)="viewTicket(t)">{{ t.ticketNumber }}</button>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="description">
+        <th mat-header-cell *matHeaderCellDef>รายละเอียด</th>
+        <td mat-cell *matCellDef="let t" class="max-w-xs truncate">{{ t.description }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="urgency">
+        <th mat-header-cell *matHeaderCellDef>ความเร่งด่วน</th>
+        <td mat-cell *matCellDef="let t">
+          <span
+            class="khd-status-badge"
+            [style.background-color]="urgencyColor[t.urgency] + '1A'"
+            [style.color]="urgencyColor[t.urgency]"
+            >{{ urgencyLabels[t.urgency] }}</span
+          >
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>สถานะ</th>
+        <td mat-cell *matCellDef="let t"><khd-status-badge [status]="t.status" /></td>
+      </ng-container>
+
+      <ng-container matColumnDef="technician">
+        <th mat-header-cell *matHeaderCellDef>ช่างผู้รับผิดชอบ</th>
+        <td mat-cell *matCellDef="let t">{{ t.assignedTechnician?.fullName ?? '-' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>วันที่แจ้ง</th>
+        <td mat-cell *matCellDef="let t">{{ t.createdAt | date: 'd MMM yyyy' }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer"
+        (click)="viewTicket(row)"
+      ></tr>
+    </table>
+
+    @if (!loading() && tickets().length === 0) {
+      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบใบแจ้งซ่อมที่ตรงกับเงื่อนไข</p>
+    }
+
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="pageSize()"
+      [pageIndex]="pageIndex()"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPage($event)"
+    />
+  </div>
+</div>

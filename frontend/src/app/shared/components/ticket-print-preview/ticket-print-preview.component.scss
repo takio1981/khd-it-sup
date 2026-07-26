@@ -1,0 +1,149 @@
+:host {
+  display: block;
+}
+
+.khd-doc {
+  max-width: 210mm;
+  margin: 0 auto;
+  background: #fff;
+  color: #111;
+  padding: 12mm;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.khd-doc-header {
+  text-align: center;
+  border-bottom: 2px solid #111;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+.khd-doc-org {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.khd-doc-title {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.khd-doc-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #444;
+}
+
+.khd-doc-section {
+  margin-bottom: 14px;
+  break-inside: avoid;
+}
+
+.khd-doc-section-title {
+  font-weight: 700;
+  margin: 0 0 6px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #ccc;
+}
+
+.khd-doc-summary {
+  background: rgb(0 108 69 / 0.04);
+  padding: 8px 10px;
+  border-radius: 4px;
+}
+
+.khd-doc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+}
+
+.khd-doc-field {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+
+  &.khd-col-2 {
+    min-width: 0;
+  }
+
+  &.khd-block {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+}
+
+.khd-doc-label {
+  font-size: 11px;
+  color: #555;
+  white-space: nowrap;
+}
+
+.khd-doc-value {
+  border-bottom: 1px dotted #999;
+  flex: 1;
+  min-height: 16px;
+  padding-bottom: 1px;
+}
+
+.khd-doc-textblock {
+  margin: 0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 6px 8px;
+  min-height: 20px;
+  white-space: pre-line;
+}
+
+.khd-doc-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.khd-doc-photo {
+  width: 100%;
+  height: 28mm;
+  object-fit: cover;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.khd-doc-video-note {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #444;
+}
+
+.khd-doc-signrow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 20px 0 14px;
+  break-inside: avoid;
+}
+
+.khd-doc-signbox {
+  text-align: center;
+}
+
+.khd-doc-signline {
+  margin: 0 0 4px;
+}
+
+.khd-doc-signdate {
+  margin: 0;
+  font-size: 12px;
+  color: #444;
+}
+
+@media print {
+  .khd-doc {
+    padding: 0;
+  }
+}

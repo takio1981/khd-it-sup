@@ -1,0 +1,78 @@
+/** ต้องตรงกับ backend/src/common/constants/statusColor.const.ts เสมอ */
+export const STATUS_COLORS: Record<string, string> = {
+  DRAFT: '#9CA3AF',
+  SUBMITTED: '#3B82F6',
+  RECEIVED: '#6366F1',
+  IT_REVIEW: '#6366F1',
+  DIAGNOSIS: '#8B5CF6',
+  WAITING_APPROVAL: '#F97316',
+  WAITING_PARTS: '#F59E0B',
+  REPAIRING: '#06B6D4',
+  TESTING: '#06B6D4',
+  VENDOR_REPAIR: '#EA580C',
+  COMPLETED: '#22C55E',
+  RETURNED: '#14B8A6',
+  USER_ACCEPTANCE: '#14B8A6',
+  CLOSED: '#166534',
+  CANCELLED: '#EF4444',
+  REJECTED: '#991B1B',
+
+  // สถานะครุภัณฑ์ (AssetStatus) — WAITING_PARTS ใช้ร่วมกับสถานะงานแจ้งซ่อมด้านบน
+  ACTIVE: '#22C55E',
+  IN_REPAIR: '#06B6D4',
+  MAINTENANCE: '#8B5CF6',
+  RESERVED: '#3B82F6',
+  INACTIVE: '#9CA3AF',
+  DISPOSED: '#6B7280',
+  LOST: '#991B1B',
+};
+
+export const STATUS_LABEL_TH: Record<string, string> = {
+  DRAFT: 'ร่าง',
+  SUBMITTED: 'แจ้งซ่อมแล้ว',
+  RECEIVED: 'รับเรื่องแล้ว',
+  IT_REVIEW: 'ตรวจสอบเบื้องต้น',
+  DIAGNOSIS: 'วิเคราะห์ปัญหา',
+  WAITING_APPROVAL: 'รออนุมัติ',
+  WAITING_PARTS: 'รออะไหล่',
+  REPAIRING: 'กำลังซ่อม',
+  TESTING: 'ทดสอบระบบ',
+  VENDOR_REPAIR: 'ซ่อมภายนอก',
+  COMPLETED: 'ซ่อมเสร็จสิ้น',
+  RETURNED: 'คืนอุปกรณ์แล้ว',
+  USER_ACCEPTANCE: 'ผู้แจ้งรับมอบ',
+  CLOSED: 'ปิดงาน',
+  CANCELLED: 'ยกเลิก',
+  REJECTED: 'ปฏิเสธ',
+
+  // สถานะครุภัณฑ์ (AssetStatus)
+  ACTIVE: 'ใช้งานปกติ',
+  IN_REPAIR: 'อยู่ระหว่างซ่อม',
+  MAINTENANCE: 'ซ่อมบำรุง',
+  RESERVED: 'สำรองใช้งาน',
+  INACTIVE: 'ปิดใช้งาน',
+  DISPOSED: 'จำหน่ายแล้ว',
+  LOST: 'สูญหาย',
+};
+
+export function getStatusColor(code: string): string {
+  return STATUS_COLORS[code] ?? '#9CA3AF';
+}
+
+export function getStatusLabel(code: string): string {
+  return STATUS_LABEL_TH[code] ?? code;
+}
+
+export const URGENCY_LABEL_TH: Record<string, string> = {
+  LOW: 'ต่ำ',
+  MEDIUM: 'ปานกลาง',
+  HIGH: 'สูง',
+  CRITICAL: 'วิกฤต',
+};
+
+export const URGENCY_COLOR: Record<string, string> = {
+  LOW: '#22C55E',
+  MEDIUM: '#F59E0B',
+  HIGH: '#EA580C',
+  CRITICAL: '#EF4444',
+};

@@ -1,0 +1,104 @@
+<div class="space-y-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <a routerLink="/assets" class="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-brand-primary mb-1">
+        <khd-icon name="chevron-left" [size]="16" />
+        กลับไปรายการครุภัณฑ์
+      </a>
+      <h1 class="text-xl font-semibold">ประเภทครุภัณฑ์</h1>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ categories().length }} ประเภท</p>
+    </div>
+    <button mat-flat-button color="primary" *khdHasPermission="'asset:create'" (click)="showForm() ? cancelForm() : openCreateForm()">
+      <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
+      {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มประเภทครุภัณฑ์' }}
+    </button>
+  </div>
+
+  @if (showForm()) {
+    <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <h2 class="sm:col-span-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+        {{ editingId() ? 'แก้ไขประเภทครุภัณฑ์' : 'เพิ่มประเภทครุภัณฑ์ใหม่' }}
+      </h2>
+
+      <mat-form-field appearance="outline">
+        <mat-label>รหัสประเภท</mat-label>
+        <input matInput formControlName="code" />
+        @if (editingId()) {
+          <mat-hint>ไม่สามารถแก้ไขรหัสประเภทได้</mat-hint>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ชื่อประเภท (ไทย)</mat-label>
+        <input matInput formControlName="nameTh" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ชื่อประเภท (อังกฤษ)</mat-label>
+        <input matInput formControlName="nameEn" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ไอคอน (ถ้ามี)</mat-label>
+        <input matInput formControlName="icon" placeholder="เช่น computer-desktop" />
+      </mat-form-field>
+      <div class="sm:col-span-2">
+        <mat-checkbox formControlName="requiresSerial">ต้องระบุ Serial Number เมื่อเพิ่มครุภัณฑ์ประเภทนี้</mat-checkbox>
+      </div>
+      <div class="sm:col-span-2 flex justify-end gap-2">
+        <button mat-button type="button" (click)="cancelForm()">ยกเลิก</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+          {{ editingId() ? 'บันทึกการแก้ไข' : 'บันทึก' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <div class="khd-card !p-0 overflow-x-auto">
+    <table mat-table [dataSource]="categories()" class="w-full">
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef>รหัส</th>
+        <td mat-cell *matCellDef="let c">{{ c.code }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nameTh">
+        <th mat-header-cell *matHeaderCellDef>ชื่อประเภท (ไทย)</th>
+        <td mat-cell *matCellDef="let c">{{ c.nameTh }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nameEn">
+        <th mat-header-cell *matHeaderCellDef>ชื่อประเภท (อังกฤษ)</th>
+        <td mat-cell *matCellDef="let c">{{ c.nameEn }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="requiresSerial">
+        <th mat-header-cell *matHeaderCellDef>ต้องมี Serial</th>
+        <td mat-cell *matCellDef="let c">{{ c.requiresSerial ? 'ใช่' : 'ไม่ใช่' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let c">
+          <div class="flex items-center gap-2">
+            <button
+              *khdHasPermission="'asset:update'"
+              (click)="openEditForm(c)"
+              class="appearance-none inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 text-xs font-medium px-3 py-1 transition-colors"
+            >
+              <khd-icon name="pencil-square" [size]="14" />
+              แก้ไข
+            </button>
+            <button
+              *khdHasPermission="'asset:delete'"
+              (click)="deleteCategory(c)"
+              class="appearance-none inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/60 text-xs font-medium px-3 py-1 transition-colors"
+            >
+              <khd-icon name="trash" [size]="14" />
+              ลบ
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+    </table>
+  </div>
+</div>

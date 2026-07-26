@@ -1,0 +1,228 @@
+<div class="space-y-4">
+  <div>
+    <a routerLink="/departments" class="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-brand-primary mb-1">
+      <khd-icon name="chevron-left" [size]="16" />
+      กลับไปหน้าจัดการสถานที่/หน่วยงาน
+    </a>
+    <h1 class="text-xl font-semibold">จัดการอาคาร/ชั้น/ห้อง</h1>
+    <p class="text-sm text-neutral-500">เลือกอาคารเพื่อดูชั้น และเลือกชั้นเพื่อดูห้อง ตามลำดับ</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+    <!-- Buildings -->
+    <div class="khd-card space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold flex items-center gap-2">
+          <khd-icon name="building-office-2" [size]="16" class="text-blue-500" />
+          อาคาร ({{ buildings().length }})
+        </h2>
+        <button
+          mat-icon-button
+          *khdHasPermission="'asset:create'"
+          (click)="showBuildingForm() ? cancelBuildingForm() : openCreateBuildingForm()"
+        >
+          <khd-icon [name]="showBuildingForm() ? 'x-mark' : 'plus'" [size]="18" />
+        </button>
+      </div>
+
+      @if (showBuildingForm()) {
+        <form [formGroup]="buildingForm" (ngSubmit)="submitBuilding()" class="space-y-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 p-3">
+          <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+            <mat-label>รหัสอาคาร</mat-label>
+            <input matInput formControlName="code" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+            <mat-label>ชื่ออาคาร</mat-label>
+            <input matInput formControlName="name" />
+          </mat-form-field>
+          <div class="flex justify-end gap-2 pt-1">
+            <button mat-button type="button" (click)="cancelBuildingForm()">ยกเลิก</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="buildingForm.invalid">บันทึก</button>
+          </div>
+        </form>
+      }
+
+      <div class="space-y-1">
+        @for (b of buildings(); track b.id) {
+          <div
+            class="flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer text-sm transition-colors"
+            [class.bg-blue-50]="selectedBuildingId() === b.id"
+            [class.dark:bg-blue-950/30]="selectedBuildingId() === b.id"
+            [class.hover:bg-black/[0.03]]="selectedBuildingId() !== b.id"
+            (click)="selectBuilding(b)"
+          >
+            <div class="min-w-0">
+              <p class="font-medium truncate">{{ b.name }}</p>
+              <p class="text-xs text-neutral-400">{{ b.code }}</p>
+            </div>
+            <div class="flex items-center gap-1 shrink-0" (click)="$event.stopPropagation()">
+              <button
+                *khdHasPermission="'asset:update'"
+                (click)="openEditBuildingForm(b)"
+                class="appearance-none rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 p-1.5"
+              >
+                <khd-icon name="pencil-square" [size]="13" />
+              </button>
+              <button
+                *khdHasPermission="'asset:delete'"
+                (click)="deleteBuilding(b)"
+                class="appearance-none rounded-full border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 p-1.5"
+              >
+                <khd-icon name="trash" [size]="13" />
+              </button>
+            </div>
+          </div>
+        } @empty {
+          <p class="text-center text-xs text-neutral-400 py-6">ยังไม่มีอาคาร</p>
+        }
+      </div>
+    </div>
+
+    <!-- Floors -->
+    <div class="khd-card space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold flex items-center gap-2">
+          <khd-icon name="adjustments-horizontal" [size]="16" class="text-teal-500" />
+          ชั้น ({{ floors().length }})
+        </h2>
+        @if (selectedBuildingId()) {
+          <button mat-icon-button *khdHasPermission="'asset:create'" (click)="showFloorForm() ? cancelFloorForm() : openCreateFloorForm()">
+            <khd-icon [name]="showFloorForm() ? 'x-mark' : 'plus'" [size]="18" />
+          </button>
+        }
+      </div>
+
+      @if (!selectedBuildingId()) {
+        <p class="text-center text-xs text-neutral-400 py-6">เลือกอาคารทางซ้ายก่อน</p>
+      } @else {
+        @if (showFloorForm()) {
+          <form [formGroup]="floorForm" (ngSubmit)="submitFloor()" class="space-y-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 p-3">
+            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+              <mat-label>รหัสชั้น</mat-label>
+              <input matInput formControlName="code" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+              <mat-label>ชื่อชั้น</mat-label>
+              <input matInput formControlName="name" />
+            </mat-form-field>
+            <div class="flex justify-end gap-2 pt-1">
+              <button mat-button type="button" (click)="cancelFloorForm()">ยกเลิก</button>
+              <button mat-flat-button color="primary" type="submit" [disabled]="floorForm.invalid">บันทึก</button>
+            </div>
+          </form>
+        }
+
+        <div class="space-y-1">
+          @for (f of floors(); track f.id) {
+            <div
+              class="flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer text-sm transition-colors"
+              [class.bg-teal-50]="selectedFloorId() === f.id"
+              [class.dark:bg-teal-950/30]="selectedFloorId() === f.id"
+              [class.hover:bg-black/[0.03]]="selectedFloorId() !== f.id"
+              (click)="selectFloor(f)"
+            >
+              <div class="min-w-0">
+                <p class="font-medium truncate">{{ f.name }}</p>
+                <p class="text-xs text-neutral-400">{{ f.code }}</p>
+              </div>
+              <div class="flex items-center gap-1 shrink-0" (click)="$event.stopPropagation()">
+                <button
+                  *khdHasPermission="'asset:update'"
+                  (click)="openEditFloorForm(f)"
+                  class="appearance-none rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 p-1.5"
+                >
+                  <khd-icon name="pencil-square" [size]="13" />
+                </button>
+                <button
+                  *khdHasPermission="'asset:delete'"
+                  (click)="deleteFloor(f)"
+                  class="appearance-none rounded-full border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 p-1.5"
+                >
+                  <khd-icon name="trash" [size]="13" />
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-center text-xs text-neutral-400 py-6">ยังไม่มีชั้นในอาคารนี้</p>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Rooms -->
+    <div class="khd-card space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold flex items-center gap-2">
+          <khd-icon name="archive-box" [size]="16" class="text-violet-500" />
+          ห้อง ({{ rooms().length }})
+        </h2>
+        @if (selectedFloorId()) {
+          <button mat-icon-button *khdHasPermission="'asset:create'" (click)="showRoomForm() ? cancelRoomForm() : openCreateRoomForm()">
+            <khd-icon [name]="showRoomForm() ? 'x-mark' : 'plus'" [size]="18" />
+          </button>
+        }
+      </div>
+
+      @if (!selectedFloorId()) {
+        <p class="text-center text-xs text-neutral-400 py-6">เลือกชั้นตรงกลางก่อน</p>
+      } @else {
+        @if (showRoomForm()) {
+          <form [formGroup]="roomForm" (ngSubmit)="submitRoom()" class="space-y-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 p-3">
+            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+              <mat-label>รหัสห้อง</mat-label>
+              <input matInput formControlName="code" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+              <mat-label>ชื่อห้อง</mat-label>
+              <input matInput formControlName="name" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+              <mat-label>หน่วยงานที่ใช้งาน</mat-label>
+              <mat-select formControlName="departmentId">
+                <mat-option value="">ไม่ระบุ</mat-option>
+                @for (d of departments(); track d.id) {
+                  <mat-option [value]="d.id">{{ d.nameTh }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <div class="flex justify-end gap-2 pt-1">
+              <button mat-button type="button" (click)="cancelRoomForm()">ยกเลิก</button>
+              <button mat-flat-button color="primary" type="submit" [disabled]="roomForm.invalid">บันทึก</button>
+            </div>
+          </form>
+        }
+
+        <div class="space-y-1">
+          @for (r of rooms(); track r.id) {
+            <div class="flex items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-black/[0.03] dark:hover:bg-white/[0.03]">
+              <div class="min-w-0">
+                <p class="font-medium truncate">{{ r.name }}</p>
+                <p class="text-xs text-neutral-400 truncate">
+                  {{ r.code }}{{ r.department ? ' · ' + r.department.nameTh : '' }}
+                </p>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <button
+                  *khdHasPermission="'asset:update'"
+                  (click)="openEditRoomForm(r)"
+                  class="appearance-none rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 p-1.5"
+                >
+                  <khd-icon name="pencil-square" [size]="13" />
+                </button>
+                <button
+                  *khdHasPermission="'asset:delete'"
+                  (click)="deleteRoom(r)"
+                  class="appearance-none rounded-full border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 p-1.5"
+                >
+                  <khd-icon name="trash" [size]="13" />
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-center text-xs text-neutral-400 py-6">ยังไม่มีห้องในชั้นนี้</p>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

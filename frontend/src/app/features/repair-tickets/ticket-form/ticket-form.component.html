@@ -1,0 +1,44 @@
+<h2 mat-dialog-title>แจ้งซ่อมใหม่</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="!flex !flex-col !gap-1">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>รายละเอียดปัญหา</mat-label>
+      <textarea matInput formControlName="description" rows="3"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>ความเร่งด่วน</mat-label>
+      <mat-select formControlName="urgency">
+        @for (u of ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']; track u) {
+          <mat-option [value]="u">{{ urgencyLabels[u] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>ประเภทปัญหา (ถ้ามี)</mat-label>
+      <input matInput formControlName="problemType" placeholder="เช่น ฮาร์ดแวร์, ซอฟต์แวร์, เครือข่าย" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>สถานที่</mat-label>
+      <input matInput formControlName="locationNote" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>เบอร์โทรติดต่อกลับ</mat-label>
+      <input matInput formControlName="contactPhone" />
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>ยกเลิก</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+      @if (saving()) {
+        <mat-spinner diameter="18" class="!inline-block !mr-2" />
+      }
+      ส่งแจ้งซ่อม
+    </button>
+  </mat-dialog-actions>
+</form>

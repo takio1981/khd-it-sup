@@ -1,0 +1,850 @@
+// =====================================================================================
+// KHD-IT-SUP Prisma Schema
+// สอดคล้อง 1:1 กับ database/schema.sql (canonical DDL)
+//
+// หมายเหตุสำคัญ: การสร้าง/อัปเดตฐานข้อมูลจริงใช้ database/schema.sql + database/seed.sql
+// เท่านั้น (รันตรงหรือผ่าน MariaDB docker-entrypoint-initdb.d) เพราะมี MariaDB TRIGGER
+// (immutable timeline/audit log) และ FULLTEXT INDEX ที่ Prisma Migrate DSL ยังไม่รองรับ
+// สมบูรณ์ — ห้ามรัน `prisma migrate dev` กับ schema นี้ ใช้เพียง `prisma generate`
+// เพื่อสร้าง Prisma Client ที่ type-safe ให้ตรงกับโครงสร้างตารางจริงเท่านั้น
+// =====================================================================================
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" สำหรับ dev บนเครื่อง, "linux-musl-openssl-3.0.x" สำหรับ runtime ใน node:20-alpine (Docker)
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================================
+// SECTION 1: RBAC
+// =====================================================================================
+
+model Role {
+  id          String   @id @db.Char(36)
+  code        String   @unique @db.VarChar(50)
+  nameTh      String   @map("name_th") @db.VarChar(150)
+  nameEn      String   @map("name_en") @db.VarChar(150)
+  description String?  @db.VarChar(255)
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users           User[]
+  rolePermissions RolePermission[]
+  workflowSteps   WorkflowStep[]
+  approvals       Approval[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @db.Char(36)
+  code        String   @unique @db.VarChar(100)
+  module      String   @db.VarChar(50)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@index([module], name: "idx_permissions_module")
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String   @map("role_id") @db.Char(36)
+  permissionId String   @map("permission_id") @db.Char(36)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Department {
+  id        String   @id @db.Char(36)
+  code      String   @unique @db.VarChar(50)
+  nameTh    String   @map("name_th") @db.VarChar(200)
+  nameEn    String?  @map("name_en") @db.VarChar(200)
+  parentId  String?  @map("parent_id") @db.Char(36)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  parent         Department?               @relation("DepartmentHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Department[]              @relation("DepartmentHierarchy")
+  users          User[]
+  assets         Asset[]
+  repairTickets  RepairTicket[]
+  timelineEvents RepairTicketTimelineEvent[]
+  divisions      Division[]
+  rooms          Room[]
+
+  @@index([parentId], name: "idx_departments_parent")
+  @@map("departments")
+}
+
+model Division {
+  id           String   @id @db.Char(36)
+  departmentId String   @map("department_id") @db.Char(36)
+  code         String   @unique @db.VarChar(50)
+  nameTh       String   @map("name_th") @db.VarChar(150)
+  nameEn       String?  @map("name_en") @db.VarChar(150)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  @@index([departmentId], name: "idx_divisions_department")
+  @@map("divisions")
+}
+
+model Position {
+  id        String   @id @db.Char(36)
+  code      String   @unique @db.VarChar(50)
+  nameTh    String   @map("name_th") @db.VarChar(150)
+  nameEn    String?  @map("name_en") @db.VarChar(150)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users User[]
+
+  @@map("positions")
+}
+
+model User {
+  id                  String    @id @db.Char(36)
+  username            String    @unique @db.VarChar(100)
+  email               String    @unique @db.VarChar(150)
+  passwordHash        String    @map("password_hash") @db.VarChar(255)
+  fullName            String    @map("full_name") @db.VarChar(200)
+  phone               String?   @db.VarChar(30)
+  avatarUrl           String?   @map("avatar_url") @db.VarChar(500)
+  employeeCode        String?   @map("employee_code") @db.VarChar(50)
+  roleId              String    @map("role_id") @db.Char(36)
+  departmentId        String?   @map("department_id") @db.Char(36)
+  positionId          String?   @map("position_id") @db.Char(36)
+  isActive            Boolean   @default(true) @map("is_active")
+  mustChangePassword  Boolean   @default(false) @map("must_change_password")
+  lastLoginAt         DateTime? @map("last_login_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  createdBy           String?   @map("created_by") @db.Char(36)
+  updatedBy           String?   @map("updated_by") @db.Char(36)
+  deletedAt           DateTime? @map("deleted_at")
+
+  role                Role                        @relation(fields: [roleId], references: [id])
+  department          Department?                 @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  position            Position?                   @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  ownedAssets         Asset[]                     @relation("AssetOwner")
+  reportedTickets     RepairTicket[]               @relation("TicketReporter")
+  assignedTickets     RepairTicket[]               @relation("TicketTechnician")
+  repairSummaries     RepairTicket[]               @relation("TicketSummaryBy")
+  timelineEvents      RepairTicketTimelineEvent[]
+  approvals           Approval[]
+  auditLogs           AuditLog[]
+
+  @@index([roleId], name: "idx_users_role")
+  @@index([departmentId], name: "idx_users_department")
+  @@map("users")
+}
+
+model RefreshToken {
+  id            String    @id @db.Char(36)
+  userId        String    @map("user_id") @db.Char(36)
+  tokenHash     String    @map("token_hash") @db.VarChar(255)
+  expiresAt     DateTime  @map("expires_at")
+  revokedAt     DateTime? @map("revoked_at")
+  replacedById  String?   @map("replaced_by_id") @db.Char(36)
+  createdByIp   String?   @map("created_by_ip") @db.VarChar(64)
+  userAgent     String?   @map("user_agent") @db.VarChar(255)
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_refresh_tokens_user")
+  @@index([expiresAt], name: "idx_refresh_tokens_expires")
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @db.Char(36)
+  userId    String    @map("user_id") @db.Char(36)
+  tokenHash String    @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_prt_user")
+  @@map("password_reset_tokens")
+}
+
+// =====================================================================================
+// SECTION 2: LOCATION & VENDOR
+// =====================================================================================
+
+model Building {
+  id   String @id @db.Char(36)
+  code String @unique @db.VarChar(50)
+  name String @db.VarChar(150)
+
+  floors Floor[]
+  assets Asset[]
+
+  @@map("buildings")
+}
+
+model Floor {
+  id         String @id @db.Char(36)
+  buildingId String @map("building_id") @db.Char(36)
+  code       String @db.VarChar(50)
+  name       String @db.VarChar(150)
+
+  building Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  rooms    Room[]
+  assets   Asset[]
+
+  @@index([buildingId], name: "idx_floors_building")
+  @@map("floors")
+}
+
+model Room {
+  id           String  @id @db.Char(36)
+  floorId      String  @map("floor_id") @db.Char(36)
+  departmentId String? @map("department_id") @db.Char(36)
+  code         String  @db.VarChar(50)
+  name         String  @db.VarChar(150)
+
+  floor      Floor       @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assets     Asset[]
+
+  @@index([floorId], name: "idx_rooms_floor")
+  @@index([departmentId], name: "idx_rooms_department")
+  @@map("rooms")
+}
+
+model Vendor {
+  id             String   @id @db.Char(36)
+  code           String   @unique @db.VarChar(50)
+  name           String   @db.VarChar(200)
+  contactPerson  String?  @map("contact_person") @db.VarChar(150)
+  phone          String?  @db.VarChar(30)
+  email          String?  @db.VarChar(150)
+  address        String?  @db.VarChar(500)
+  taxId          String?  @map("tax_id") @db.VarChar(30)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  assets             Asset[]
+  vendorRepairOrders VendorRepairOrder[]
+
+  @@map("vendors")
+}
+
+// =====================================================================================
+// SECTION 3: ASSET MANAGEMENT
+// =====================================================================================
+
+model AssetCategory {
+  id              String   @id @db.Char(36)
+  code            String   @unique @db.VarChar(50)
+  nameTh          String   @map("name_th") @db.VarChar(150)
+  nameEn          String   @map("name_en") @db.VarChar(150)
+  icon            String?  @db.VarChar(100)
+  requiresSerial  Boolean  @default(true) @map("requires_serial")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  assets Asset[]
+
+  @@map("asset_categories")
+}
+
+enum AssetStatus {
+  ACTIVE
+  IN_REPAIR
+  WAITING_PARTS
+  MAINTENANCE
+  RESERVED
+  INACTIVE
+  DISPOSED
+  LOST
+}
+
+model Asset {
+  id                  String       @id @db.Char(36)
+  assetNumber         String       @unique @map("asset_number") @db.VarChar(50)
+  govAssetNumber      String?      @map("gov_asset_number") @db.VarChar(100)
+  serialNumber        String?      @map("serial_number") @db.VarChar(150)
+  model               String?      @db.VarChar(150)
+  brand               String?      @db.VarChar(150)
+  categoryId          String       @map("category_id") @db.Char(36)
+  departmentId        String?      @map("department_id") @db.Char(36)
+  buildingId          String?      @map("building_id") @db.Char(36)
+  floorId             String?      @map("floor_id") @db.Char(36)
+  roomId              String?      @map("room_id") @db.Char(36)
+  locationNote        String?      @map("location_note") @db.VarChar(255)
+  purchaseDate        DateTime?    @map("purchase_date") @db.Date
+  warrantyExpireDate  DateTime?    @map("warranty_expire_date") @db.Date
+  vendorId            String?      @map("vendor_id") @db.Char(36)
+  price               Decimal?     @db.Decimal(14, 2)
+  photoUrl            String?      @map("photo_url") @db.VarChar(500)
+  status              AssetStatus  @default(ACTIVE)
+  ownerUserId         String?      @map("owner_user_id") @db.Char(36)
+  remark              String?      @db.Text
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+  createdBy           String?      @map("created_by") @db.Char(36)
+  updatedBy           String?      @map("updated_by") @db.Char(36)
+  deletedAt           DateTime?    @map("deleted_at")
+
+  category       AssetCategory   @relation(fields: [categoryId], references: [id])
+  department     Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  building       Building?       @relation(fields: [buildingId], references: [id], onDelete: SetNull)
+  floor          Floor?          @relation(fields: [floorId], references: [id], onDelete: SetNull)
+  room           Room?           @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  vendor         Vendor?         @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  owner          User?           @relation("AssetOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  photos         AssetPhoto[]
+  qrcode         AssetQrcode?
+  qrScanLogs     QrScanLog[]
+  repairTickets  RepairTicket[]
+
+  @@index([categoryId], name: "idx_assets_category")
+  @@index([departmentId], name: "idx_assets_department")
+  @@index([status], name: "idx_assets_status")
+  @@index([serialNumber], name: "idx_assets_serial")
+  @@index([govAssetNumber], name: "idx_assets_gov_number")
+  @@map("assets")
+}
+
+model AssetPhoto {
+  id         String   @id @db.Char(36)
+  assetId    String   @map("asset_id") @db.Char(36)
+  fileUrl    String   @map("file_url") @db.VarChar(500)
+  caption    String?  @db.VarChar(255)
+  uploadedBy String?  @map("uploaded_by") @db.Char(36)
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId], name: "idx_asset_photos_asset")
+  @@map("asset_photos")
+}
+
+model AssetQrcode {
+  id           String   @id @db.Char(36)
+  assetId      String   @unique @map("asset_id") @db.Char(36)
+  qrToken      String   @unique @map("qr_token") @db.VarChar(255)
+  qrImageUrl   String?  @map("qr_image_url") @db.VarChar(500)
+  isActive     Boolean  @default(true) @map("is_active")
+  generatedBy  String?  @map("generated_by") @db.Char(36)
+  generatedAt  DateTime @default(now()) @map("generated_at")
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@map("asset_qrcodes")
+}
+
+model QrScanLog {
+  id         String   @id @db.Char(36)
+  assetId    String   @map("asset_id") @db.Char(36)
+  scannedBy  String?  @map("scanned_by") @db.Char(36)
+  ipAddress  String?  @map("ip_address") @db.VarChar(64)
+  userAgent  String?  @map("user_agent") @db.VarChar(255)
+  scannedAt  DateTime @default(now()) @map("scanned_at")
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId], name: "idx_qr_scan_logs_asset")
+  @@map("qr_scan_logs")
+}
+
+// =====================================================================================
+// SECTION 4: WORKFLOW ENGINE
+// =====================================================================================
+
+enum WorkflowAppliesTo {
+  REPAIR_INTERNAL
+  REPAIR_EXTERNAL
+}
+
+model WorkflowTemplate {
+  id         String            @id @db.Char(36)
+  code       String            @db.VarChar(50)
+  name       String            @db.VarChar(200)
+  appliesTo  WorkflowAppliesTo @map("applies_to")
+  version    Int               @default(1)
+  isActive   Boolean           @default(true) @map("is_active")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  steps       WorkflowStep[]
+  transitions WorkflowTransition[]
+  instances   WorkflowInstance[]
+
+  @@unique([code, version], map: "uq_workflow_templates_code_version")
+  @@map("workflow_templates")
+}
+
+model WorkflowStep {
+  id                  String   @id @db.Char(36)
+  templateId          String   @map("template_id") @db.Char(36)
+  stepCode            String   @map("step_code") @db.VarChar(50)
+  stepNameTh          String   @map("step_name_th") @db.VarChar(150)
+  stepNameEn          String   @map("step_name_en") @db.VarChar(150)
+  stepOrder           Int      @map("step_order")
+  responsibleRoleId   String?  @map("responsible_role_id") @db.Char(36)
+  slaHours            Int?     @map("sla_hours")
+  requiresApproval    Boolean  @default(false) @map("requires_approval")
+  colorCode           String?  @map("color_code") @db.VarChar(20)
+  isTerminal          Boolean  @default(false) @map("is_terminal")
+  notifyOnEnter       Boolean  @default(true) @map("notify_on_enter")
+
+  template          WorkflowTemplate     @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  responsibleRole   Role?                @relation(fields: [responsibleRoleId], references: [id], onDelete: SetNull)
+  transitionsFrom   WorkflowTransition[] @relation("TransitionFrom")
+  transitionsTo     WorkflowTransition[] @relation("TransitionTo")
+  instancesAtStep   WorkflowInstance[]
+  approvals         Approval[]
+
+  @@unique([templateId, stepCode], map: "uq_workflow_steps_template_code")
+  @@index([responsibleRoleId], name: "idx_workflow_steps_role")
+  @@map("workflow_steps")
+}
+
+model WorkflowTransition {
+  id            String  @id @db.Char(36)
+  templateId    String  @map("template_id") @db.Char(36)
+  fromStepId    String? @map("from_step_id") @db.Char(36)
+  toStepId      String  @map("to_step_id") @db.Char(36)
+  conditionKey  String? @map("condition_key") @db.VarChar(100)
+  label         String? @db.VarChar(150)
+
+  template WorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  fromStep WorkflowStep?    @relation("TransitionFrom", fields: [fromStepId], references: [id], onDelete: Cascade)
+  toStep   WorkflowStep     @relation("TransitionTo", fields: [toStepId], references: [id], onDelete: Cascade)
+
+  @@index([fromStepId], name: "idx_workflow_transitions_from")
+  @@index([toStepId], name: "idx_workflow_transitions_to")
+  @@map("workflow_transitions")
+}
+
+enum WorkflowEntityType {
+  REPAIR_TICKET
+}
+
+enum WorkflowInstanceStatus {
+  RUNNING
+  COMPLETED
+  CANCELLED
+}
+
+model WorkflowInstance {
+  id             String                  @id @db.Char(36)
+  templateId     String                  @map("template_id") @db.Char(36)
+  entityType     WorkflowEntityType      @default(REPAIR_TICKET) @map("entity_type")
+  entityId       String                  @map("entity_id") @db.Char(36)
+  currentStepId  String                  @map("current_step_id") @db.Char(36)
+  status         WorkflowInstanceStatus  @default(RUNNING)
+  startedAt      DateTime                @default(now()) @map("started_at")
+  completedAt    DateTime?               @map("completed_at")
+
+  template    WorkflowTemplate @relation(fields: [templateId], references: [id])
+  currentStep WorkflowStep     @relation(fields: [currentStepId], references: [id])
+  ticket      RepairTicket?
+
+  @@unique([entityType, entityId], map: "uq_workflow_instances_entity")
+  @@index([currentStepId], name: "idx_workflow_instances_step")
+  @@map("workflow_instances")
+}
+
+// =====================================================================================
+// SECTION 5-6: REPAIR TICKET / TIMELINE / APPROVAL
+// =====================================================================================
+
+enum TicketUrgency {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model RepairTicket {
+  id                    String        @id @db.Char(36)
+  ticketNumber          String        @unique @map("ticket_number") @db.VarChar(50)
+  assetId               String?       @map("asset_id") @db.Char(36)
+  reportedByUserId      String        @map("reported_by_user_id") @db.Char(36)
+  departmentId          String?       @map("department_id") @db.Char(36)
+  problemType           String?       @map("problem_type") @db.VarChar(100)
+  description           String        @db.Text
+  urgency               TicketUrgency @default(MEDIUM)
+  locationNote          String?       @map("location_note") @db.VarChar(255)
+  contactPhone          String?       @map("contact_phone") @db.VarChar(30)
+  status                String        @default("DRAFT") @db.VarChar(50)
+  workflowInstanceId    String?       @unique @map("workflow_instance_id") @db.Char(36)
+  assignedTechnicianId  String?       @map("assigned_technician_id") @db.Char(36)
+  estimatedFinishAt     DateTime?     @map("estimated_finish_at")
+  slaDueAt              DateTime?     @map("sla_due_at")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt              DateTime     @updatedAt @map("updated_at")
+  closedAt               DateTime?    @map("closed_at")
+  cancelledAt            DateTime?    @map("cancelled_at")
+  cancelReason            String?     @map("cancel_reason") @db.VarChar(500)
+
+  // สรุปผลการซ่อมจากช่าง — บันทึกตอน transition ไปสถานะ COMPLETED
+  rootCause         String?      @map("root_cause") @db.Text
+  repairAction      String?      @map("repair_action") @db.Text
+  partsUsed         String?      @map("parts_used") @db.Text
+  recommendation    String?      @db.Text
+  summaryByUserId   String?      @map("summary_by_user_id") @db.Char(36)
+  summaryAt         DateTime?    @map("summary_at")
+
+  asset             Asset?                      @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  reportedBy        User                        @relation("TicketReporter", fields: [reportedByUserId], references: [id])
+  department        Department?                 @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assignedTechnician User?                       @relation("TicketTechnician", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
+  summaryByUser     User?                       @relation("TicketSummaryBy", fields: [summaryByUserId], references: [id], onDelete: SetNull)
+  workflowInstance  WorkflowInstance?            @relation(fields: [workflowInstanceId], references: [id], onDelete: SetNull)
+  attachments       RepairTicketAttachment[]
+  timeline          RepairTicketTimelineEvent[]
+  approvals         Approval[]
+  sparePartTxns     SparePartTransaction[]
+  vendorRepairOrders VendorRepairOrder[]
+  generatedDocuments GeneratedDocument[]
+
+  @@index([assetId], name: "idx_repair_tickets_asset")
+  @@index([reportedByUserId], name: "idx_repair_tickets_reporter")
+  @@index([status], name: "idx_repair_tickets_status")
+  @@index([assignedTechnicianId], name: "idx_repair_tickets_technician")
+  @@index([createdAt], name: "idx_repair_tickets_created")
+  @@map("repair_tickets")
+}
+
+model RepairTicketAttachment {
+  id         String   @id @db.Char(36)
+  ticketId   String   @map("ticket_id") @db.Char(36)
+  fileUrl    String   @map("file_url") @db.VarChar(500)
+  fileType   String?  @map("file_type") @db.VarChar(50)
+  caption    String?  @db.VarChar(255)
+  uploadedBy String?  @map("uploaded_by") @db.Char(36)
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+
+  ticket RepairTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId], name: "idx_rt_attachments_ticket")
+  @@map("repair_ticket_attachments")
+}
+
+enum ApprovalResult {
+  WAITING
+  APPROVED
+  REJECTED
+  RETURNED
+  SKIPPED
+}
+
+// Insert-only ledger: MariaDB triggers (trg_timeline_no_update/delete) บังคับ append-only
+// ที่ระดับ DB — ห้ามเพิ่มเมธอด update/delete ให้ Prisma model นี้ใน Repository/Service layer
+model RepairTicketTimelineEvent {
+  id                   String          @id @db.Char(36)
+  ticketId             String          @map("ticket_id") @db.Char(36)
+  eventTime            DateTime        @default(now()) @map("event_time")
+  eventType            String          @map("event_type") @db.VarChar(50)
+  previousStatus       String?         @map("previous_status") @db.VarChar(50)
+  currentStatus        String          @map("current_status") @db.VarChar(50)
+  responsibleUserId    String?         @map("responsible_user_id") @db.Char(36)
+  departmentId         String?         @map("department_id") @db.Char(36)
+  comment              String?         @db.Text
+  attachmentUrl        String?         @map("attachment_url") @db.VarChar(500)
+  approvalResult       ApprovalResult? @map("approval_result")
+  signatureUrl         String?         @map("signature_url") @db.VarChar(500)
+  gpsLat               Decimal?        @map("gps_lat") @db.Decimal(10, 7)
+  gpsLng               Decimal?        @map("gps_lng") @db.Decimal(10, 7)
+  ipAddress            String?         @map("ip_address") @db.VarChar(64)
+  elapsedSeconds       Int?            @map("elapsed_seconds")
+  slaRemainingSeconds  Int?            @map("sla_remaining_seconds")
+  createdAt            DateTime        @default(now()) @map("created_at")
+
+  ticket       RepairTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  responsible  User?        @relation(fields: [responsibleUserId], references: [id], onDelete: SetNull)
+  department   Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId, eventTime], name: "idx_timeline_ticket")
+  @@index([eventType], name: "idx_timeline_type")
+  @@index([responsibleUserId], name: "idx_timeline_user")
+  @@map("repair_ticket_timeline")
+}
+
+model Approval {
+  id               String          @id @db.Char(36)
+  ticketId         String          @map("ticket_id") @db.Char(36)
+  workflowStepId   String?         @map("workflow_step_id") @db.Char(36)
+  sequenceOrder    Int             @default(1) @map("sequence_order")
+  approverUserId   String?         @map("approver_user_id") @db.Char(36)
+  approverRoleId   String?         @map("approver_role_id") @db.Char(36)
+  result           ApprovalResult  @default(WAITING)
+  comment          String?         @db.VarChar(1000)
+  signatureUrl     String?         @map("signature_url") @db.VarChar(500)
+  decidedAt        DateTime?       @map("decided_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+
+  ticket        RepairTicket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  workflowStep  WorkflowStep? @relation(fields: [workflowStepId], references: [id], onDelete: SetNull)
+  approverUser  User?         @relation(fields: [approverUserId], references: [id], onDelete: SetNull)
+  approverRole  Role?         @relation(fields: [approverRoleId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId], name: "idx_approvals_ticket")
+  @@index([approverUserId], name: "idx_approvals_approver")
+  @@map("approvals")
+}
+
+// =====================================================================================
+// SECTION 7: INVENTORY
+// =====================================================================================
+
+model SparePart {
+  id               String   @id @db.Char(36)
+  code             String   @unique @db.VarChar(50)
+  name             String   @db.VarChar(200)
+  unit             String   @default("ชิ้น") @db.VarChar(30)
+  quantityOnHand   Int      @default(0) @map("quantity_on_hand")
+  reorderLevel     Int      @default(0) @map("reorder_level")
+  unitCost         Decimal? @map("unit_cost") @db.Decimal(14, 2)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  transactions SparePartTransaction[]
+
+  @@map("spare_parts")
+}
+
+enum SparePartTxnType {
+  RESERVE
+  ISSUE
+  RETURN
+  ADJUST
+  PURCHASE
+  RECEIVE
+}
+
+model SparePartTransaction {
+  id            String           @id @db.Char(36)
+  sparePartId   String           @map("spare_part_id") @db.Char(36)
+  ticketId      String?          @map("ticket_id") @db.Char(36)
+  type          SparePartTxnType
+  quantity      Int
+  balanceAfter  Int              @map("balance_after")
+  performedBy   String?          @map("performed_by") @db.Char(36)
+  note          String?          @db.VarChar(500)
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  sparePart SparePart     @relation(fields: [sparePartId], references: [id])
+  ticket    RepairTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([sparePartId], name: "idx_spt_spare_part")
+  @@index([ticketId], name: "idx_spt_ticket")
+  @@map("spare_part_transactions")
+}
+
+// =====================================================================================
+// SECTION 8: VENDOR / EXTERNAL REPAIR
+// =====================================================================================
+
+enum VendorRepairStatus {
+  QUOTATION_REQUESTED
+  QUOTATION_RECEIVED
+  APPROVED
+  PO_GENERATED
+  SENT
+  IN_REPAIR
+  RETURNED
+  INSPECTED
+  COMPLETED
+  CANCELLED
+}
+
+model VendorRepairOrder {
+  id                 String             @id @db.Char(36)
+  ticketId           String             @map("ticket_id") @db.Char(36)
+  vendorId           String             @map("vendor_id") @db.Char(36)
+  quotationAmount    Decimal?           @map("quotation_amount") @db.Decimal(14, 2)
+  quotationFileUrl   String?            @map("quotation_file_url") @db.VarChar(500)
+  poNumber           String?            @map("po_number") @db.VarChar(50)
+  sentAt             DateTime?          @map("sent_at")
+  receivedAt         DateTime?          @map("received_at")
+  invoiceFileUrl     String?            @map("invoice_file_url") @db.VarChar(500)
+  warrantyUntil      DateTime?          @map("warranty_until") @db.Date
+  status             VendorRepairStatus @default(QUOTATION_REQUESTED)
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  ticket RepairTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  vendor Vendor       @relation(fields: [vendorId], references: [id])
+
+  @@index([ticketId], name: "idx_vro_ticket")
+  @@index([vendorId], name: "idx_vro_vendor")
+  @@map("vendor_repair_orders")
+}
+
+// =====================================================================================
+// SECTION 9: DOCUMENT GENERATION
+// =====================================================================================
+
+model DocumentTemplate {
+  id          String  @id @db.Char(36)
+  code        String  @unique @db.VarChar(50)
+  nameTh      String  @map("name_th") @db.VarChar(200)
+  description String? @db.VarChar(500)
+  isActive    Boolean @default(true) @map("is_active")
+
+  @@map("document_templates")
+}
+
+model GeneratedDocument {
+  id             String   @id @db.Char(36)
+  ticketId       String?  @map("ticket_id") @db.Char(36)
+  templateCode   String   @map("template_code") @db.VarChar(50)
+  runningNumber  String   @unique @map("running_number") @db.VarChar(50)
+  fileUrl        String   @map("file_url") @db.VarChar(500)
+  signatureUrl   String?  @map("signature_url") @db.VarChar(500)
+  qrVerifyToken  String?  @map("qr_verify_token") @db.VarChar(255)
+  generatedBy    String?  @map("generated_by") @db.Char(36)
+  generatedAt    DateTime @default(now()) @map("generated_at")
+
+  ticket RepairTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId], name: "idx_generated_documents_ticket")
+  @@map("generated_documents")
+}
+
+// =====================================================================================
+// SECTION 10: NOTIFICATIONS
+// =====================================================================================
+
+enum NotificationChannel {
+  EMAIL
+  TELEGRAM
+  LINE
+  PUSH
+  SMS
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+model NotificationLog {
+  id                 String              @id @db.Char(36)
+  channel            NotificationChannel
+  recipient          String              @db.VarChar(255)
+  subject            String?             @db.VarChar(255)
+  message            String              @db.Text
+  relatedEntityType  String?             @map("related_entity_type") @db.VarChar(50)
+  relatedEntityId    String?             @map("related_entity_id") @db.Char(36)
+  status             NotificationStatus  @default(PENDING)
+  sentAt             DateTime?           @map("sent_at")
+  readAt             DateTime?           @map("read_at")
+  errorMessage       String?             @map("error_message") @db.VarChar(500)
+  createdAt          DateTime            @default(now()) @map("created_at")
+
+  @@index([relatedEntityType, relatedEntityId], name: "idx_notification_logs_entity")
+  @@index([status], name: "idx_notification_logs_status")
+  @@map("notification_logs")
+}
+
+// =====================================================================================
+// SECTION 11: SETTINGS
+// =====================================================================================
+
+model SystemSetting {
+  id            String   @id @db.Char(36)
+  settingKey    String   @unique @map("setting_key") @db.VarChar(100)
+  settingValue  String?  @map("setting_value") @db.Text
+  category      String   @db.VarChar(50)
+  isSecret      Boolean  @default(false) @map("is_secret")
+  updatedBy     String?  @map("updated_by") @db.Char(36)
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model RunningNumberSequence {
+  id             String   @id @db.Char(36)
+  docType        String   @unique @map("doc_type") @db.VarChar(50)
+  prefix         String?  @db.VarChar(20)
+  yearFormat     String?  @map("year_format") @db.VarChar(10)
+  currentNumber  BigInt   @default(0) @map("current_number")
+  resetYearly    Boolean  @default(true) @map("reset_yearly")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("running_number_sequences")
+}
+
+// =====================================================================================
+// SECTION 12: AUDIT / BACKUP
+// =====================================================================================
+
+// Insert-only ledger: MariaDB triggers (trg_audit_logs_no_update/delete) บังคับ append-only
+model AuditLog {
+  id           String   @id @db.Char(36)
+  userId       String?  @map("user_id") @db.Char(36)
+  action       String   @db.VarChar(50)
+  module       String   @db.VarChar(50)
+  entityType   String?  @map("entity_type") @db.VarChar(50)
+  entityId     String?  @map("entity_id") @db.VarChar(100)
+  description  String?  @db.VarChar(500)
+  ipAddress    String?  @map("ip_address") @db.VarChar(64)
+  userAgent    String?  @map("user_agent") @db.VarChar(255)
+  beforeData   Json?    @map("before_data")
+  afterData    Json?    @map("after_data")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId], name: "idx_audit_logs_user")
+  @@index([module], name: "idx_audit_logs_module")
+  @@index([entityType, entityId], name: "idx_audit_logs_entity")
+  @@index([createdAt], name: "idx_audit_logs_created")
+  @@map("audit_logs")
+}
+
+enum BackupType {
+  MANUAL
+  AUTOMATIC
+}
+
+enum BackupStatus {
+  SUCCESS
+  FAILED
+}
+
+model BackupLog {
+  id             String       @id @db.Char(36)
+  type           BackupType
+  fileName       String       @map("file_name") @db.VarChar(255)
+  fileSizeBytes  BigInt?      @map("file_size_bytes")
+  status         BackupStatus
+  triggeredBy    String?      @map("triggered_by") @db.Char(36)
+  startedAt      DateTime     @map("started_at")
+  finishedAt     DateTime?    @map("finished_at")
+  errorMessage   String?      @map("error_message") @db.VarChar(500)
+
+  @@index([status], name: "idx_backup_logs_status")
+  @@map("backup_logs")
+}

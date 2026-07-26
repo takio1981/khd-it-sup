@@ -1,0 +1,45 @@
+<div class="min-h-screen flex items-center justify-center bg-brand-background dark:bg-neutral-950 px-4">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-6">
+      <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-primary text-white text-2xl font-bold shadow-softLg">
+        IT
+      </div>
+      <h1 class="text-lg font-semibold text-neutral-900 dark:text-white">ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์</h1>
+      <p class="text-sm text-neutral-500 mt-1">{{ orgName }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card !shadow-softLg space-y-4">
+      <h2 class="text-base font-medium text-neutral-700 dark:text-neutral-200">เข้าสู่ระบบ</h2>
+
+      @if (errorMessage()) {
+        <div class="rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm px-3 py-2">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>ชื่อผู้ใช้</mat-label>
+        <input matInput formControlName="username" autocomplete="username" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>รหัสผ่าน</mat-label>
+        <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password" autocomplete="current-password" />
+        <button mat-icon-button matSuffix type="button" (click)="hidePassword.set(!hidePassword())">
+          {{ hidePassword() ? '👁' : '🙈' }}
+        </button>
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" type="submit" class="!w-full !h-11" [disabled]="form.invalid || loading()">
+        @if (loading()) {
+          <mat-spinner diameter="20" class="!inline-block !mr-2" />
+        }
+        เข้าสู่ระบบ
+      </button>
+    </form>
+
+    <p class="text-center text-xs text-neutral-400 mt-6">
+      © สำนักงานสาธารณสุขจังหวัดนครราชสีมา — IT Service Desk
+    </p>
+  </div>
+</div>

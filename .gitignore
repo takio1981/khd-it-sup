@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+.angular/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Uploads & logs (runtime data, not source)
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/logs/*
+!backend/logs/.gitkeep
+
+# Test / coverage
+coverage/
+*.lcov
+
+# Prisma
+backend/prisma/migrations/dev.db
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Docker
+docker/volumes/
+
+# Backups
+database/backups/*
+!database/backups/.gitkeep

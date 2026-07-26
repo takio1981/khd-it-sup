@@ -1,0 +1,89 @@
+@if (loading()) {
+  <div class="flex justify-center py-20">
+    <mat-spinner diameter="36" />
+  </div>
+} @else if (asset(); as a) {
+  <div class="space-y-4">
+    <a routerLink="/assets" class="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-brand-primary">
+      <khd-icon name="chevron-left" [size]="16" />
+      กลับไปรายการครุภัณฑ์
+    </a>
+
+    <div class="khd-card flex flex-col md:flex-row md:items-start justify-between gap-4">
+      <div>
+        <p class="text-xs text-neutral-500">{{ a.category.nameTh }}</p>
+        <h1 class="text-xl font-semibold">{{ a.assetNumber }}</h1>
+        <p class="text-sm text-neutral-500">{{ a.brand }} {{ a.model }} @if (a.serialNumber) { · S/N: {{ a.serialNumber }} }</p>
+        <div class="mt-2"><khd-status-badge [status]="a.status" /></div>
+      </div>
+
+      <div class="flex gap-2">
+        <button mat-stroked-button *khdHasPermission="'asset:update'" (click)="openEditForm()">
+          <khd-icon name="pencil-square" [size]="18" class="!mr-1" />แก้ไข
+        </button>
+        <button mat-stroked-button *khdHasPermission="'qrcode:generate'" (click)="generateQr()">
+          <khd-icon name="qr-code" [size]="18" class="!mr-1" />สร้าง QR
+        </button>
+        <button mat-flat-button color="primary" *khdHasPermission="'qrcode:print'" [disabled]="printing()" (click)="printQr()">
+          <khd-icon name="printer" [size]="18" class="!mr-1" />พิมพ์ QR
+        </button>
+        <button mat-stroked-button *khdHasPermission="'asset:delete'" (click)="deleteAsset()" class="!text-red-600 !border-red-200">
+          <khd-icon name="trash" [size]="18" class="!mr-1" />ลบ
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="khd-card md:col-span-2">
+        <h2 class="text-sm font-medium mb-3">ข้อมูลครุภัณฑ์</h2>
+        <dl class="grid grid-cols-2 gap-y-3 text-sm">
+          <div><dt class="text-neutral-400 text-xs">เลขครุภัณฑ์ราชการ</dt><dd>{{ a.govAssetNumber ?? '-' }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">หน่วยงาน</dt><dd>{{ a.department?.nameTh ?? '-' }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">สถานที่</dt><dd>{{ a.building?.name }} {{ a.floor?.name }} {{ a.room?.name }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">วันที่จัดซื้อ</dt><dd>{{ a.purchaseDate ?? '-' }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">หมดประกัน</dt><dd>{{ a.warrantyExpireDate ?? '-' }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">ราคา</dt><dd>{{ a.price ?? '-' }}</dd></div>
+        </dl>
+        @if (a.remark) {
+          <div class="mt-3 pt-3 border-t border-black/5 dark:border-white/10">
+            <p class="text-neutral-400 text-xs mb-1">หมายเหตุ</p>
+            <p class="text-sm">{{ a.remark }}</p>
+          </div>
+        }
+      </div>
+
+      <div class="khd-card">
+        <h2 class="text-sm font-medium mb-3">QR Code</h2>
+        @if (qrDataUrl(); as qr) {
+          <img [src]="qr" alt="QR Code" class="w-full rounded-lg border border-black/5" />
+        } @else if (a.qrcode) {
+          <p class="text-sm text-neutral-500">มี QR Code แล้ว — กด "พิมพ์ QR" เพื่อดาวน์โหลด หรือ "สร้าง QR" เพื่อสร้างใหม่</p>
+        } @else {
+          <p class="text-sm text-neutral-500">ยังไม่มี QR Code — กด "สร้าง QR" เพื่อสร้างใหม่</p>
+        }
+      </div>
+    </div>
+
+    <div class="khd-card">
+      <h2 class="text-sm font-medium mb-3">ประวัติการซ่อม</h2>
+      @if (history().length === 0) {
+        <p class="text-sm text-neutral-400 py-4 text-center">ยังไม่มีประวัติการแจ้งซ่อม</p>
+      } @else {
+        <div class="space-y-2">
+          @for (h of history(); track h.id) {
+            <a
+              [routerLink]="['/repair-tickets', h.id]"
+              class="flex items-center justify-between text-sm border-b border-black/5 dark:border-white/10 pb-2 last:border-0 last:pb-0 hover:text-brand-primary"
+            >
+              <div>
+                <span class="font-medium">{{ h.ticketNumber }}</span>
+                <span class="text-neutral-400 ml-2">{{ h.createdAt | date: 'd MMM yyyy' }}</span>
+              </div>
+              <khd-status-badge [status]="h.status" />
+            </a>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

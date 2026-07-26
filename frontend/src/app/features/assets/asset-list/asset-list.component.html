@@ -1,0 +1,123 @@
+<div class="space-y-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold">ครุภัณฑ์</h1>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} รายการ</p>
+    </div>
+    <div class="flex items-center gap-2">
+      @if (selectedIds().size > 0) {
+        <button mat-stroked-button color="primary" *khdHasPermission="'qrcode:print'" [disabled]="printing()" (click)="printSelected()">
+          <khd-icon name="printer" [size]="18" class="!mr-1" />
+          พิมพ์ QR ที่เลือก ({{ selectedIds().size }})
+        </button>
+      }
+      <button mat-stroked-button *khdHasPermission="'asset:update'" routerLink="/assets/categories">
+        <khd-icon name="adjustments-horizontal" [size]="18" class="!mr-1" />
+        จัดการประเภทครุภัณฑ์
+      </button>
+      <button mat-flat-button color="primary" *khdHasPermission="'asset:create'" (click)="openCreateForm()">
+        <khd-icon name="plus" [size]="18" class="!mr-1" />
+        เพิ่มครุภัณฑ์
+      </button>
+    </div>
+  </div>
+
+  <div class="khd-card !p-3 flex flex-col sm:flex-row gap-3">
+    <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
+      <mat-label>ค้นหา (เลขครุภัณฑ์ / Serial / ยี่ห้อ)</mat-label>
+      <input matInput [(ngModel)]="keyword" (ngModelChange)="onKeywordChange()" />
+      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="!mr-2 text-neutral-400" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="sm:w-64 !mb-[-1.25em]">
+      <mat-label>ประเภทครุภัณฑ์</mat-label>
+      <mat-select [(ngModel)]="categoryId" (ngModelChange)="onFilterChange()">
+        <mat-option value="">ทั้งหมด</mat-option>
+        @for (c of categories(); track c.id) {
+          <mat-option [value]="c.id">{{ c.nameTh }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="khd-card !p-0 overflow-x-auto">
+    <table mat-table [dataSource]="assets()" class="w-full">
+      <ng-container matColumnDef="select">
+        <th mat-header-cell *matHeaderCellDef class="!w-12">
+          <mat-checkbox [checked]="allSelectedOnPage" (change)="toggleSelectAll()" (click)="$event.stopPropagation()" />
+        </th>
+        <td mat-cell *matCellDef="let a" class="!w-12" (click)="$event.stopPropagation()">
+          <mat-checkbox [checked]="isSelected(a.id)" (change)="toggleSelection(a.id)" />
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="assetNumber">
+        <th mat-header-cell *matHeaderCellDef>เลขครุภัณฑ์</th>
+        <td mat-cell *matCellDef="let a">
+          <button class="text-brand-primary font-medium hover:underline" (click)="viewAsset(a)">{{ a.assetNumber }}</button>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="category">
+        <th mat-header-cell *matHeaderCellDef>ประเภท</th>
+        <td mat-cell *matCellDef="let a">{{ a.category.nameTh }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="brandModel">
+        <th mat-header-cell *matHeaderCellDef>ยี่ห้อ/รุ่น</th>
+        <td mat-cell *matCellDef="let a">{{ a.brand }} {{ a.model }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="department">
+        <th mat-header-cell *matHeaderCellDef>หน่วยงาน</th>
+        <td mat-cell *matCellDef="let a">{{ a.department?.nameTh ?? '-' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>สถานะ</th>
+        <td mat-cell *matCellDef="let a"><khd-status-badge [status]="a.status" /></td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let a">
+          <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+            <khd-icon name="chevron-down" [size]="18" />
+          </button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="viewAsset(a)">
+              <khd-icon name="eye" [size]="16" class="!mr-2" />ดูรายละเอียด
+            </button>
+            <button mat-menu-item *khdHasPermission="'asset:update'" (click)="openEditForm(a)">
+              <khd-icon name="pencil-square" [size]="16" class="!mr-2" />แก้ไข
+            </button>
+            <button mat-menu-item *khdHasPermission="'qrcode:generate'" (click)="generateQr(a)">
+              <khd-icon name="qr-code" [size]="16" class="!mr-2" />สร้าง QR Code
+            </button>
+            <button mat-menu-item *khdHasPermission="'qrcode:print'" (click)="printQr(a)">
+              <khd-icon name="printer" [size]="16" class="!mr-2" />พิมพ์ QR Code
+            </button>
+            <button mat-menu-item *khdHasPermission="'asset:delete'" (click)="deleteAsset(a)" class="!text-red-600">
+              <khd-icon name="trash" [size]="16" class="!mr-2" />ลบ
+            </button>
+          </mat-menu>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer"></tr>
+    </table>
+
+    @if (!loading() && assets().length === 0) {
+      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบครุภัณฑ์ที่ตรงกับเงื่อนไข</p>
+    }
+
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="pageSize()"
+      [pageIndex]="pageIndex()"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPage($event)"
+    />
+  </div>
+</div>

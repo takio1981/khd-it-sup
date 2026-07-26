@@ -1,0 +1,66 @@
+import { Router } from 'express';
+import * as qrcodeController from '@modules/qrcode/controllers/qrcode.controller';
+import { assetIdParamSchema, bulkPrintSchema, qrTokenParamSchema } from '@modules/qrcode/dto/qrcode.dto';
+import { authenticate, optionalAuthenticate, requirePermission, validateRequest } from '@common/middleware';
+import { PERMISSIONS } from '@common/constants/permissions.const';
+
+const router = Router();
+
+/**
+ * @openapi
+ * /qrcodes/assets/{assetId}/generate:
+ *   post:
+ *     tags: [QR Code]
+ *     summary: สร้าง/สร้างใหม่ QR Code สำหรับครุภัณฑ์ (regenerate จะทำให้สติกเกอร์เดิมใช้ไม่ได้)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post(
+  '/assets/:assetId/generate',
+  authenticate,
+  requirePermission(PERMISSIONS.QRCODE_GENERATE),
+  validateRequest({ params: assetIdParamSchema }),
+  qrcodeController.generateQrCode,
+);
+
+/**
+ * @openapi
+ * /qrcodes/assets/{assetId}/print:
+ *   get:
+ *     tags: [QR Code]
+ *     summary: ดาวน์โหลด/พิมพ์ QR Code เป็นรูปภาพ PNG ความละเอียดสูงสำหรับติดสติกเกอร์
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/assets/:assetId/print',
+  authenticate,
+  requirePermission(PERMISSIONS.QRCODE_PRINT),
+  validateRequest({ params: assetIdParamSchema }),
+  qrcodeController.printQrCode,
+);
+
+/**
+ * @openapi
+ * /qrcodes/bulk-print:
+ *   post:
+ *     tags: [QR Code]
+ *     summary: สร้าง QR Code หลายรายการพร้อมกัน (คืนเป็น data URL ให้ frontend จัดหน้าพิมพ์)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post(
+  '/bulk-print',
+  authenticate,
+  requirePermission(PERMISSIONS.QRCODE_PRINT),
+  validateRequest({ body: bulkPrintSchema }),
+  qrcodeController.bulkPrintQrCode,
+);
+
+/**
+ * @openapi
+ * /qrcodes/resolve/{token}:
+ *   get:
+ *     tags: [QR Code]
+ *     summary: ถอดรหัส QR token เป็นข้อมูลครุภัณฑ์ (Public endpoint — ไม่ต้อง login เพื่อรองรับการสแกนจากมือถือทั่วไป)
+ */
+router.get('/resolve/:token', optionalAuthenticate, validateRequest({ params: qrTokenParamSchema }), qrcodeController.resolveQrCode);
+
+export default router;

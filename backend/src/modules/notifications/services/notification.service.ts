@@ -1,0 +1,208 @@
+import { NotificationRepository } from '@modules/notifications/repositories/notification.repository';
+import { buildTicketEmailHtml } from '@modules/notifications/templates/ticketEmail.template';
+import { buildPasswordResetEmailHtml } from '@modules/notifications/templates/passwordResetEmail.template';
+import { buildTicketMessageText } from '@modules/notifications/templates/ticketMessage.template';
+import { sendMail } from '@infrastructure/mailer/mailer';
+import { sendTelegramMessage } from '@infrastructure/telegram/telegram.client';
+import { sendLinePush } from '@infrastructure/line/line.client';
+import { emitToUser } from '@infrastructure/socket/socket.server';
+import { logger } from '@infrastructure/logger/logger';
+import { env } from '@config/env';
+import { prisma } from '@infrastructure/database/prisma';
+import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
+import { systemSettingService } from '@modules/settings/services/systemSetting.service';
+import type { ListNotificationLogsQueryDto } from '@modules/notifications/dto/notification.dto';
+
+export type TicketNotificationEvent = 'NEW_TICKET' | 'ASSIGN' | 'STATUS_CHANGE' | 'COMPLETE' | 'CANCEL';
+
+const EVENT_SETTING_KEY: Record<TicketNotificationEvent, 'notifyNewTicket' | 'notifyAssign' | 'notifyStatusChange' | 'notifyComplete' | 'notifyCancel'> = {
+  NEW_TICKET: 'notifyNewTicket',
+  ASSIGN: 'notifyAssign',
+  STATUS_CHANGE: 'notifyStatusChange',
+  COMPLETE: 'notifyComplete',
+  CANCEL: 'notifyCancel',
+};
+
+const EVENT_LABEL_TH: Record<TicketNotificationEvent, string> = {
+  NEW_TICKET: 'มีใบแจ้งซ่อมใหม่เข้าระบบ',
+  ASSIGN: 'มีการมอบหมายงานซ่อมให้คุณ',
+  STATUS_CHANGE: 'สถานะงานซ่อมของคุณมีการเปลี่ยนแปลง',
+  COMPLETE: 'งานซ่อมของคุณเสร็จสิ้นแล้ว',
+  CANCEL: 'ใบแจ้งซ่อมถูกยกเลิก',
+};
+
+interface ITicketForNotification {
+  id: string;
+  ticketNumber: string;
+  description: string;
+  urgency: string;
+  status: string;
+  reportedBy: { id: string; fullName: string; email?: string | null } | null;
+  assignedTechnician?: { id: string; fullName: string; email?: string | null } | null;
+  asset: { assetNumber: string; model: string | null; brand: string | null } | null;
+}
+
+/**
+ * Notification Service — ช่องทาง Email (Gmail SMTP) ใช้งานได้เต็มรูปแบบใน Phase นี้
+ * Telegram/LINE เป็น interface เดียวกัน (channel enum พร้อมใน schema) แต่ client จริงจะเพิ่มใน Phase ถัดไป
+ * ทุกการแจ้งเตือนถูกบันทึกลง notification_logs เสมอ ไม่ว่าจะส่งสำเร็จหรือไม่ (audit trail สำหรับ "Notification Timeline")
+ */
+export class NotificationService {
+  private readonly repo = new NotificationRepository();
+
+  private async sendEmail(
+    to: string,
+    subject: string,
+    html: string,
+    relatedEntityType?: string,
+    relatedEntityId?: string,
+  ): Promise<void> {
+    const log = await this.repo.create({ channel: 'EMAIL', recipient: to, subject, message: html, relatedEntityType, relatedEntityId });
+    try {
+      await sendMail({ to, subject, html });
+      await this.repo.markSent(log.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error(`[notification] ส่งอีเมลไม่สำเร็จถึง ${to}: ${message}`);
+      await this.repo.markFailed(log.id, message);
+    }
+  }
+
+  /** เรียกจาก RepairTicketService หลัง commit transaction สำเร็จเสมอ (ไม่ block flow หลักถ้าแจ้งเตือนล้มเหลว) */
+  async notifyTicketEvent(event: TicketNotificationEvent, ticket: ITicketForNotification, statusNameTh: string): Promise<void> {
+    const settings = await systemSettingService.getNotificationSettings();
+    if (!settings[EVENT_SETTING_KEY[event]]) return;
+
+    const detailUrl = `${env.FRONTEND_BASE_URL}/repair-tickets/${ticket.id}`;
+    const assetLabel = ticket.asset ? `${ticket.asset.assetNumber} — ${ticket.asset.brand ?? ''} ${ticket.asset.model ?? ''}`.trim() : null;
+    const actionLabel = EVENT_LABEL_TH[event];
+
+    const recipients = await this.resolveRecipients(event, ticket);
+
+    if (settings.emailEnabled) {
+      const html = buildTicketEmailHtml({
+        ticketNumber: ticket.ticketNumber,
+        description: ticket.description,
+        urgency: ticket.urgency,
+        statusNameTh,
+        reporterName: ticket.reportedBy?.fullName ?? 'ไม่ระบุ',
+        assetLabel,
+        actionLabel,
+        detailUrl,
+      });
+      const subject = `[${ticket.ticketNumber}] ${actionLabel}`;
+      await Promise.all(recipients.map((r) => this.sendEmail(r.email, subject, html, 'RepairTicket', ticket.id)));
+    }
+
+    if (settings.telegramEnabled || settings.lineEnabled) {
+      const text = buildTicketMessageText({
+        ticketNumber: ticket.ticketNumber,
+        description: ticket.description,
+        urgency: ticket.urgency,
+        statusNameTh,
+        reporterName: ticket.reportedBy?.fullName ?? 'ไม่ระบุ',
+        assetLabel,
+        actionLabel,
+        detailUrl,
+      });
+      if (settings.telegramEnabled) await this.sendTelegram(text, 'RepairTicket', ticket.id);
+      if (settings.lineEnabled) await this.sendLine(text, 'RepairTicket', ticket.id);
+    }
+
+    // Realtime push ผ่าน Socket.IO ให้ผู้ใช้ที่เกี่ยวข้อง (ถ้า client เชื่อมต่ออยู่) — ทำงานอิสระจากช่องทางภายนอก (email/telegram/line)
+    for (const r of recipients) {
+      try {
+        emitToUser(r.userId, 'ticket:notification', { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, event, statusNameTh });
+      } catch {
+        // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
+      }
+    }
+  }
+
+  /** ส่งข้อความ Telegram เข้าแชท/กลุ่มที่ตั้งค่าไว้ (broadcast เดียว ไม่ผูกรายบุคคล) */
+  private async sendTelegram(text: string, relatedEntityType?: string, relatedEntityId?: string): Promise<void> {
+    const config = await systemSettingService.getTelegramConfig();
+    const log = await this.repo.create({
+      channel: 'TELEGRAM',
+      recipient: config?.chatId ?? 'ยังไม่ได้ตั้งค่า',
+      message: text,
+      relatedEntityType,
+      relatedEntityId,
+    });
+    try {
+      if (!config) throw new Error('Telegram ยังไม่ได้ตั้งค่า Bot Token/Chat ID');
+      await sendTelegramMessage(config.botToken, config.chatId, text);
+      await this.repo.markSent(log.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error(`[notification] ส่ง Telegram ไม่สำเร็จ: ${message}`);
+      await this.repo.markFailed(log.id, message);
+    }
+  }
+
+  /** ส่งข้อความ LINE เข้ากลุ่ม/แชทเดียวที่ตั้งค่าไว้ (push ไม่ใช่ broadcast เพราะต้องเข้าถึง group chat ได้) */
+  private async sendLine(text: string, relatedEntityType?: string, relatedEntityId?: string): Promise<void> {
+    const config = await systemSettingService.getLineConfig();
+    const log = await this.repo.create({
+      channel: 'LINE',
+      recipient: config?.targetId ?? 'ยังไม่ได้ตั้งค่า',
+      message: text,
+      relatedEntityType,
+      relatedEntityId,
+    });
+    try {
+      if (!config) throw new Error('LINE ยังไม่ได้ตั้งค่า Channel Access Token/Group ID');
+      await sendLinePush(config.accessToken, config.targetId, text);
+      await this.repo.markSent(log.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error(`[notification] ส่ง LINE ไม่สำเร็จ: ${message}`);
+      await this.repo.markFailed(log.id, message);
+    }
+  }
+
+  /** เรียกจาก UserService หลังรีเซ็ตรหัสผ่านสำเร็จ — ส่งรหัสผ่านชั่วคราวไปยังอีเมลผู้ใช้แทนการแสดงให้ admin คัดลอก */
+  async sendPasswordResetEmail(user: { fullName: string; username: string; email: string }, temporaryPassword: string): Promise<void> {
+    const html = buildPasswordResetEmailHtml({
+      fullName: user.fullName,
+      username: user.username,
+      temporaryPassword,
+      loginUrl: `${env.FRONTEND_BASE_URL}/auth/login`,
+    });
+    const subject = 'รหัสผ่านชั่วคราวสำหรับเข้าใช้งานระบบ IT Service Desk';
+    await this.sendEmail(user.email, subject, html);
+  }
+
+  private async resolveRecipients(
+    event: TicketNotificationEvent,
+    ticket: ITicketForNotification,
+  ): Promise<{ userId: string; email: string }[]> {
+    const recipients = new Map<string, string>();
+
+    if (event === 'NEW_TICKET') {
+      const officers = await prisma.user.findMany({
+        where: { isActive: true, deletedAt: null, role: { code: 'IT_OFFICER' } },
+        select: { id: true, email: true },
+      });
+      officers.forEach((o) => recipients.set(o.id, o.email));
+    }
+
+    if (ticket.reportedBy?.email && ['STATUS_CHANGE', 'COMPLETE', 'CANCEL'].includes(event)) {
+      recipients.set(ticket.reportedBy.id, ticket.reportedBy.email);
+    }
+
+    if (event === 'ASSIGN' && ticket.assignedTechnician?.email) {
+      recipients.set(ticket.assignedTechnician.id, ticket.assignedTechnician.email);
+    }
+
+    return Array.from(recipients.entries()).map(([userId, email]) => ({ userId, email }));
+  }
+
+  async listLogs(query: ListNotificationLogsQueryDto) {
+    const pagination = normalizePagination(query);
+    const { items, total } = await this.repo.findMany({ channel: query.channel, status: query.status }, pagination.skip, pagination.take);
+    return buildPaginatedResult(items, total, pagination);
+  }
+}
+
+export const notificationService = new NotificationService();

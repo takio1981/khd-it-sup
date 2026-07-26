@@ -1,0 +1,85 @@
+<div class="space-y-4">
+  <p class="text-sm text-neutral-500">ประวัติการแจ้งเตือนทุกช่องทาง (Email/Telegram/LINE) ใช้ตรวจสอบสถานะการส่ง</p>
+
+  <div class="khd-card !p-3 flex flex-col sm:flex-row gap-3">
+    <mat-form-field appearance="outline" class="sm:w-56 !mb-[-1.25em]">
+      <mat-label>ช่องทาง</mat-label>
+      <mat-select [(ngModel)]="channel" (ngModelChange)="onFilterChange()">
+        <mat-option value="">ทั้งหมด</mat-option>
+        <mat-option value="EMAIL">อีเมล</mat-option>
+        <mat-option value="TELEGRAM">Telegram</mat-option>
+        <mat-option value="LINE">LINE</mat-option>
+        <mat-option value="PUSH">Push</mat-option>
+        <mat-option value="SMS">SMS</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="sm:w-56 !mb-[-1.25em]">
+      <mat-label>สถานะ</mat-label>
+      <mat-select [(ngModel)]="status" (ngModelChange)="onFilterChange()">
+        <mat-option value="">ทั้งหมด</mat-option>
+        <mat-option value="PENDING">รอดำเนินการ</mat-option>
+        <mat-option value="SENT">ส่งสำเร็จ</mat-option>
+        <mat-option value="FAILED">ส่งไม่สำเร็จ</mat-option>
+        <mat-option value="READ">อ่านแล้ว</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="khd-card !p-0 overflow-x-auto">
+    <table mat-table [dataSource]="logs()" class="w-full">
+      <ng-container matColumnDef="channel">
+        <th mat-header-cell *matHeaderCellDef>ช่องทาง</th>
+        <td mat-cell *matCellDef="let n">
+          <span class="inline-flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 text-xs font-medium px-2.5 py-1">
+            {{ channelLabel[n.channel] }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="recipient">
+        <th mat-header-cell *matHeaderCellDef>ผู้รับ</th>
+        <td mat-cell *matCellDef="let n">{{ n.recipient }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="subject">
+        <th mat-header-cell *matHeaderCellDef>หัวข้อ</th>
+        <td mat-cell *matCellDef="let n" class="max-w-xs truncate">
+          {{ n.subject ?? '-' }}
+          @if (n.status === 'FAILED' && n.errorMessage) {
+            <p class="text-xs text-rose-500 truncate">{{ n.errorMessage }}</p>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>สถานะ</th>
+        <td mat-cell *matCellDef="let n">
+          <span class="khd-status-badge" [style.background-color]="statusColor[n.status] + '1A'" [style.color]="statusColor[n.status]">
+            {{ statusLabel[n.status] }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>เวลา</th>
+        <td mat-cell *matCellDef="let n">{{ n.createdAt | date: 'd MMM yyyy, HH:mm' }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+    </table>
+
+    @if (!loading() && logs().length === 0) {
+      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบประวัติการแจ้งเตือนที่ตรงกับเงื่อนไข</p>
+    }
+
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="pageSize()"
+      [pageIndex]="pageIndex()"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPage($event)"
+    />
+  </div>
+</div>

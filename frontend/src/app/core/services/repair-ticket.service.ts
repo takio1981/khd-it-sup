@@ -1,0 +1,114 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { map, Observable } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import type { IApiSuccessResponse, IPaginationMeta } from '../models/api-response.model';
+import type {
+  ICreateTicketPayload,
+  IRepairSummary,
+  IRepairTicketDetail,
+  IRepairTicketListItem,
+  ITimelineEvent,
+} from '../models/repair-ticket.model';
+
+export type IRepairSummaryPayload = Pick<IRepairSummary, 'rootCause' | 'repairAction' | 'partsUsed' | 'recommendation'>;
+
+export interface ITicketListFilter {
+  page?: number;
+  limit?: number;
+  status?: string;
+  urgency?: string;
+  departmentId?: string;
+  assignedTechnicianId?: string;
+  keyword?: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class RepairTicketService {
+  private readonly http = inject(HttpClient);
+  private readonly base = `${environment.apiBaseUrl}/repair-tickets`;
+
+  list(filter: ITicketListFilter): Observable<{ items: IRepairTicketListItem[]; meta: IPaginationMeta }> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(filter)) {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, String(value));
+      }
+    }
+    return this.http
+      .get<IApiSuccessResponse<IRepairTicketListItem[]>>(this.base, { params })
+      .pipe(map((res) => ({ items: res.data, meta: res.meta as IPaginationMeta })));
+  }
+
+  getById(id: string): Observable<IRepairTicketDetail> {
+    return this.http.get<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}`).pipe(map((res) => res.data));
+  }
+
+  getTimeline(id: string): Observable<ITimelineEvent[]> {
+    return this.http.get<IApiSuccessResponse<ITimelineEvent[]>>(`${this.base}/${id}/timeline`).pipe(map((res) => res.data));
+  }
+
+  create(payload: ICreateTicketPayload): Observable<IRepairTicketDetail> {
+    return this.http.post<IApiSuccessResponse<IRepairTicketDetail>>(this.base, payload).pipe(map((res) => res.data));
+  }
+
+  receive(id: string): Observable<IRepairTicketDetail> {
+    return this.http.post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/receive`, {}).pipe(map((res) => res.data));
+  }
+
+  assign(id: string, technicianId: string): Observable<IRepairTicketDetail> {
+    return this.http
+      .post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/assign`, { technicianId })
+      .pipe(map((res) => res.data));
+  }
+
+  transition(
+    id: string,
+    toStepCode: string,
+    conditionKey?: string,
+    comment?: string,
+    repairSummary?: IRepairSummaryPayload,
+  ): Observable<IRepairTicketDetail> {
+    return this.http
+      .post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/transition`, {
+        toStepCode,
+        conditionKey,
+        comment,
+        repairSummary,
+      })
+      .pipe(map((res) => res.data));
+  }
+
+  cancel(id: string, reason: string): Observable<IRepairTicketDetail> {
+    return this.http
+      .post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/cancel`, { reason })
+      .pipe(map((res) => res.data));
+  }
+
+  close(id: string): Observable<IRepairTicketDetail> {
+    return this.http.post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/close`, {}).pipe(map((res) => res.data));
+  }
+
+  addComment(id: string, comment: string): Observable<ITimelineEvent> {
+    return this.http
+      .post<IApiSuccessResponse<ITimelineEvent>>(`${this.base}/${id}/comment`, { comment })
+      .pipe(map((res) => res.data));
+  }
+
+  uploadAttachments(id: string, files: File[]): Observable<unknown> {
+    const formData = new FormData();
+    files.forEach((f) => formData.append('attachments', f));
+    return this.http.post(`${this.base}/${id}/attachments`, formData);
+  }
+
+  updateRepairSummary(id: string, payload: IRepairSummaryPayload): Observable<IRepairTicketDetail> {
+    return this.http
+      .patch<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/summary`, payload)
+      .pipe(map((res) => res.data));
+  }
+
+  /** ไฟล์แนบต้องแนบ Authorization header เสมอ (ดู serveFile.controller.ts) — โหลดผ่าน HttpClient เป็น blob แทน <img src>/<a href> ตรง ๆ */
+  getAttachmentBlob(fileUrl: string): Observable<Blob> {
+    return this.http.get(fileUrl, { responseType: 'blob' });
+  }
+}

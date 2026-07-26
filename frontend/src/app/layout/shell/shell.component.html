@@ -1,0 +1,76 @@
+<mat-sidenav-container class="h-screen">
+  <mat-sidenav
+    [mode]="isMobile() ? 'over' : 'side'"
+    [opened]="isMobile() ? sidenavOpened() : true"
+    class="!w-64 !border-r-0 shadow-soft"
+  >
+    <div class="flex h-16 items-center gap-2 px-5 border-b border-black/5 dark:border-white/10">
+      <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-primary text-white font-bold">
+        IT
+      </div>
+      <div class="min-w-0">
+        <p class="text-sm font-semibold leading-tight truncate">{{ appName }}</p>
+        <p class="text-[11px] text-neutral-500 truncate">IT Service Desk</p>
+      </div>
+    </div>
+
+    <mat-nav-list class="!py-2">
+      @for (item of navItems(); track item.route) {
+        <a
+          mat-list-item
+          [routerLink]="item.route"
+          routerLinkActive="!bg-brand-primary/10 !text-brand-primary dark:!text-emerald-400 font-medium"
+          class="!rounded-lg !mx-2 !mb-1"
+        >
+          <khd-icon matListItemIcon [name]="item.icon" [size]="20" />
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="flex flex-col">
+    <mat-toolbar class="!bg-white dark:!bg-neutral-900 !border-b !border-black/5 dark:!border-white/10 !px-3 md:!px-6 shadow-soft">
+      @if (isMobile()) {
+        <button mat-icon-button (click)="toggleSidenav()" aria-label="เปิดเมนู">
+          <khd-icon name="bars-3" [size]="22" />
+        </button>
+      }
+
+      <span class="hidden md:block text-sm text-neutral-500 truncate">{{ orgName }}</span>
+      <span class="flex-1"></span>
+
+      <button mat-icon-button [matTooltip]="themeService.mode() === 'dark' ? 'สลับเป็นโหมดสว่าง' : 'สลับเป็นโหมดมืด'" (click)="toggleTheme()">
+        <khd-icon [name]="themeService.mode() === 'dark' ? 'sun' : 'moon'" [size]="20" />
+      </button>
+
+      <button mat-icon-button matTooltip="การแจ้งเตือน">
+        <khd-icon name="bell" [size]="20" />
+      </button>
+
+      <button mat-button [matMenuTriggerFor]="userMenu" class="!ml-1 !normal-case">
+        <khd-icon name="user-circle" [size]="22" class="!mr-1" />
+        <span class="hidden sm:inline max-w-[140px] truncate align-middle">{{ authService.currentUser()?.fullName }}</span>
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <div class="px-4 py-2">
+          <p class="text-sm font-medium">{{ authService.currentUser()?.fullName }}</p>
+          <p class="text-xs text-neutral-500">{{ authService.currentUser()?.role }}</p>
+        </div>
+        <mat-divider />
+        <button mat-menu-item routerLink="/auth/change-password">
+          <khd-icon name="pencil-square" [size]="18" class="!mr-2" />
+          เปลี่ยนรหัสผ่าน
+        </button>
+        <button mat-menu-item (click)="logout()">
+          <khd-icon name="arrow-right-on-rectangle" [size]="18" class="!mr-2" />
+          ออกจากระบบ
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <main class="flex-1 overflow-y-auto bg-brand-background dark:bg-neutral-950 p-4 md:p-6">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

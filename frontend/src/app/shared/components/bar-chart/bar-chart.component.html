@@ -1,0 +1,51 @@
+@if (data().length === 0) {
+  <p class="text-sm text-neutral-400 text-center py-8">{{ emptyMessage() }}</p>
+} @else if (orientation() === 'horizontal') {
+  <div class="space-y-3">
+    @for (d of data(); track d.label; let i = $index) {
+      <div
+        class="group"
+        (mouseenter)="onHover(i)"
+        (mouseleave)="onHover(null)"
+      >
+        <div class="flex items-center justify-between text-xs mb-1">
+          <span class="truncate text-neutral-600 dark:text-neutral-300 max-w-[65%]">{{ d.label }}</span>
+          <span class="tabular-nums font-medium text-neutral-800 dark:text-neutral-100">{{ d.value }}{{ valueSuffix() }}</span>
+        </div>
+        <div class="h-2.5 w-full rounded-full bg-black/[0.04] dark:bg-white/[0.06] overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-300 ease-out"
+            [style.width.%]="barLength(d.value)"
+            [style.background-color]="d.color ?? defaultColor()"
+            [class.opacity-80]="hoveredIndex() !== null && hoveredIndex() !== i"
+          ></div>
+        </div>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="flex items-end justify-between gap-1.5 h-40 px-1">
+    @for (d of data(); track d.label; let i = $index) {
+      <div
+        class="relative flex-1 max-w-[56px] flex flex-col items-center justify-end h-full group"
+        (mouseenter)="onHover(i)"
+        (mouseleave)="onHover(null)"
+      >
+        @if (hoveredIndex() === i) {
+          <div
+            class="absolute -top-7 whitespace-nowrap rounded-md bg-neutral-800 text-white text-[11px] px-2 py-1 shadow-softLg z-10"
+          >
+            {{ d.value }}{{ valueSuffix() }}
+          </div>
+        }
+        <div
+          class="w-full rounded-t-[4px] transition-all duration-300 ease-out"
+          [style.height.%]="barLength(d.value) || 2"
+          [style.background-color]="d.color ?? defaultColor()"
+          [class.opacity-80]="hoveredIndex() !== null && hoveredIndex() !== i"
+        ></div>
+        <span class="mt-1.5 text-[11px] text-neutral-500 truncate max-w-full">{{ d.label }}</span>
+      </div>
+    }
+  </div>
+}

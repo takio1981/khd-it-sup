@@ -1,0 +1,160 @@
+@if (loading()) {
+  <div class="flex justify-center py-16">
+    <p class="text-sm text-neutral-400">กำลังโหลด...</p>
+  </div>
+} @else if (settings(); as s) {
+  <div class="space-y-4 max-w-2xl">
+    <div class="khd-card">
+      <div class="flex items-center gap-2 mb-1">
+        <khd-icon name="paper-airplane" [size]="18" class="text-blue-500" />
+        <h2 class="text-sm font-medium">ช่องทางแจ้งเตือน</h2>
+      </div>
+      <p class="text-xs text-neutral-500 mb-4">เปิด/ปิดช่องทางการส่งแจ้งเตือนของระบบ</p>
+
+      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
+        <div>
+          <p class="text-sm font-medium">อีเมล (Email)</p>
+          <p class="text-xs text-neutral-500">ส่งผ่าน Gmail SMTP</p>
+        </div>
+        <mat-slide-toggle [checked]="s.emailEnabled" [disabled]="!canManage() || saving()" (change)="toggle('emailEnabled')" />
+      </div>
+
+      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
+        <div>
+          <p class="text-sm font-medium">Telegram</p>
+          <p class="text-xs text-neutral-500">
+            ส่งเข้าแชท/กลุ่มเดียวรวม (broadcast)
+            @if (!s.telegramBotTokenConfigured) {
+              <span class="text-amber-600 dark:text-amber-400"> — ยังไม่ได้ตั้งค่า Bot Token</span>
+            }
+          </p>
+        </div>
+        <mat-slide-toggle [checked]="s.telegramEnabled" [disabled]="!canManage() || saving()" (change)="toggle('telegramEnabled')" />
+      </div>
+
+      <div class="flex items-center justify-between py-2">
+        <div>
+          <p class="text-sm font-medium">LINE</p>
+          <p class="text-xs text-neutral-500">
+            ส่งเข้ากลุ่ม/แชทเดียวที่ตั้งค่าไว้ (push)
+            @if (!s.lineAccessTokenConfigured || !s.lineTargetId) {
+              <span class="text-amber-600 dark:text-amber-400"> — ยังไม่ได้ตั้งค่า Access Token/Group ID ให้ครบ</span>
+            }
+          </p>
+        </div>
+        <mat-slide-toggle [checked]="s.lineEnabled" [disabled]="!canManage() || saving()" (change)="toggle('lineEnabled')" />
+      </div>
+    </div>
+
+    @if (canManage()) {
+      <div class="khd-card">
+        <div class="flex items-center gap-2 mb-1">
+          <khd-icon name="paper-airplane" [size]="18" class="text-sky-500" />
+          <h2 class="text-sm font-medium">ตั้งค่า Telegram Bot</h2>
+        </div>
+        <p class="text-xs text-neutral-500 mb-4">
+          สร้างบอทผ่าน @&#8288;BotFather แล้วนำ Bot Token มาใส่ จากนั้นเชิญบอทเข้ากลุ่ม/แชทที่ต้องการรับแจ้งเตือน แล้วนำ Chat ID มาใส่
+        </p>
+        <form [formGroup]="telegramForm" (ngSubmit)="saveTelegramCredentials()" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Chat ID</mat-label>
+            <input matInput formControlName="telegramChatId" placeholder="เช่น -1001234567890" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Bot Token</mat-label>
+            <input
+              matInput
+              type="password"
+              formControlName="telegramBotToken"
+              [placeholder]="s.telegramBotTokenConfigured ? 'ตั้งค่าไว้แล้ว (กรอกใหม่เพื่อเปลี่ยน)' : 'ยังไม่ได้ตั้งค่า'"
+            />
+          </mat-form-field>
+          <div class="sm:col-span-2 flex justify-end">
+            <button mat-flat-button color="primary" type="submit" [disabled]="savingCredentials()">บันทึก Telegram</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="khd-card">
+        <div class="flex items-center gap-2 mb-1">
+          <khd-icon name="paper-airplane" [size]="18" class="text-green-500" />
+          <h2 class="text-sm font-medium">ตั้งค่า LINE Messaging API</h2>
+        </div>
+        <p class="text-xs text-neutral-500 mb-4">
+          สร้าง LINE Official Account พร้อม Messaging API Channel ที่ LINE Developers Console นำ Channel Access Token (long-lived) มาใส่
+          และเชิญบอทเข้ากลุ่ม/แชทที่ต้องการรับแจ้งเตือน แล้วนำ Group ID หรือ User ID มาใส่ (ต้องใช้ push ไม่ใช่ broadcast เพราะต้องส่งเข้ากลุ่มได้)
+        </p>
+        <form [formGroup]="lineForm" (ngSubmit)="saveLineCredentials()" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Group ID / User ID</mat-label>
+            <input matInput formControlName="lineTargetId" placeholder="เช่น C9eb50f2c90cd6a835cde90bdcfd7ae38" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Channel Access Token</mat-label>
+            <input
+              matInput
+              type="password"
+              formControlName="lineAccessToken"
+              [placeholder]="s.lineAccessTokenConfigured ? 'ตั้งค่าไว้แล้ว (กรอกใหม่เพื่อเปลี่ยน)' : 'ยังไม่ได้ตั้งค่า'"
+            />
+          </mat-form-field>
+          <div class="sm:col-span-2 flex justify-end">
+            <button mat-flat-button color="primary" type="submit" [disabled]="savingCredentials()">บันทึก LINE</button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <div class="khd-card">
+      <div class="flex items-center gap-2 mb-1">
+        <khd-icon name="bell" [size]="18" class="text-amber-500" />
+        <h2 class="text-sm font-medium">แจ้งเตือนเมื่อเกิดเหตุการณ์</h2>
+      </div>
+      <p class="text-xs text-neutral-500 mb-4">เลือกประเภทเหตุการณ์ของงานแจ้งซ่อมที่ต้องการให้ส่งแจ้งเตือนผู้เกี่ยวข้อง (มีผลกับทุกช่องทางที่เปิดใช้งานด้านบน)</p>
+
+      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
+        <div>
+          <p class="text-sm font-medium">มีใบแจ้งซ่อมใหม่</p>
+          <p class="text-xs text-neutral-500">แจ้งเจ้าหน้าที่ไอทีทุกคนเมื่อมีการแจ้งซ่อมเข้ามาใหม่</p>
+        </div>
+        <mat-slide-toggle [checked]="s.notifyNewTicket" [disabled]="!canManage() || saving()" (change)="toggle('notifyNewTicket')" />
+      </div>
+
+      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
+        <div>
+          <p class="text-sm font-medium">มีการมอบหมายงาน</p>
+          <p class="text-xs text-neutral-500">แจ้งช่างเทคนิคเมื่อได้รับมอบหมายงานซ่อม</p>
+        </div>
+        <mat-slide-toggle [checked]="s.notifyAssign" [disabled]="!canManage() || saving()" (change)="toggle('notifyAssign')" />
+      </div>
+
+      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
+        <div>
+          <p class="text-sm font-medium">สถานะงานเปลี่ยนแปลง</p>
+          <p class="text-xs text-neutral-500">แจ้งผู้แจ้งซ่อมเมื่อสถานะงานมีการเปลี่ยนแปลง</p>
+        </div>
+        <mat-slide-toggle [checked]="s.notifyStatusChange" [disabled]="!canManage() || saving()" (change)="toggle('notifyStatusChange')" />
+      </div>
+
+      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
+        <div>
+          <p class="text-sm font-medium">งานซ่อมเสร็จสิ้น</p>
+          <p class="text-xs text-neutral-500">แจ้งผู้แจ้งซ่อมเมื่อซ่อมเสร็จสิ้น</p>
+        </div>
+        <mat-slide-toggle [checked]="s.notifyComplete" [disabled]="!canManage() || saving()" (change)="toggle('notifyComplete')" />
+      </div>
+
+      <div class="flex items-center justify-between py-2">
+        <div>
+          <p class="text-sm font-medium">งานถูกยกเลิก</p>
+          <p class="text-xs text-neutral-500">แจ้งผู้แจ้งซ่อมเมื่อใบแจ้งซ่อมถูกยกเลิก</p>
+        </div>
+        <mat-slide-toggle [checked]="s.notifyCancel" [disabled]="!canManage() || saving()" (change)="toggle('notifyCancel')" />
+      </div>
+    </div>
+
+    @if (!canManage()) {
+      <p class="text-xs text-neutral-400">คุณมีสิทธิ์ดูการตั้งค่าเท่านั้น ไม่สามารถแก้ไขได้</p>
+    }
+  </div>
+}

@@ -1,0 +1,70 @@
+<h2 mat-dialog-title>{{ isEdit ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้ใหม่' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="!flex !flex-col !gap-1 !max-h-[70vh]">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>ชื่อผู้ใช้ (username)</mat-label>
+      <input matInput formControlName="username" />
+    </mat-form-field>
+
+    @if (!isEdit) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>รหัสผ่านเริ่มต้น</mat-label>
+        <input matInput type="password" formControlName="password" />
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>ชื่อ-นามสกุล</mat-label>
+      <input matInput formControlName="fullName" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>อีเมล</mat-label>
+      <input matInput type="email" formControlName="email" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>เบอร์โทร</mat-label>
+      <input matInput formControlName="phone" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>สิทธิ์ (Role)</mat-label>
+      <mat-select formControlName="roleId">
+        @for (r of roles(); track r.id) {
+          <mat-option [value]="r.id">{{ r.nameTh }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>หน่วยงาน</mat-label>
+      <mat-select formControlName="departmentId">
+        @for (d of departments(); track d.id) {
+          <mat-option [value]="d.id">{{ d.nameTh }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>ตำแหน่งงาน</mat-label>
+      <mat-select formControlName="positionId">
+        <mat-option value="">ไม่ระบุ</mat-option>
+        @for (p of positions(); track p.id) {
+          <mat-option [value]="p.id">{{ p.nameTh }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>ยกเลิก</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+      @if (saving()) {
+        <mat-spinner diameter="18" class="!inline-block !mr-2" />
+      }
+      บันทึก
+    </button>
+  </mat-dialog-actions>
+</form>

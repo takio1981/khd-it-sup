@@ -1,0 +1,69 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import multer, { type FileFilterCallback } from 'multer';
+import type { Request } from 'express';
+import { env } from '@config/env';
+import { BadRequestError } from '@common/errors';
+
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+]);
+
+/** ใช้กับไฟล์แนบใบแจ้งซ่อม (รูป/วิดีโอหน้างานเท่านั้น ไม่รับ PDF/เอกสารอื่น) */
+const IMAGE_AND_VIDEO_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+]);
+
+/** จัดเก็บไฟล์แยกโฟลเดอร์ตามประเภท (subDir) นอก web root — เข้าถึงผ่าน API endpoint ที่ตรวจสิทธิ์เท่านั้น ไม่ serve static ตรง ๆ */
+function buildStorage(subDir: string): multer.StorageEngine {
+  const uploadPath = path.resolve(env.UPLOAD_DIR, subDir);
+  fs.mkdirSync(uploadPath, { recursive: true });
+
+  return multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadPath),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${randomUUID()}${ext}`);
+    },
+  });
+}
+
+function buildFileFilter(allowedMimeTypes: Set<string>) {
+  return (_req: Request, file: Express.Multer.File, cb: FileFilterCallback): void => {
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      cb(new BadRequestError(`ไม่รองรับชนิดไฟล์: ${file.mimetype}`));
+      return;
+    }
+    cb(null, true);
+  };
+}
+
+export function createUploader(
+  subDir: string,
+  options?: { allowedMimeTypes?: Set<string>; maxFileSizeMB?: number },
+) {
+  return multer({
+    storage: buildStorage(subDir),
+    fileFilter: buildFileFilter(options?.allowedMimeTypes ?? ALLOWED_MIME_TYPES),
+    limits: { fileSize: (options?.maxFileSizeMB ?? env.UPLOAD_MAX_FILE_SIZE_MB) * 1024 * 1024 },
+  });
+}
+
+export const assetPhotoUploader = createUploader('assets');
+/** ไฟล์แนบใบแจ้งซ่อม — เฉพาะรูปภาพ/วิดีโอหน้างาน ขนาดไม่เกิน 5 MB ต่อไฟล์ */
+export const ticketAttachmentUploader = createUploader('tickets', {
+  allowedMimeTypes: IMAGE_AND_VIDEO_MIME_TYPES,
+  maxFileSizeMB: 5,
+});
+export const avatarUploader = createUploader('avatars');

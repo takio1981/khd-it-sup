@@ -1,0 +1,147 @@
+// =====================================================================================
+// KHD-IT-SUP Global Styles
+// Angular Material (M3 system-level theming) + TailwindCSS (utility layer สำหรับ brand color เป๊ะตาม spec)
+// =====================================================================================
+@use '@angular/material' as mat;
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// --- Angular Material Theme (Light — default) ---
+html {
+  height: 100%;
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$green-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+
+  // Brand colors ตาม UI/UX spec — ใช้เป็น CSS custom property กลาง ให้ component SCSS เรียกใช้ได้โดยไม่ต้อง hardcode
+  --khd-primary: #006C45;
+  --khd-secondary: #00A86B;
+  --khd-background: #F7FAF8;
+}
+
+// --- Dark Mode (toggle ผ่าน ThemeService ที่ใส่ class "dark-theme" บน <html>) ---
+html.dark-theme {
+  @include mat.theme((
+    color: (
+      theme-type: dark,
+      primary: mat.$green-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+
+  --khd-background: #0F1712;
+}
+
+body {
+  color-scheme: light;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+  height: 100%;
+}
+
+html.dark-theme body {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+// --- Scrollbar (บาง, กลมกลืนกับธีม) ---
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgb(0 0 0 / 0.15);
+  border-radius: 8px;
+}
+html.dark-theme ::-webkit-scrollbar-thumb {
+  background-color: rgb(255 255 255 / 0.15);
+}
+
+// --- Utility: การ์ด/ผิว soft-shadow ที่ใช้ซ้ำทั่วระบบ (Modern/Minimal ตาม UI/UX spec) ---
+.khd-card {
+  @apply rounded-2xl shadow-soft bg-white dark:bg-neutral-800 p-4 md:p-6;
+}
+
+// --- Status badge — pill พาสเทล (พื้นอ่อน + ตัวหนังสือสีเข้ม) ใส่สีผ่าน [style.background-color]/[style.color] ---
+.khd-status-badge {
+  @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium;
+}
+
+// --- Table header — พื้นมิ้นต์อ่อนโทนแบรนด์ ใช้ร่วมกันทุกตาราง (mat-table) ในระบบ ---
+.mat-mdc-table .mat-mdc-header-row {
+  background-color: rgb(0 108 69 / 0.06);
+}
+.mat-mdc-table .mat-mdc-header-cell {
+  color: #047857;
+  font-weight: 600;
+}
+html.dark-theme .mat-mdc-table .mat-mdc-header-row {
+  background-color: rgb(16 185 129 / 0.1);
+}
+html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
+  color: #6ee7b7;
+}
+
+// =====================================================================================
+// Print isolation — ใช้กับหน้าตัวอย่างก่อนพิมพ์ (QR Label) และเอกสารอื่นในอนาคต
+// ใส่ id="khd-print-area" ครอบเนื้อหาที่ต้องการพิมพ์ + class "khd-no-print" บนปุ่ม/ส่วนควบคุมที่ไม่ต้องการให้พิมพ์
+// ต้องอยู่ใน global stylesheet (ไม่ใช่ scoped component style) เพราะต้องซ่อนทุกอย่างนอก component ด้วย (เช่น sidebar/toolbar)
+// =====================================================================================
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #khd-print-area,
+  #khd-print-area * {
+    visibility: visible;
+  }
+
+  #khd-print-area {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 12mm;
+  }
+
+  .khd-no-print {
+    display: none !important;
+  }
+
+  .khd-qr-label {
+    page-break-inside: avoid;
+    border-color: #000 !important;
+  }
+
+  .cdk-overlay-container,
+  .cdk-overlay-backdrop,
+  .cdk-overlay-pane,
+  .mat-mdc-dialog-container,
+  .mat-mdc-dialog-surface,
+  .mdc-dialog__content {
+    position: static !important;
+    overflow: visible !important;
+    max-height: none !important;
+    max-width: none !important;
+    height: auto !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+}

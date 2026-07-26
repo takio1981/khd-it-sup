@@ -1,0 +1,101 @@
+<h2 mat-dialog-title>{{ isEdit ? 'แก้ไขครุภัณฑ์' : 'เพิ่มครุภัณฑ์ใหม่' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="!flex !flex-col !gap-1 !max-h-[70vh]">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>ประเภทครุภัณฑ์</mat-label>
+      <mat-select formControlName="categoryId">
+        @for (c of data.categories; track c.id) {
+          <mat-option [value]="c.id">{{ c.nameTh }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="grid grid-cols-2 gap-3">
+      <mat-form-field appearance="outline">
+        <mat-label>ยี่ห้อ</mat-label>
+        <input matInput formControlName="brand" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>รุ่น</mat-label>
+        <input matInput formControlName="model" />
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <mat-form-field appearance="outline">
+        <mat-label>Serial Number</mat-label>
+        <input matInput formControlName="serialNumber" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>เลขครุภัณฑ์ราชการ</mat-label>
+        <input matInput formControlName="govAssetNumber" />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>หน่วยงานที่ครอบครอง</mat-label>
+      <mat-select formControlName="departmentId">
+        @for (d of departments(); track d.id) {
+          <mat-option [value]="d.id">{{ d.nameTh }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="grid grid-cols-3 gap-3">
+      <mat-form-field appearance="outline">
+        <mat-label>อาคาร</mat-label>
+        <mat-select formControlName="buildingId">
+          <mat-option value="">ไม่ระบุ</mat-option>
+          @for (b of buildings(); track b.id) {
+            <mat-option [value]="b.id">{{ b.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ชั้น</mat-label>
+        <mat-select formControlName="floorId" [disabled]="!form.value.buildingId">
+          <mat-option value="">ไม่ระบุ</mat-option>
+          @for (f of floors(); track f.id) {
+            <mat-option [value]="f.id">{{ f.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ห้อง</mat-label>
+        <mat-select formControlName="roomId" [disabled]="!form.value.floorId">
+          <mat-option value="">ไม่ระบุ</mat-option>
+          @for (r of rooms(); track r.id) {
+            <mat-option [value]="r.id">{{ r.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (isEdit) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>สถานะครุภัณฑ์</mat-label>
+        <mat-select formControlName="status">
+          @for (s of statusOptions; track s.code) {
+            <mat-option [value]="s.code">{{ s.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>หมายเหตุ</mat-label>
+      <textarea matInput formControlName="remark" rows="2"></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>ยกเลิก</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+      @if (saving()) {
+        <mat-spinner diameter="18" class="!inline-block !mr-2" />
+      }
+      บันทึก
+    </button>
+  </mat-dialog-actions>
+</form>

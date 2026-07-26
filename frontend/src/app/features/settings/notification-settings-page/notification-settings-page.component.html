@@ -1,0 +1,19 @@
+<div class="space-y-4">
+  <div>
+    <h1 class="text-xl font-semibold">ตั้งค่าแจ้งเตือน</h1>
+    <p class="text-sm text-neutral-500">จัดการช่องทาง เหตุการณ์ที่แจ้งเตือน และตรวจสอบประวัติการส่ง</p>
+  </div>
+
+  <mat-tab-group animationDuration="150ms" class="khd-settings-tabs">
+    <mat-tab label="ประวัติการแจ้งเตือน">
+      <div class="pt-4">
+        <khd-notification-log-list />
+      </div>
+    </mat-tab>
+    <mat-tab label="ตั้งค่า">
+      <div class="pt-4">
+        <khd-notification-settings-form />
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

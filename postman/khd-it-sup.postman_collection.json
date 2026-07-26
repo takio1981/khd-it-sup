@@ -1,0 +1,505 @@
+{
+  "info": {
+    "name": "KHD-IT-SUP API",
+    "description": "IT Service Desk & Asset Maintenance Management System — สำนักงานสาธารณสุขจังหวัดนครราชสีมา\n\nดำเนินการ 'Login' ก่อนเสมอ — accessToken จะถูกบันทึกลง collection variable {{accessToken}} อัตโนมัติผ่าน test script แล้วถูกแนบใน Authorization header ของ request อื่น ๆ ทั้งหมดโดยอัตโนมัติ",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/v1" },
+    { "key": "serverRoot", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "assetId", "value": "" },
+    { "key": "ticketId", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "departmentId", "value": "" },
+    { "key": "qrToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success) {",
+                  "  pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  console.log('accessToken saved to collection variable');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin@12345\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          },
+          "auth": { "type": "noauth" }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] }
+          }
+        },
+        {
+          "name": "Me (Current User)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Admin@12345\",\n  \"newPassword\": \"NewPassw0rd!\",\n  \"confirmPassword\": \"NewPassw0rd!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/change-password", "host": ["{{baseUrl}}"], "path": ["auth", "change-password"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["users"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }
+          }
+        },
+        {
+          "name": "List Roles",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users/roles", "host": ["{{baseUrl}}"], "path": ["users", "roles"] }
+          }
+        },
+        {
+          "name": "List Technicians",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users/technicians", "host": ["{{baseUrl}}"], "path": ["users", "technicians"] }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["const json = pm.response.json(); if (json.success) pm.collectionVariables.set('userId', json.data.id);"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newuser1\",\n  \"email\": \"newuser1@example.com\",\n  \"password\": \"Passw0rd123\",\n  \"fullName\": \"ทดสอบ ผู้ใช้ใหม่\",\n  \"roleId\": \"<ROLE_ID>\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"ทดสอบ ผู้ใช้ (แก้ไข)\"\n}" },
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}/reset-password", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}", "reset-password"] }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Departments",
+      "item": [
+        {
+          "name": "List Departments",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/departments", "host": ["{{baseUrl}}"], "path": ["departments"] }
+          }
+        },
+        {
+          "name": "Create Department",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["const json = pm.response.json(); if (json.success) pm.collectionVariables.set('departmentId', json.data.id);"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"NEWDEPT\",\n  \"nameTh\": \"หน่วยงานทดสอบ\",\n  \"nameEn\": \"Test Department\"\n}" },
+            "url": { "raw": "{{baseUrl}}/departments", "host": ["{{baseUrl}}"], "path": ["departments"] }
+          }
+        },
+        {
+          "name": "Update Department",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nameTh\": \"หน่วยงานทดสอบ (แก้ไข)\"\n}" },
+            "url": { "raw": "{{baseUrl}}/departments/{{departmentId}}", "host": ["{{baseUrl}}"], "path": ["departments", "{{departmentId}}"] }
+          }
+        },
+        {
+          "name": "Delete Department",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/departments/{{departmentId}}", "host": ["{{baseUrl}}"], "path": ["departments", "{{departmentId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assets",
+      "item": [
+        {
+          "name": "List Asset Categories",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/assets/categories", "host": ["{{baseUrl}}"], "path": ["assets", "categories"] }
+          }
+        },
+        {
+          "name": "List Assets",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/assets?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["assets"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Get Asset by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/assets/{{assetId}}", "host": ["{{baseUrl}}"], "path": ["assets", "{{assetId}}"] }
+          }
+        },
+        {
+          "name": "Get Asset Repair History",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/assets/{{assetId}}/history", "host": ["{{baseUrl}}"], "path": ["assets", "{{assetId}}", "history"] }
+          }
+        },
+        {
+          "name": "Create Asset",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["const json = pm.response.json(); if (json.success) pm.collectionVariables.set('assetId', json.data.id);"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": \"<CATEGORY_ID>\",\n  \"brand\": \"Dell\",\n  \"model\": \"OptiPlex 7090\",\n  \"serialNumber\": \"SN-TEST-001\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/assets", "host": ["{{baseUrl}}"], "path": ["assets"] }
+          }
+        },
+        {
+          "name": "Update Asset",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"remark\": \"อัปเดตหมายเหตุ\"\n}" },
+            "url": { "raw": "{{baseUrl}}/assets/{{assetId}}", "host": ["{{baseUrl}}"], "path": ["assets", "{{assetId}}"] }
+          }
+        },
+        {
+          "name": "Upload Asset Photos",
+          "request": {
+            "method": "POST",
+            "body": { "mode": "formdata", "formdata": [{ "key": "photos", "type": "file", "src": [] }] },
+            "url": { "raw": "{{baseUrl}}/assets/{{assetId}}/photos", "host": ["{{baseUrl}}"], "path": ["assets", "{{assetId}}", "photos"] }
+          }
+        },
+        {
+          "name": "Delete Asset",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/assets/{{assetId}}", "host": ["{{baseUrl}}"], "path": ["assets", "{{assetId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "QR Code",
+      "item": [
+        {
+          "name": "Generate QR Code",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["const json = pm.response.json(); if (json.success) pm.collectionVariables.set('qrToken', json.data.qrToken);"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/qrcodes/assets/{{assetId}}/generate", "host": ["{{baseUrl}}"], "path": ["qrcodes", "assets", "{{assetId}}", "generate"] }
+          }
+        },
+        {
+          "name": "Print QR Code (PNG)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/qrcodes/assets/{{assetId}}/print", "host": ["{{baseUrl}}"], "path": ["qrcodes", "assets", "{{assetId}}", "print"] }
+          }
+        },
+        {
+          "name": "Bulk Print QR Codes",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"assetIds\": [\"{{assetId}}\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/qrcodes/bulk-print", "host": ["{{baseUrl}}"], "path": ["qrcodes", "bulk-print"] }
+          }
+        },
+        {
+          "name": "Resolve QR Token (Public — no auth)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/qrcodes/resolve/{{qrToken}}", "host": ["{{baseUrl}}"], "path": ["qrcodes", "resolve", "{{qrToken}}"] }
+          },
+          "auth": { "type": "noauth" }
+        }
+      ]
+    },
+    {
+      "name": "Repair Tickets",
+      "item": [
+        {
+          "name": "List Repair Tickets",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/repair-tickets?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["repair-tickets"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Get Ticket by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/repair-tickets/{{ticketId}}", "host": ["{{baseUrl}}"], "path": ["repair-tickets", "{{ticketId}}"] }
+          }
+        },
+        {
+          "name": "Get Ticket Timeline",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/repair-tickets/{{ticketId}}/timeline", "host": ["{{baseUrl}}"], "path": ["repair-tickets", "{{ticketId}}", "timeline"] }
+          }
+        },
+        {
+          "name": "Create Ticket",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["const json = pm.response.json(); if (json.success) pm.collectionVariables.set('ticketId', json.data.id);"] }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{assetId}}\",\n  \"description\": \"คอมพิวเตอร์เปิดไม่ติด\",\n  \"urgency\": \"HIGH\",\n  \"locationNote\": \"ห้อง IT ชั้น 2\",\n  \"contactPhone\": \"0812345678\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/repair-tickets", "host": ["{{baseUrl}}"], "path": ["repair-tickets"] }
+          }
+        },
+        {
+          "name": "Receive Ticket (SUBMITTED -> RECEIVED)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/repair-tickets/{{ticketId}}/receive", "host": ["{{baseUrl}}"], "path": ["repair-tickets", "{{ticketId}}", "receive"] }
+          }
+        },
+        {
+          "name": "Assign Technician",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"technicianId\": \"<TECHNICIAN_USER_ID>\"\n}" },
+            "url": { "raw": "{{baseUrl}}/repair-tickets/{{ticketId}}/assign", "host": ["{{baseUrl}}"], "path": ["repair-tickets", "{{ticketId}}", "assign"] }
+          }
+        },
+        {
+          "name": "Transition Status",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"toStepCode\": \"IT_REVIEW\"\n}" },
+            "url": { "raw": "{{baseUrl}}/repair-tickets/{{ticketId}}/transition", "host": ["{{baseUrl}}"], "path": ["repair-tickets", "{{ticketId}}", "transition"] }
+          }
+        },
+        {
+          "name": "Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"comment\": \"กำลังดำเนินการตรวจสอบ\"\n}" },
+            "url": { "raw": "{{baseUrl}}/repair-tickets/{{ticketId}}/comment", "host": ["{{baseUrl}}"], "path": ["repair-tickets", "{{ticketId}}", "comment"] }
+          }
+        },
+        {
+          "name": "Upload Attachment",
+          "request": {
+            "method": "POST",
+            "body": { "mode": "formdata", "formdata": [{ "key": "attachments", "type": "file", "src": [] }] },
+            "url": { "raw": "{{baseUrl}}/repair-tickets/{{ticketId}}/attachments", "host": ["{{baseUrl}}"], "path": ["repair-tickets", "{{ticketId}}", "attachments"] }
+          }
+        },
+        {
+          "name": "Close Ticket",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/repair-tickets/{{ticketId}}/close", "host": ["{{baseUrl}}"], "path": ["repair-tickets", "{{ticketId}}", "close"] }
+          }
+        },
+        {
+          "name": "Cancel Ticket",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"ผู้ใช้แก้ไขได้เองแล้ว\"\n}" },
+            "url": { "raw": "{{baseUrl}}/repair-tickets/{{ticketId}}/cancel", "host": ["{{baseUrl}}"], "path": ["repair-tickets", "{{ticketId}}", "cancel"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workflow",
+      "item": [
+        {
+          "name": "Get Workflow Template Structure",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/workflow-templates/REPAIR_INTERNAL", "host": ["{{baseUrl}}"], "path": ["workflow-templates", "REPAIR_INTERNAL"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notification Logs",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/notifications/logs?limit=20", "host": ["{{baseUrl}}"], "path": ["notifications", "logs"], "query": [{ "key": "limit", "value": "20" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Summary",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/dashboard/summary", "host": ["{{baseUrl}}"], "path": ["dashboard", "summary"] }
+          }
+        },
+        {
+          "name": "Monthly Chart",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/dashboard/charts/monthly?year=2026", "host": ["{{baseUrl}}"], "path": ["dashboard", "charts", "monthly"], "query": [{ "key": "year", "value": "2026" }] }
+          }
+        },
+        {
+          "name": "Yearly Chart",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/dashboard/charts/yearly", "host": ["{{baseUrl}}"], "path": ["dashboard", "charts", "yearly"] }
+          }
+        },
+        {
+          "name": "Department Ranking",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/dashboard/charts/department-ranking?limit=10", "host": ["{{baseUrl}}"], "path": ["dashboard", "charts", "department-ranking"], "query": [{ "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Technician Workload",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/dashboard/charts/technician-workload", "host": ["{{baseUrl}}"], "path": ["dashboard", "charts", "technician-workload"] }
+          }
+        },
+        {
+          "name": "Analytics",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/dashboard/analytics", "host": ["{{baseUrl}}"], "path": ["dashboard", "analytics"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{serverRoot}}/health", "host": ["{{serverRoot}}"], "path": ["health"] }
+          },
+          "auth": { "type": "noauth" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+<div class="space-y-4 pb-6">
+  <div>
+    <h1 class="text-xl font-semibold">คู่มือการใช้งานระบบ</h1>
+    <p class="text-sm text-neutral-500">ขั้นตอนการใช้งานฟีเจอร์หลักของระบบ เรียงตามลำดับงานจริง — คลิกแต่ละหัวข้อเพื่อดูรายละเอียด</p>
+  </div>
+
+  <mat-accordion multi="false" class="block space-y-3">
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="home" [size]="18" class="text-blue-500" />
+          เริ่มต้นใช้งานระบบ
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-700 dark:text-neutral-300 pb-2">
+        <li>เข้าสู่ระบบด้วย Username และรหัสผ่านที่เจ้าหน้าที่ไอทีสร้างให้ (หน้าแรกของระบบ)</li>
+        <li>หากเป็นการเข้าสู่ระบบครั้งแรก หรือรหัสผ่านถูกรีเซ็ต ระบบจะบังคับให้เปลี่ยนรหัสผ่านใหม่ก่อนใช้งานต่อ</li>
+        <li>เมนูด้านซ้ายจะแสดงเฉพาะรายการที่ตรงกับสิทธิ์การใช้งานของบัญชีเท่านั้น (ดูหัวข้อ "บทบาทและสิทธิ์การใช้งาน" ด้านล่าง)</li>
+        <li>มุมขวาบน: ปุ่มพระอาทิตย์/พระจันทร์สลับโหมดสว่าง-มืด, กระดิ่งแจ้งเตือน, และเมนูผู้ใช้งาน (เปลี่ยนรหัสผ่าน/ออกจากระบบ)</li>
+      </ol>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="chart-bar" [size]="18" class="text-indigo-500" />
+          แดชบอร์ดภาพรวม
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-700 dark:text-neutral-300 pb-2">
+        <li>หน้าแรกหลังเข้าสู่ระบบ แบ่งเป็นแท็บตามหัวข้อ: <strong>งานแจ้งซ่อม / ครุภัณฑ์ / ผู้ใช้งาน / ตำแหน่งงาน / หน่วยงาน / แผนก / การแจ้งเตือน</strong></li>
+        <li>แต่ละแท็บแสดงการ์ดตัวเลขสรุปและกราฟที่เกี่ยวข้องกับเรื่องนั้นๆ โดยเฉพาะ (เช่น แท็บ "ผู้ใช้งาน" แสดงกราฟแจกแจงตามสิทธิ์และหน่วยงาน)</li>
+        <li>จะเห็นเฉพาะแท็บที่ตรงกับสิทธิ์การใช้งานของบัญชีเท่านั้น เช่น บัญชีที่ไม่มีสิทธิ์จัดการผู้ใช้งานจะไม่เห็นแท็บ "ผู้ใช้งาน"</li>
+      </ol>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="paper-airplane" [size]="18" class="text-emerald-500" />
+          แจ้งซ่อมครุภัณฑ์ (สำหรับผู้แจ้ง)
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-700 dark:text-neutral-300 pb-2">
+        <li>ไปที่เมนู <strong>"งานแจ้งซ่อม"</strong> แล้วกดปุ่ม <strong>"แจ้งซ่อมใหม่"</strong> มุมขวาบน</li>
+        <li>เลือกครุภัณฑ์ที่ต้องการแจ้งซ่อม (ถ้าทราบเลขครุภัณฑ์ หรือสแกน QR Code ที่ติดอยู่บนตัวเครื่อง) กรอกรายละเอียดอาการเสีย ระดับความเร่งด่วน สถานที่ และเบอร์ติดต่อ</li>
+        <li>กด "บันทึก" ระบบจะออกเลขที่ใบแจ้งซ่อมให้อัตโนมัติ และแจ้งเตือนไปยังเจ้าหน้าที่ไอทีทันที</li>
+        <li>ติดตามความคืบหน้าได้จากหน้ารายละเอียดใบแจ้งซ่อม (แถบสถานะและ Timeline ด้านขวา)</li>
+        <li>สามารถแนบรูปภาพหรือวิดีโอเพิ่มเติมได้ตลอดเวลาที่งานยังไม่ปิด (ปุ่ม "แนบไฟล์" — รองรับเฉพาะรูปภาพ/วิดีโอ ขนาดไม่เกิน 5 MB ต่อไฟล์)</li>
+        <li>พิมพ์เอกสารใบแจ้งซ่อมได้จากเมนู ⌄ มุมขวาบนของหน้ารายละเอียด → "พิมพ์ใบแจ้งซ่อม"</li>
+      </ol>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="wrench-screwdriver" [size]="18" class="text-amber-500" />
+          รับเรื่องและดำเนินการซ่อม (เจ้าหน้าที่ไอที/ช่างเทคนิค)
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-700 dark:text-neutral-300 pb-2">
+        <li>เจ้าหน้าที่ไอทีเปิดใบแจ้งซ่อมที่มีสถานะ "แจ้งซ่อมแล้ว" แล้วกดเมนู ⌄ → <strong>"รับเรื่อง"</strong></li>
+        <li>กดเมนู ⌄ → <strong>"มอบหมายช่าง"</strong> เพื่อเลือกช่างเทคนิคผู้รับผิดชอบ</li>
+        <li>ช่างเทคนิคเปลี่ยนสถานะงานตามขั้นตอนจริงผ่านเมนู ⌄ (เช่น ตรวจสอบเบื้องต้น → วิเคราะห์ปัญหา → รออะไหล่/กำลังซ่อม → ทดสอบระบบ) — ระบบจะเสนอเฉพาะสถานะถัดไปที่เป็นไปได้เท่านั้น</li>
+        <li>ทุกครั้งที่เปลี่ยนสถานะ ระบบจะบันทึกลง Timeline แบบถาวร (แก้ไขหรือลบย้อนหลังไม่ได้ เพื่อความโปร่งใส) และแจ้งเตือนผู้เกี่ยวข้องอัตโนมัติผ่านทุกช่องทางที่เปิดใช้งานไว้ (อีเมล/Telegram/LINE — ดูหัวข้อ "ตั้งค่าและตรวจสอบระบบแจ้งเตือน")</li>
+        <li>เมื่อซ่อมเสร็จ เลือก "ทดสอบผ่าน" ระบบจะเปิดฟอร์ม <strong>"สรุปผลการซ่อม"</strong> ให้กรอกก่อนเปลี่ยนสถานะเป็น "ซ่อมเสร็จสิ้น" เสมอ (ดูหัวข้อถัดไป)</li>
+        <li>ขั้นตอนสุดท้าย: ผู้แจ้งกด "ปิดงาน" หลังตรวจรับเครื่องคืนเรียบร้อย</li>
+      </ol>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="clipboard-document-list" [size]="18" class="text-teal-500" />
+          สรุปผลการซ่อม และพิมพ์ใบแจ้งซ่อม
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-700 dark:text-neutral-300 pb-2">
+        <li>เมื่อเปลี่ยนสถานะเป็น "ซ่อมเสร็จสิ้น" ระบบจะบังคับกรอก <strong>สาเหตุที่พบ</strong> และ <strong>วิธีการดำเนินการซ่อม</strong> (บังคับ) พร้อมช่องเสริม อะไหล่ที่ใช้ และข้อเสนอแนะป้องกัน</li>
+        <li>หากต้องแก้ไขสรุปผลภายหลัง (เช่น กรอกข้อมูลเพิ่มเติม) กดปุ่ม <strong>"แก้ไข"</strong> ที่การ์ด "สรุปผลการซ่อมจากช่าง" ในหน้ารายละเอียด — แก้ไขได้โดยไม่ต้องเปลี่ยนสถานะงานซ่อม</li>
+        <li>พิมพ์เอกสารทางการได้จากเมนู ⌄ → "พิมพ์ใบแจ้งซ่อม" — เอกสารจะรวมข้อมูลผู้แจ้ง/ครุภัณฑ์/อาการ/รูปภาพประกอบ/สรุปผลการซ่อม (ถ้ามี) และช่องลงนามให้ครบในหน้าเดียว พร้อมพิมพ์ทันที</li>
+      </ol>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="computer-desktop" [size]="18" class="text-violet-500" />
+          จัดการครุภัณฑ์
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-700 dark:text-neutral-300 pb-2">
+        <li>เมนู "ครุภัณฑ์" → ปุ่ม "เพิ่มครุภัณฑ์" เพื่อบันทึกครุภัณฑ์ใหม่ (เลขครุภัณฑ์ระบบออกให้อัตโนมัติ)</li>
+        <li>แก้ไขข้อมูลหรือ<strong>เปลี่ยนสถานะครุภัณฑ์</strong> (ใช้งานปกติ/อยู่ระหว่างซ่อม/รออะไหล่/ปิดใช้งาน ฯลฯ) ได้ทั้งจากเมนู ⌄ ในตาราง หรือปุ่ม "แก้ไข" ในหน้ารายละเอียดครุภัณฑ์</li>
+        <li>ในฟอร์มเพิ่ม/แก้ไขครุภัณฑ์ สามารถระบุ<strong>ที่ตั้งจริง</strong>ของเครื่องได้ (อาคาร → ชั้น → ห้อง ตามลำดับ) — ถ้ายังไม่มีอาคาร/ชั้น/ห้องที่ต้องการ ให้ไปเพิ่มที่เมนู "จัดการสถานที่/หน่วยงาน" ก่อน (ดูหัวข้อถัดไป)</li>
+        <li>สร้าง QR Code จากปุ่ม "สร้าง QR" แล้วกด "พิมพ์ QR" เพื่อดูตัวอย่างสติกเกอร์ก่อนพิมพ์จริง (มีชื่อหน่วยงาน เลขครุภัณฑ์ และลิงก์สแกนตรวจสอบ)</li>
+        <li>เลือกครุภัณฑ์หลายรายการในตาราง (ติ๊กช่องซ้าย) แล้วกด "พิมพ์ QR ที่เลือก" เพื่อพิมพ์สติกเกอร์ครั้งละหลายชิ้น</li>
+        <li>ปุ่ม "จัดการประเภทครุภัณฑ์" มุมขวาบนของหน้ารายการ ใช้เพิ่ม/แก้ไขประเภทครุภัณฑ์ใหม่ๆ ที่ยังไม่มีในระบบ (เช่น อุปกรณ์รุ่นใหม่ที่ไม่อยู่ใน 14 ประเภทเริ่มต้น)</li>
+        <li>คลิกเลขครุภัณฑ์เพื่อดูรายละเอียดและ<strong>ประวัติการแจ้งซ่อมทั้งหมด</strong>ของเครื่องนั้น</li>
+      </ol>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="users" [size]="18" class="text-rose-500" />
+          จัดการผู้ใช้งาน
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-700 dark:text-neutral-300 pb-2">
+        <li>เมนู "ผู้ใช้งาน" แสดงตารางรายชื่อและกราฟแจกแจงตามสิทธิ์/หน่วยงาน (ตัวเลขสรุปภาพรวมย้ายไปอยู่ที่แท็บ "ผู้ใช้งาน" ในหน้าแดชบอร์ดแล้ว)</li>
+        <li>กด "เพิ่มผู้ใช้" เพื่อสร้างบัญชีใหม่ — เลือกสิทธิ์การใช้งาน หน่วยงาน และ<strong>ตำแหน่งงาน</strong>ได้ในฟอร์มเดียวกัน ระบบจะบังคับให้ผู้ใช้เปลี่ยนรหัสผ่านเองในการเข้าสู่ระบบครั้งแรกเสมอ</li>
+        <li>ปุ่ม "จัดการตำแหน่งงาน" มุมขวาบน ใช้เพิ่ม/แก้ไขตำแหน่งงานที่ยังไม่มีในระบบ</li>
+        <li>แก้ไขข้อมูล/สิทธิ์/หน่วยงานผ่านเมนู ⌄ ท้ายแถวในตาราง</li>
+        <li>"รีเซ็ตรหัสผ่าน" ระบบจะสุ่มรหัสผ่านชั่วคราวและ<strong>ส่งเข้าอีเมลของผู้ใช้คนนั้นให้เองโดยอัตโนมัติ</strong> (ไม่แสดงรหัสผ่านให้ผู้ดูแลระบบเห็น/คัดลอกอีกต่อไป เพื่อความปลอดภัย) และบังคับเปลี่ยนรหัสผ่านครั้งถัดไปที่เข้าสู่ระบบ</li>
+        <li>"ลบ" ผู้ใช้เป็นการปิดใช้งานบัญชี (Soft Delete) ไม่ได้ลบประวัติการทำงานที่ผ่านมาของผู้ใช้นั้นออกจากระบบ</li>
+      </ol>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="building-office-2" [size]="18" class="text-cyan-500" />
+          จัดการสถานที่/หน่วยงาน
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <div class="text-sm text-neutral-700 dark:text-neutral-300 space-y-3 pb-2">
+        <div>
+          <p class="font-medium mb-1">หน่วยงาน</p>
+          <ol class="list-decimal list-inside space-y-1">
+            <li>กด "เพิ่มหน่วยงาน" กรอกรหัส ชื่อหน่วยงาน (ไทย/อังกฤษ) และเลือกหน่วยงานแม่ (ถ้าเป็นหน่วยงานย่อย)</li>
+            <li>กด "แก้ไข" ท้ายแถวเพื่อแก้ชื่อหรือย้ายสังกัดหน่วยงานแม่ — <strong>รหัสหน่วยงานแก้ไขไม่ได้หลังสร้างแล้ว</strong></li>
+            <li>"ลบ" เป็นการปิดใช้งาน จะทำไม่ได้หากหน่วยงานนั้นยังมีหน่วยงานย่อย ผู้ใช้งาน หรือแผนกสังกัดอยู่ (ต้องย้ายข้อมูลออกก่อน)</li>
+          </ol>
+        </div>
+        <div>
+          <p class="font-medium mb-1">แผนก</p>
+          <ol class="list-decimal list-inside space-y-1">
+            <li>ปุ่ม "จัดการแผนก" มุมขวาบน เปิดหน้าจัดการแผนกแยกต่างหาก</li>
+            <li>แต่ละแผนกต้องเลือก<strong>หน่วยงานที่สังกัด</strong>เสมอ (1 หน่วยงานมีได้หลายแผนก)</li>
+          </ol>
+        </div>
+        <div>
+          <p class="font-medium mb-1">อาคาร/ชั้น/ห้อง</p>
+          <ol class="list-decimal list-inside space-y-1">
+            <li>ปุ่ม "จัดการอาคาร/ชั้น/ห้อง" มุมขวาบน เปิดหน้าจัดการแบบ 3 คอลัมน์ — เลือกอาคารทางซ้ายเพื่อดูชั้น แล้วเลือกชั้นเพื่อดูห้อง ตามลำดับ</li>
+            <li>แต่ละห้องสามารถระบุ<strong>หน่วยงานที่ใช้งานห้องนั้น</strong>ได้ (ไม่บังคับ) เพื่อดูสรุปจำนวนห้องต่อหน่วยงานในแดชบอร์ด</li>
+            <li>ลบอาคาร/ชั้น/ห้องไม่ได้ถ้ายังมีชั้น/ห้อง/ครุภัณฑ์ผูกอยู่ (ต้องย้ายข้อมูลออกก่อน)</li>
+          </ol>
+        </div>
+      </div>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="bell" [size]="18" class="text-orange-500" />
+          ตั้งค่าและตรวจสอบระบบแจ้งเตือน
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <ol class="list-decimal list-inside space-y-2 text-sm text-neutral-700 dark:text-neutral-300 pb-2">
+        <li>เมนู "ตั้งค่าแจ้งเตือน" มี 2 แท็บ: <strong>"ประวัติการแจ้งเตือน"</strong> และ <strong>"ตั้งค่า"</strong> — เข้าถึงได้เฉพาะผู้ดูแลระบบเท่านั้น (สิทธิ์ "จัดการตั้งค่าระบบ")</li>
+        <li>แท็บ "ประวัติการแจ้งเตือน" แสดงการแจ้งเตือนที่ระบบเคยส่งทุกช่องทาง (อีเมล/Telegram/LINE) พร้อมสถานะ (ส่งสำเร็จ/ส่งไม่สำเร็จ) และเหตุผลกรณีส่งไม่สำเร็จ — ใช้ตรวจสอบเวลาผู้ใช้แจ้งว่า "ไม่ได้รับการแจ้งเตือน"</li>
+        <li>แท็บ "ตั้งค่า" → หัวข้อ "ช่องทางแจ้งเตือน" เปิด/ปิดแต่ละช่องทางแยกกันได้ (อีเมล/Telegram/LINE)</li>
+        <li>
+          <strong>Telegram</strong>: สร้างบอทผ่าน @BotFather รับ Bot Token มา เชิญบอทเข้ากลุ่ม/แชทที่ต้องการรับแจ้งเตือน แล้วนำ Chat ID มากรอกในหัวข้อ "ตั้งค่า Telegram Bot" — ระบบส่งเข้าแชท/กลุ่มเดียวที่ตั้งไว้ (ไม่ผูกบัญชีรายคน)
+        </li>
+        <li>
+          <strong>LINE</strong>: สร้าง LINE Official Account พร้อม Messaging API Channel ที่ LINE Developers Console นำ Channel Access Token มากรอก และเชิญบอทเข้ากลุ่ม/แชทที่ต้องการ แล้วนำ Group ID หรือ User ID มากรอกในหัวข้อ "ตั้งค่า LINE Messaging API" — ระบบส่งแบบ push เข้ากลุ่ม/แชทเดียวที่ตั้งไว้เท่านั้น (ไม่ใช่ broadcast ถึงทุกคนที่แอดเพื่อน OA)
+        </li>
+        <li>หัวข้อ "แจ้งเตือนเมื่อเกิดเหตุการณ์" เลือกได้ว่างานแจ้งซ่อมเหตุการณ์ไหนบ้าง (มีใบแจ้งซ่อมใหม่ / มอบหมายงาน / สถานะเปลี่ยน / ซ่อมเสร็จ / ยกเลิกงาน) ที่ต้องการให้แจ้งเตือน — มีผลกับทุกช่องทางที่เปิดใช้งานพร้อมกัน</li>
+      </ol>
+    </mat-expansion-panel>
+
+    <mat-expansion-panel class="khd-card !p-0 !rounded-2xl overflow-hidden">
+      <mat-expansion-panel-header class="!h-auto !py-3">
+        <mat-panel-title class="flex items-center gap-2 !font-medium">
+          <khd-icon name="shield-check" [size]="18" class="text-emerald-600" />
+          บทบาทและสิทธิ์การใช้งานในระบบ
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+      <div class="text-sm text-neutral-700 dark:text-neutral-300 space-y-3 pb-2">
+        <div><strong>ผู้ดูแลระบบสูงสุด</strong> — เข้าถึงและตั้งค่าได้ทุกส่วนของระบบ รวมถึงการตั้งค่าแจ้งเตือน</div>
+        <div><strong>ผู้ดูแลระบบ</strong> — จัดการครุภัณฑ์ งานซ่อม ผู้ใช้งาน หน่วยงาน และพิมพ์เอกสารได้ทั้งหมด ยกเว้นการตั้งค่าระบบระดับสูง</div>
+        <div><strong>เจ้าหน้าที่ไอที</strong> — รับเรื่อง มอบหมายงาน เปลี่ยนสถานะงานซ่อม พิมพ์เอกสาร และดูครุภัณฑ์ได้ (ไม่สามารถจัดการผู้ใช้งาน/หน่วยงาน)</div>
+        <div><strong>ช่างเทคนิค</strong> — เปลี่ยนสถานะงานซ่อมที่ได้รับมอบหมาย แนบไฟล์ และบันทึกสรุปผลการซ่อมได้ (ไม่เห็นเมนูแดชบอร์ด/พิมพ์เอกสาร)</div>
+        <div><strong>ผู้ใช้งานทั่วไป</strong> — แจ้งซ่อมและติดตามงานของตนเองเท่านั้น</div>
+      </div>
+    </mat-expansion-panel>
+  </mat-accordion>
+</div>
