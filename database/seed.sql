@@ -32,6 +32,7 @@ INSERT INTO `permissions` (`id`, `code`, `module`, `description`) VALUES
 (UUID(), 'asset:update',          'asset',     'แก้ไขครุภัณฑ์'),
 (UUID(), 'asset:delete',          'asset',     'ลบครุภัณฑ์'),
 (UUID(), 'asset:view_history',    'asset',     'ดูประวัติครุภัณฑ์'),
+(UUID(), 'asset:loan',            'asset',     'บันทึกยืม-คืนอุปกรณ์'),
 (UUID(), 'qrcode:generate',       'qrcode',    'สร้าง/พิมพ์ QR Code'),
 (UUID(), 'qrcode:print',          'qrcode',    'พิมพ์ QR Code'),
 (UUID(), 'ticket:create',         'ticket',    'แจ้งซ่อม'),
@@ -70,7 +71,7 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_admin, `id` FROM `permissions`
 WHERE `code` IN (
   'dashboard:view',
-  'asset:create','asset:read','asset:update','asset:delete','asset:view_history',
+  'asset:create','asset:read','asset:update','asset:delete','asset:view_history','asset:loan',
   'qrcode:generate','qrcode:print',
   'ticket:create','ticket:read','ticket:receive','ticket:assign','ticket:update_status',
   'ticket:upload_attachment','ticket:cancel','ticket:close',
@@ -83,7 +84,7 @@ WHERE `code` IN (
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_it_officer, `id` FROM `permissions`
 WHERE `code` IN (
-  'dashboard:view','asset:read','qrcode:generate',
+  'dashboard:view','asset:read','asset:loan','qrcode:generate',
   'ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment',
   'document:print','document:generate'
 );
@@ -92,7 +93,7 @@ WHERE `code` IN (
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_technician, `id` FROM `permissions`
 WHERE `code` IN (
-  'asset:read','ticket:read','ticket:update_status','ticket:upload_attachment'
+  'asset:read','asset:loan','ticket:read','ticket:update_status','ticket:upload_attachment'
 );
 
 -- User: create ticket, track ticket, print QR, view history

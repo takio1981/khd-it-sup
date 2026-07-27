@@ -151,6 +151,9 @@ model User {
   timelineEvents      RepairTicketTimelineEvent[]
   approvals           Approval[]
   auditLogs           AuditLog[]
+  assetLoansBorrowed  AssetLoan[]                 @relation("AssetLoanBorrower")
+  assetLoansRecorded  AssetLoan[]                 @relation("AssetLoanRecordedBy")
+  assetLoansReturned  AssetLoan[]                 @relation("AssetLoanReturnedBy")
 
   @@index([roleId], name: "idx_users_role")
   @@index([departmentId], name: "idx_users_department")
@@ -327,7 +330,33 @@ model Asset {
   @@index([status], name: "idx_assets_status")
   @@index([serialNumber], name: "idx_assets_serial")
   @@index([govAssetNumber], name: "idx_assets_gov_number")
+  loans          AssetLoan[]
   @@map("assets")
+}
+
+model AssetLoan {
+  id                  String    @id @db.Char(36)
+  assetId             String    @map("asset_id") @db.Char(36)
+  borrowerId          String    @map("borrower_id") @db.Char(36)
+  recordedBy          String    @map("recorded_by") @db.Char(36)
+  returnedBy          String?   @map("returned_by") @db.Char(36)
+  borrowDate          DateTime  @default(now()) @map("borrow_date")
+  expectedReturnDate  DateTime? @map("expected_return_date") @db.Date
+  actualReturnDate    DateTime? @map("actual_return_date")
+  purpose             String?   @db.VarChar(500)
+  conditionOnBorrow   String?   @map("condition_on_borrow") @db.VarChar(500)
+  conditionOnReturn   String?   @map("condition_on_return") @db.VarChar(500)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  asset    Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  borrower User  @relation("AssetLoanBorrower", fields: [borrowerId], references: [id], onDelete: Restrict)
+  recorder User  @relation("AssetLoanRecordedBy", fields: [recordedBy], references: [id], onDelete: Restrict)
+  returner User? @relation("AssetLoanReturnedBy", fields: [returnedBy], references: [id], onDelete: SetNull)
+
+  @@index([assetId], name: "idx_asset_loans_asset")
+  @@index([borrowerId], name: "idx_asset_loans_borrower")
+  @@map("asset_loans")
 }
 
 model AssetPhoto {

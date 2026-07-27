@@ -7,6 +7,7 @@ import { PositionService } from '../../core/services/position.service';
 import { DivisionService } from '../../core/services/division.service';
 import { LocationService } from '../../core/services/location.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { AssetLoanService } from '../../core/services/asset-loan.service';
 import { AuthService } from '../../core/services/auth.service';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
 import { BarChartComponent, type IBarChartDatum } from '../../shared/components/bar-chart/bar-chart.component';
@@ -23,6 +24,7 @@ import type {
 import type { IDepartment, IDivision, IPosition, IUserStats } from '../../core/models/user.model';
 import type { IRoom } from '../../core/models/location.model';
 import type { NotificationChannel } from '../../core/models/notification.model';
+import type { IAssetLoanChartData, IAssetLoanStats } from '../../core/models/asset-loan.model';
 
 const THAI_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const IN_PROGRESS_STATUSES = new Set(['IN_REPAIR', 'WAITING_PARTS', 'MAINTENANCE']);
@@ -50,6 +52,7 @@ export class DashboardComponent {
   private readonly divisionService = inject(DivisionService);
   private readonly locationService = inject(LocationService);
   private readonly notificationService = inject(NotificationService);
+  private readonly assetLoanService = inject(AssetLoanService);
   private readonly authService = inject(AuthService);
 
   readonly summary = signal<IDashboardSummary | null>(null);
@@ -78,6 +81,10 @@ export class DashboardComponent {
   readonly notifPending = signal(0);
   readonly notifFailed = signal(0);
   readonly notifByChannel = signal<{ channel: NotificationChannel; count: number }[]>([]);
+
+  // --- ยืม-คืนอุปกรณ์ ---
+  readonly loanStats = signal<IAssetLoanStats | null>(null);
+  readonly loanChartData = signal<IAssetLoanChartData | null>(null);
 
   readonly monthlyChartData = computed<IBarChartDatum[]>(() =>
     this.monthly().map((m) => ({
@@ -158,6 +165,13 @@ export class DashboardComponent {
       .map((c) => ({ label: CHANNEL_LABEL_TH[c.channel], value: c.count })),
   );
 
+  readonly topBorrowedAssetsChartData = computed<IBarChartDatum[]>(
+    () => this.loanChartData()?.topAssets.map((a) => ({ label: a.label, value: a.count })) ?? [],
+  );
+  readonly topBorrowersChartData = computed<IBarChartDatum[]>(
+    () => this.loanChartData()?.topBorrowers.map((b) => ({ label: b.label, value: b.count })) ?? [],
+  );
+
   constructor() {
     const year = new Date().getFullYear();
 
@@ -195,6 +209,10 @@ export class DashboardComponent {
           this.notifByChannel.update((list) => [...list.filter((c) => c.channel !== channel), { channel, count: res.meta.total }]);
         });
       }
+    }
+    if (this.authService.hasPermission('asset:loan')) {
+      this.assetLoanService.getStats().subscribe((stats) => this.loanStats.set(stats));
+      this.assetLoanService.getChartData().subscribe((data) => this.loanChartData.set(data));
     }
   }
 }

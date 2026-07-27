@@ -262,6 +262,30 @@ CREATE TABLE `assets` (
   CONSTRAINT `fk_assets_owner` FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `asset_loans` (
+  `id`                    CHAR(36)     NOT NULL,
+  `asset_id`              CHAR(36)     NOT NULL,
+  `borrower_id`           CHAR(36)     NOT NULL,
+  `recorded_by`           CHAR(36)     NOT NULL,
+  `returned_by`           CHAR(36)     NULL,
+  `borrow_date`           DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `expected_return_date`  DATE         NULL,
+  `actual_return_date`    DATETIME(3)  NULL,
+  `purpose`               VARCHAR(500) NULL,
+  `condition_on_borrow`   VARCHAR(500) NULL,
+  `condition_on_return`   VARCHAR(500) NULL,
+  `created_at`            DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at`            DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `idx_asset_loans_asset` (`asset_id`),
+  KEY `idx_asset_loans_borrower` (`borrower_id`),
+  KEY `idx_asset_loans_recorded_by` (`recorded_by`),
+  CONSTRAINT `fk_asset_loans_asset` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_asset_loans_borrower` FOREIGN KEY (`borrower_id`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_asset_loans_recorded_by` FOREIGN KEY (`recorded_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_asset_loans_returned_by` FOREIGN KEY (`returned_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `asset_photos` (
   `id`          CHAR(36)     NOT NULL,
   `asset_id`    CHAR(36)     NOT NULL,

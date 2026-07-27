@@ -8,6 +8,7 @@ export type Permission =
   | 'asset:update'
   | 'asset:delete'
   | 'asset:view_history'
+  | 'asset:loan'
   | 'qrcode:generate'
   | 'qrcode:print'
   | 'ticket:create'

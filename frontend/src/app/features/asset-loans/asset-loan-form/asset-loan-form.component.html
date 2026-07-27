@@ -1,0 +1,50 @@
+<h2 mat-dialog-title>ยืมครุภัณฑ์</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="!flex !flex-col !gap-1">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>ครุภัณฑ์</mat-label>
+      <mat-select formControlName="assetId">
+        @for (a of availableAssets(); track a.id) {
+          <mat-option [value]="a.id">{{ a.assetNumber }} — {{ a.brand }} {{ a.model }}</mat-option>
+        } @empty {
+          <mat-option disabled>ไม่มีครุภัณฑ์ที่พร้อมให้ยืม</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>ผู้ยืม</mat-label>
+      <mat-select formControlName="borrowerId">
+        @for (u of users(); track u.id) {
+          <mat-option [value]="u.id">{{ u.fullName }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>กำหนดคืน (ถ้ามี)</mat-label>
+      <input matInput type="date" formControlName="expectedReturnDate" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>วัตถุประสงค์/เหตุผลที่ยืม</mat-label>
+      <textarea matInput formControlName="purpose" rows="2"></textarea>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>สภาพเครื่องตอนยืม (ถ้ามี)</mat-label>
+      <textarea matInput formControlName="conditionOnBorrow" rows="2"></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>ยกเลิก</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+      @if (saving()) {
+        <mat-spinner diameter="18" class="!inline-block !mr-2" />
+      }
+      บันทึกการยืม
+    </button>
+  </mat-dialog-actions>
+</form>

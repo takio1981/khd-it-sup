@@ -1,0 +1,25 @@
+import { z } from 'zod';
+
+export const createAssetLoanSchema = z.object({
+  assetId: z.string().uuid('assetId ต้องเป็น UUID'),
+  borrowerId: z.string().uuid('borrowerId ต้องเป็น UUID'),
+  expectedReturnDate: z.coerce.date().optional(),
+  purpose: z.string().max(500).optional(),
+  conditionOnBorrow: z.string().max(500).optional(),
+});
+export type CreateAssetLoanDto = z.infer<typeof createAssetLoanSchema>;
+
+export const returnAssetLoanSchema = z.object({
+  conditionOnReturn: z.string().max(500).optional(),
+});
+export type ReturnAssetLoanDto = z.infer<typeof returnAssetLoanSchema>;
+
+export const listAssetLoansQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().optional(),
+  status: z.enum(['BORROWED', 'OVERDUE', 'RETURNED']).optional(),
+  keyword: z.string().optional(),
+});
+export type ListAssetLoansQueryDto = z.infer<typeof listAssetLoansQuerySchema>;
+
+export const assetLoanIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });

@@ -73,6 +73,35 @@
       </div>
     </mat-tab>
 
+    <mat-tab label="ยืม-คืนอุปกรณ์" *khdHasPermission="'asset:loan'">
+      <div class="pt-4 space-y-4">
+        @if (loanStats(); as ls) {
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <khd-stat-card variant="solid" color="blue" label="ทั้งหมด" [value]="ls.total" />
+            <khd-stat-card variant="solid" color="amber" label="กำลังยืม" [value]="ls.borrowed" />
+            <khd-stat-card variant="solid" color="red" label="เกินกำหนด" [value]="ls.overdue" />
+            <khd-stat-card variant="solid" color="green" label="คืนแล้ว" [value]="ls.returned" />
+          </div>
+        }
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="khd-card">
+            <div class="flex items-center gap-2 mb-4">
+              <khd-icon name="computer-desktop" [size]="18" class="text-blue-500" />
+              <h2 class="text-sm font-medium">ครุภัณฑ์ที่ถูกยืมบ่อยที่สุด</h2>
+            </div>
+            <khd-bar-chart [data]="topBorrowedAssetsChartData()" orientation="horizontal" defaultColor="#3B82F6" />
+          </div>
+          <div class="khd-card">
+            <div class="flex items-center gap-2 mb-4">
+              <khd-icon name="users" [size]="18" class="text-amber-500" />
+              <h2 class="text-sm font-medium">ผู้ยืมบ่อยที่สุด</h2>
+            </div>
+            <khd-bar-chart [data]="topBorrowersChartData()" orientation="horizontal" defaultColor="#F59E0B" />
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
     <mat-tab label="ผู้ใช้งาน" *khdHasPermission="'user:read'">
       <div class="pt-4 space-y-4">
         @if (userStats(); as us) {

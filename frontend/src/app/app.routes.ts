@@ -57,6 +57,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/locations/location-list.component').then((m) => m.LocationListComponent),
       },
       {
+        path: 'asset-loans',
+        canActivate: [permissionGuard],
+        data: { permissions: ['asset:loan'] },
+        loadComponent: () => import('./features/asset-loans/asset-loan-list.component').then((m) => m.AssetLoanListComponent),
+      },
+      {
         path: 'assets/:id',
         canActivate: [permissionGuard],
         data: { permissions: ['asset:read'] },

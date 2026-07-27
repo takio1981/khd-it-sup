@@ -10,6 +10,7 @@ export const PERMISSIONS = {
   ASSET_UPDATE: 'asset:update',
   ASSET_DELETE: 'asset:delete',
   ASSET_VIEW_HISTORY: 'asset:view_history',
+  ASSET_LOAN: 'asset:loan',
 
   QRCODE_GENERATE: 'qrcode:generate',
   QRCODE_PRINT: 'qrcode:print',
