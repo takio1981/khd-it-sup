@@ -7,6 +7,7 @@ import type {
   AssignTicketDto,
   CommentTicketDto,
   CreateTicketDto,
+  InspectionDto,
   ListTicketsQueryDto,
   RepairSummaryDto,
   TransitionTicketDto,
@@ -97,6 +98,14 @@ export class RepairTicketService {
           locationNote: dto.locationNote,
           contactPhone: dto.contactPhone,
           status: 'DRAFT',
+          equipmentType: dto.equipmentType,
+          equipmentTypeOther: dto.equipmentTypeOther,
+          deviceColor: dto.deviceColor,
+          hasAdapterCable: dto.hasAdapterCable ?? false,
+          hasVgaCable: dto.hasVgaCable ?? false,
+          hasPowerCable: dto.hasPowerCable ?? false,
+          hasOtherAccessory: dto.hasOtherAccessory ?? false,
+          otherAccessoryNote: dto.otherAccessoryNote,
         },
         tx,
       );
@@ -283,6 +292,69 @@ export class RepairTicketService {
 
     await auditLogService.record(
       { action: 'UPDATE', module: 'ticket', entityType: 'RepairTicket', entityId: id, description: `แก้ไขสรุปผลการซ่อม ${existing.ticketNumber}` },
+      ctx,
+    );
+
+    return ticket;
+  }
+
+  /** ส่วนที่ 1 ของแบบฟอร์มกระดาษ — หัวหน้างาน/กลุ่มงานของผู้แจ้งซ่อมลงนามรับทราบ/อนุมัติคำขอ (endorsement เท่านั้น ไม่ block workflow) */
+  async approveUnitHead(id: string, ctx: IRequestContext) {
+    const existing = await this.repo.findById(id);
+    if (!existing) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
+
+    const ticket = await this.repo.update(id, { unitHeadApprovedByUserId: ctx.user.id, unitHeadApprovedAt: new Date() });
+
+    await auditLogService.record(
+      { action: 'UPDATE', module: 'ticket', entityType: 'RepairTicket', entityId: id, description: `ลงนามอนุมัติ (หัวหน้างาน/กลุ่มงาน) ${existing.ticketNumber}` },
+      ctx,
+    );
+
+    return ticket;
+  }
+
+  /** ส่วนที่ 2 ของแบบฟอร์มกระดาษ — ผลตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที ก่อนเริ่มซ่อมจริง (แยกจากสรุปผลการซ่อมตอนปิดงาน) */
+  async recordInspection(id: string, dto: InspectionDto, ctx: IRequestContext) {
+    const existing = await this.repo.findById(id);
+    if (!existing) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
+
+    const isInHouse = dto.inspectionOutcome === 'IN_HOUSE';
+    const isSendExternal = dto.inspectionOutcome === 'SEND_EXTERNAL';
+
+    const ticket = await this.repo.update(id, {
+      inspectedByUserId: ctx.user.id,
+      inspectedAt: new Date(),
+      inspectionOutcome: dto.inspectionOutcome,
+      requestPartsNeeded: isInHouse ? (dto.requestPartsNeeded ?? false) : false,
+      requestedPart1Name: isInHouse ? dto.requestedPart1Name : null,
+      requestedPart1Qty: isInHouse ? dto.requestedPart1Qty : null,
+      requestedPart2Name: isInHouse ? dto.requestedPart2Name : null,
+      requestedPart2Qty: isInHouse ? dto.requestedPart2Qty : null,
+      requestedPart3Name: isInHouse ? dto.requestedPart3Name : null,
+      requestedPart3Qty: isInHouse ? dto.requestedPart3Qty : null,
+      sendExternalReason: isSendExternal ? dto.sendExternalReason : null,
+    });
+
+    await auditLogService.record(
+      { action: 'UPDATE', module: 'ticket', entityType: 'RepairTicket', entityId: id, description: `บันทึกผลตรวจสอบเบื้องต้น ${existing.ticketNumber}` },
+      ctx,
+    );
+
+    return ticket;
+  }
+
+  /** ส่วนที่ 2 ของแบบฟอร์มกระดาษ — หัวหน้ากลุ่มงานสุขภาพดิจิทัลลงนามรับรองผลตรวจสอบ (endorsement เท่านั้น ไม่ block workflow) */
+  async approveDigitalHealthHead(id: string, ctx: IRequestContext) {
+    const existing = await this.repo.findById(id);
+    if (!existing) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
+
+    const ticket = await this.repo.update(id, {
+      digitalHealthHeadApprovedByUserId: ctx.user.id,
+      digitalHealthHeadApprovedAt: new Date(),
+    });
+
+    await auditLogService.record(
+      { action: 'UPDATE', module: 'ticket', entityType: 'RepairTicket', entityId: id, description: `ลงนามอนุมัติ (หัวหน้ากลุ่มงานสุขภาพดิจิทัล) ${existing.ticketNumber}` },
       ctx,
     );
 

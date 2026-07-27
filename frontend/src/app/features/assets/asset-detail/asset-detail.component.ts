@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, effect, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { AuthService } from '../../../core/services/auth.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { QrCodeService } from '../../../core/services/qrcode.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
@@ -11,6 +13,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { QrPrintPreviewComponent } from '../../../shared/components/qr-print-preview/qr-print-preview.component';
+import { AssetPhotoThumbnailComponent } from '../../../shared/components/asset-photo-thumbnail/asset-photo-thumbnail.component';
 import type { IQrLabelData } from '../../../shared/components/qr-print-preview/qr-print-preview.model';
 import { AssetFormComponent } from '../asset-form/asset-form.component';
 import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/models/asset.model';
@@ -19,7 +22,16 @@ import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/mo
   selector: 'khd-asset-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, DatePipe, MatButtonModule, MatProgressSpinnerModule, StatusBadgeComponent, IconComponent, HasPermissionDirective],
+  imports: [
+    RouterLink,
+    DatePipe,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    StatusBadgeComponent,
+    IconComponent,
+    HasPermissionDirective,
+    AssetPhotoThumbnailComponent,
+  ],
   templateUrl: './asset-detail.component.html',
 })
 export class AssetDetailComponent {
@@ -27,6 +39,12 @@ export class AssetDetailComponent {
   private readonly qrCodeService = inject(QrCodeService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly authService = inject(AuthService);
+
+  private static readonly MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
+
+  @ViewChild('photoInput') photoInput?: ElementRef<HTMLInputElement>;
 
   /** ผูกอัตโนมัติจาก route param :id */
   readonly id = input<string>('');
@@ -36,6 +54,7 @@ export class AssetDetailComponent {
   readonly loading = signal(true);
   readonly qrDataUrl = signal<string | null>(null);
   readonly printing = signal(false);
+  readonly uploadingPhotos = signal(false);
   readonly categories = signal<IAssetCategory[]>([]);
 
   constructor() {
@@ -138,6 +157,52 @@ export class AssetDetailComponent {
         });
       },
       error: () => this.printing.set(false),
+    });
+  }
+
+  canEditPhotos(): boolean {
+    return this.authService.hasAnyPermission(['asset:update']);
+  }
+
+  triggerPhotoInput(): void {
+    this.photoInput?.nativeElement.click();
+  }
+
+  onPhotosSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    if (!files?.length) return;
+
+    const fileList = Array.from(files);
+    const tooLarge = fileList.find((f) => f.size > AssetDetailComponent.MAX_PHOTO_SIZE_BYTES);
+    if (tooLarge) {
+      this.snackBar.open(`ไฟล์ "${tooLarge.name}" มีขนาดเกิน 5 MB`, 'ปิด', { duration: 4000 });
+      input.value = '';
+      return;
+    }
+
+    this.uploadingPhotos.set(true);
+    this.assetService.uploadPhotos(this.id(), fileList).subscribe({
+      next: () => {
+        this.uploadingPhotos.set(false);
+        input.value = '';
+        this.load();
+      },
+      error: () => {
+        this.uploadingPhotos.set(false);
+        this.snackBar.open('อัปโหลดรูปภาพไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        input.value = '';
+      },
+    });
+  }
+
+  deletePhoto(photoId: string): void {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      width: '360px',
+      data: { title: 'ลบรูปครุภัณฑ์', message: 'ยืนยันการลบรูปนี้ใช่หรือไม่?', danger: true },
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) this.assetService.removePhoto(this.id(), photoId).subscribe(() => this.load());
     });
   }
 }

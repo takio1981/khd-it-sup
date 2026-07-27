@@ -1,4 +1,6 @@
 export type TicketUrgency = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type EquipmentType = 'COMPUTER_CASE' | 'NOTEBOOK' | 'PRINTER' | 'SCANNER' | 'MONITOR' | 'OTHER';
+export type InspectionOutcome = 'IN_HOUSE' | 'SEND_EXTERNAL' | 'REPLACE_NEW';
 
 export interface IRepairTicketListItem {
   id: string;
@@ -17,7 +19,7 @@ export interface IRepairTicketListItem {
     serialNumber: string | null;
     category: { nameTh: string } | null;
   } | null;
-  reportedBy: { id: string; fullName: string; username: string };
+  reportedBy: { id: string; fullName: string; username: string; position?: { nameTh: string } | null };
   department: { id: string; nameTh: string } | null;
   assignedTechnician: { id: string; fullName: string; username: string } | null;
   workflowInstance: { id: string; currentStep: { stepCode: string; stepNameTh: string; colorCode: string | null } } | null;
@@ -62,6 +64,37 @@ export interface IRepairTicketDetail extends IRepairTicketListItem, IRepairSumma
         template: { steps: IWorkflowStep[]; transitions: IWorkflowTransition[] };
       }
     | null;
+
+  // ส่วนที่ 1 ของแบบฟอร์มกระดาษ — ข้อมูลอุปกรณ์/อุปกรณ์เสริมที่ผู้แจ้งซ่อมกรอกตอนแจ้ง
+  equipmentType: EquipmentType | null;
+  equipmentTypeOther: string | null;
+  deviceColor: string | null;
+  hasAdapterCable: boolean;
+  hasVgaCable: boolean;
+  hasPowerCable: boolean;
+  hasOtherAccessory: boolean;
+  otherAccessoryNote: string | null;
+
+  // ส่วนที่ 1 — ลงนามหัวหน้างาน/กลุ่มงานของผู้แจ้งซ่อม
+  unitHeadApprovedAt: string | null;
+  unitHeadApprovedBy: { id: string; fullName: string } | null;
+
+  // ส่วนที่ 2 — ผลตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที
+  inspectedAt: string | null;
+  inspectedBy: { id: string; fullName: string } | null;
+  inspectionOutcome: InspectionOutcome | null;
+  requestPartsNeeded: boolean;
+  requestedPart1Name: string | null;
+  requestedPart1Qty: number | null;
+  requestedPart2Name: string | null;
+  requestedPart2Qty: number | null;
+  requestedPart3Name: string | null;
+  requestedPart3Qty: number | null;
+  sendExternalReason: string | null;
+
+  // ส่วนที่ 2 — ลงนามหัวหน้ากลุ่มงานสุขภาพดิจิทัล
+  digitalHealthHeadApprovedAt: string | null;
+  digitalHealthHeadApprovedBy: { id: string; fullName: string } | null;
 }
 
 export interface ITimelineEvent {
@@ -87,4 +120,24 @@ export interface ICreateTicketPayload {
   locationNote?: string;
   contactPhone?: string;
   departmentId?: string;
+  equipmentType?: EquipmentType;
+  equipmentTypeOther?: string;
+  deviceColor?: string;
+  hasAdapterCable?: boolean;
+  hasVgaCable?: boolean;
+  hasPowerCable?: boolean;
+  hasOtherAccessory?: boolean;
+  otherAccessoryNote?: string;
+}
+
+export interface IInspectionPayload {
+  inspectionOutcome: InspectionOutcome;
+  requestPartsNeeded?: boolean;
+  requestedPart1Name?: string;
+  requestedPart1Qty?: number;
+  requestedPart2Name?: string;
+  requestedPart2Qty?: number;
+  requestedPart3Name?: string;
+  requestedPart3Qty?: number;
+  sendExternalReason?: string;
 }

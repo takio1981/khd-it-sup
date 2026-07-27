@@ -161,4 +161,16 @@ export class AssetService {
 
     return photos;
   }
+
+  async removePhoto(assetId: string, photoId: string, ctx: IRequestContext) {
+    const photo = await this.repo.findPhotoById(photoId);
+    if (!photo || photo.assetId !== assetId) throw new NotFoundError('ไม่พบรูปภาพนี้');
+
+    await this.repo.deletePhoto(photoId);
+
+    await auditLogService.record(
+      { action: 'DELETE', module: 'asset', entityType: 'Asset', entityId: assetId, description: 'ลบรูปครุภัณฑ์' },
+      ctx,
+    );
+  }
 }

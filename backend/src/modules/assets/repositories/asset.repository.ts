@@ -109,6 +109,14 @@ export class AssetRepository {
     return prisma.assetPhoto.create({ data });
   }
 
+  async findPhotoById(photoId: string) {
+    return prisma.assetPhoto.findUnique({ where: { id: photoId } });
+  }
+
+  async deletePhoto(photoId: string) {
+    await prisma.assetPhoto.delete({ where: { id: photoId } });
+  }
+
   async repairHistory(assetId: string) {
     return prisma.repairTicket.findMany({
       where: { assetId },

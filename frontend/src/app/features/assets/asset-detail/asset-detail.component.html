@@ -53,6 +53,30 @@
       </div>
 
       <div class="khd-card">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-medium">รูปภาพครุภัณฑ์</h2>
+          <button mat-button class="!text-xs" *khdHasPermission="'asset:update'" [disabled]="uploadingPhotos()" (click)="triggerPhotoInput()">
+            @if (uploadingPhotos()) {
+              <mat-spinner diameter="14" class="!inline-block !mr-1" />
+            } @else {
+              <khd-icon name="paper-clip" [size]="14" class="!mr-1" />
+            }
+            เพิ่มรูป
+          </button>
+          <input #photoInput type="file" multiple accept="image/*" class="hidden" (change)="onPhotosSelected($event)" />
+        </div>
+        @if (a.photos && a.photos.length > 0) {
+          <div class="flex flex-wrap gap-2">
+            @for (photo of a.photos; track photo.id) {
+              <khd-asset-photo-thumbnail [fileUrl]="photo.fileUrl" [deletable]="canEditPhotos()" (removed)="deletePhoto(photo.id)" />
+            }
+          </div>
+        } @else {
+          <p class="text-sm text-neutral-400 text-center py-4">ยังไม่มีรูปภาพ</p>
+        }
+      </div>
+
+      <div class="khd-card">
         <h2 class="text-sm font-medium mb-3">QR Code</h2>
         @if (qrDataUrl(); as qr) {
           <img [src]="qr" alt="QR Code" class="w-full rounded-lg border border-black/5" />

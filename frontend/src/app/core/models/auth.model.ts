@@ -20,6 +20,7 @@ export type Permission =
   | 'ticket:upload_attachment'
   | 'ticket:cancel'
   | 'ticket:close'
+  | 'ticket:approve'
   | 'user:create'
   | 'user:read'
   | 'user:update'

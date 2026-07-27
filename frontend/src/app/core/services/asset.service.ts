@@ -7,6 +7,7 @@ import type {
   IAsset,
   IAssetCategory,
   IAssetHistoryItem,
+  IAssetPhoto,
   ICreateAssetCategoryPayload,
   ICreateAssetPayload,
 } from '../models/asset.model';
@@ -77,9 +78,20 @@ export class AssetService {
     return this.http.delete<IApiSuccessResponse<unknown>>(`${this.base}/${id}`).pipe(map(() => undefined));
   }
 
-  uploadPhotos(id: string, files: File[]): Observable<unknown> {
+  uploadPhotos(id: string, files: File[]): Observable<IAssetPhoto[]> {
     const formData = new FormData();
     files.forEach((f) => formData.append('photos', f));
-    return this.http.post(`${this.base}/${id}/photos`, formData);
+    return this.http
+      .post<IApiSuccessResponse<IAssetPhoto[]>>(`${this.base}/${id}/photos`, formData)
+      .pipe(map((res) => res.data));
+  }
+
+  removePhoto(id: string, photoId: string): Observable<void> {
+    return this.http.delete<IApiSuccessResponse<unknown>>(`${this.base}/${id}/photos/${photoId}`).pipe(map(() => undefined));
+  }
+
+  /** ไฟล์รูปครุภัณฑ์ต้องแนบ Authorization header เสมอ — โหลดผ่าน HttpClient เป็น blob แทน <img src> ตรง ๆ */
+  getPhotoBlob(fileUrl: string): Observable<Blob> {
+    return this.http.get(fileUrl, { responseType: 'blob' });
   }
 }

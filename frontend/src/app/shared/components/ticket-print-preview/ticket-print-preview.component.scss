@@ -91,6 +91,31 @@
   padding-bottom: 1px;
 }
 
+.khd-doc-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 4px 0;
+}
+
+.khd-doc-checklist-col {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.khd-doc-checkitem {
+  white-space: pre-line;
+}
+
+.khd-doc-partslist {
+  margin: 2px 0 4px 20px;
+  font-size: 12px;
+
+  p {
+    margin: 0 0 2px;
+  }
+}
+
 .khd-doc-textblock {
   margin: 0;
   border: 1px solid #ccc;

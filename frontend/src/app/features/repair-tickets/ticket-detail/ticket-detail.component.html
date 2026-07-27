@@ -38,6 +38,14 @@
                 <khd-icon name="arrow-path" [size]="16" class="!mr-2" />{{ tr.label ?? ('ไปยัง ' + tr.toStep.stepNameTh) }}
               </button>
             }
+            <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="openInspectionDialog()">
+              <khd-icon name="clipboard-document-list" [size]="16" class="!mr-2" />บันทึกผลตรวจสอบเบื้องต้น
+            </button>
+            @if (canApproveDigitalHealthHead()) {
+              <button mat-menu-item *khdHasPermission="'ticket:approve'" (click)="approveDigitalHealthHead()">
+                <khd-icon name="pencil-square" [size]="16" class="!mr-2" />ลงนามอนุมัติ (หัวหน้ากลุ่มงานสุขภาพดิจิทัล)
+              </button>
+            }
             @if (canClose()) {
               <button mat-menu-item *khdHasPermission="'ticket:close'" (click)="close()">
                 <khd-icon name="check-circle" [size]="16" class="!mr-2" />ปิดงาน
@@ -85,8 +93,47 @@
           @if (t.contactPhone) {
             <div class="flex justify-between"><dt class="text-neutral-400">เบอร์ติดต่อ</dt><dd>{{ t.contactPhone }}</dd></div>
           }
+          @if (t.equipmentType) {
+            <div class="flex justify-between">
+              <dt class="text-neutral-400">ประเภทอุปกรณ์</dt>
+              <dd>{{ t.equipmentType === 'OTHER' ? (t.equipmentTypeOther || 'อื่นๆ') : equipmentTypeLabels[t.equipmentType] }}</dd>
+            </div>
+          }
+          @if (t.deviceColor) {
+            <div class="flex justify-between"><dt class="text-neutral-400">สีเครื่อง</dt><dd>{{ t.deviceColor }}</dd></div>
+          }
+          @if (t.hasAdapterCable || t.hasVgaCable || t.hasPowerCable || t.hasOtherAccessory) {
+            <div class="flex justify-between">
+              <dt class="text-neutral-400">อุปกรณ์ที่มาด้วย</dt>
+              <dd class="text-right">
+                @if (t.hasAdapterCable) { <span class="block">สาย Adapter</span> }
+                @if (t.hasVgaCable) { <span class="block">สาย VGA/RGB/DVI/HDMI</span> }
+                @if (t.hasPowerCable) { <span class="block">สาย POWER AC</span> }
+                @if (t.hasOtherAccessory) { <span class="block">{{ t.otherAccessoryNote || 'อื่นๆ' }}</span> }
+              </dd>
+            </div>
+          }
           <div class="flex justify-between"><dt class="text-neutral-400">วันที่แจ้ง</dt><dd>{{ t.createdAt | date: 'd MMM yyyy, HH:mm' }}</dd></div>
         </dl>
+
+        <div class="pt-2 border-t border-black/5 dark:border-white/10 text-sm">
+          @if (t.unitHeadApprovedAt) {
+            <p class="text-xs text-neutral-500">
+              <khd-icon name="check-circle" [size]="14" class="!inline text-emerald-500 !mr-1" />
+              หัวหน้างาน/กลุ่มงานลงนามแล้ว โดย {{ t.unitHeadApprovedBy?.fullName }} · {{ t.unitHeadApprovedAt | date: 'd MMM yyyy, HH:mm' }}
+            </p>
+          } @else {
+            <button
+              mat-stroked-button
+              class="!w-full !text-xs"
+              *khdHasPermission="'ticket:approve'"
+              [disabled]="acting()"
+              (click)="approveUnitHead()"
+            >
+              <khd-icon name="pencil-square" [size]="14" class="!mr-1" />ลงนามอนุมัติ (หัวหน้างาน/กลุ่มงาน)
+            </button>
+          }
+        </div>
 
         <div class="pt-2 border-t border-black/5 dark:border-white/10">
           <div class="flex items-center justify-between mb-2">
@@ -118,6 +165,43 @@
       </div>
 
       <div class="lg:col-span-2 space-y-4">
+        @if (t.inspectedAt) {
+          <div class="khd-card">
+            <div class="flex items-center gap-2 mb-3">
+              <khd-icon name="clipboard-document-list" [size]="18" class="text-brand-primary" />
+              <h2 class="text-sm font-medium">ผลตรวจสอบเบื้องต้น (ก่อนซ่อม)</h2>
+            </div>
+            <dl class="space-y-3 text-sm">
+              <div>
+                <dt class="text-xs text-neutral-400 mb-0.5">ผลการตรวจสอบ</dt>
+                <dd class="text-neutral-700 dark:text-neutral-200">{{ outcomeLabels[t.inspectionOutcome!] }}</dd>
+              </div>
+              @if (t.inspectionOutcome === 'IN_HOUSE' && t.requestPartsNeeded) {
+                <div>
+                  <dt class="text-xs text-neutral-400 mb-0.5">รายการอะไหล่ที่ขออนุมัติซื้อ</dt>
+                  <dd class="text-neutral-700 dark:text-neutral-200">
+                    @if (t.requestedPart1Name) { <span class="block">1. {{ t.requestedPart1Name }} จำนวน {{ t.requestedPart1Qty }}</span> }
+                    @if (t.requestedPart2Name) { <span class="block">2. {{ t.requestedPart2Name }} จำนวน {{ t.requestedPart2Qty }}</span> }
+                    @if (t.requestedPart3Name) { <span class="block">3. {{ t.requestedPart3Name }} จำนวน {{ t.requestedPart3Qty }}</span> }
+                  </dd>
+                </div>
+              }
+              @if (t.inspectionOutcome === 'SEND_EXTERNAL' && t.sendExternalReason) {
+                <div>
+                  <dt class="text-xs text-neutral-400 mb-0.5">เหตุผลที่ส่งซ่อมภายนอก</dt>
+                  <dd class="text-neutral-700 dark:text-neutral-200 whitespace-pre-line">{{ t.sendExternalReason }}</dd>
+                </div>
+              }
+            </dl>
+            <p class="text-xs text-neutral-400 mt-3 pt-3 border-t border-black/5 dark:border-white/10">
+              ตรวจสอบโดย {{ t.inspectedBy?.fullName }} · {{ t.inspectedAt | date: 'd MMM yyyy, HH:mm' }}
+              @if (t.digitalHealthHeadApprovedAt) {
+                <br />ลงนามรับรองโดย {{ t.digitalHealthHeadApprovedBy?.fullName }} · {{ t.digitalHealthHeadApprovedAt | date: 'd MMM yyyy, HH:mm' }}
+              }
+            </p>
+          </div>
+        }
+
         @if (t.rootCause || t.repairAction) {
           <div class="khd-card">
             <div class="flex items-center justify-between gap-2 mb-3">

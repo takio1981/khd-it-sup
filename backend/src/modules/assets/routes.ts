@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as assetController from '@modules/assets/controllers/asset.controller';
 import {
   assetIdParamSchema,
+  assetPhotoParamSchema,
   categoryIdParamSchema,
   createAssetSchema,
   createCategorySchema,
@@ -155,6 +156,21 @@ router.post(
   validateRequest({ params: assetIdParamSchema }),
   assetPhotoUploader.array('photos', 10),
   assetController.uploadAssetPhotos,
+);
+
+/**
+ * @openapi
+ * /assets/{id}/photos/{photoId}:
+ *   delete:
+ *     tags: [Assets]
+ *     summary: ลบรูปครุภัณฑ์
+ *     security: [{ bearerAuth: [] }]
+ */
+router.delete(
+  '/:id/photos/:photoId',
+  requirePermission(PERMISSIONS.ASSET_UPDATE),
+  validateRequest({ params: assetPhotoParamSchema }),
+  assetController.deleteAssetPhoto,
 );
 
 export default router;

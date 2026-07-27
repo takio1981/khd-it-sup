@@ -76,3 +76,8 @@ export const uploadAssetPhotos = asyncHandler(async (req: Request, res: Response
   const photos = await assetService.addPhotos(req.params.id, files, contextOf(req));
   sendCreated(res, photos);
 });
+
+export const deleteAssetPhoto = asyncHandler(async (req: Request, res: Response) => {
+  await assetService.removePhoto(req.params.id, req.params.photoId, contextOf(req));
+  sendSuccess(res, { message: 'ลบรูปครุภัณฑ์สำเร็จ' });
+});

@@ -48,6 +48,11 @@ export type ListAssetsQueryDto = z.infer<typeof listAssetsQuerySchema>;
 
 export const assetIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });
 
+export const assetPhotoParamSchema = z.object({
+  id: z.string().uuid('id ต้องเป็น UUID'),
+  photoId: z.string().uuid('photoId ต้องเป็น UUID'),
+});
+
 export const createCategorySchema = z.object({
   code: z.string().min(1).max(50),
   nameTh: z.string().min(1).max(150),

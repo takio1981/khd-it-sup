@@ -44,6 +44,7 @@ INSERT INTO `permissions` (`id`, `code`, `module`, `description`) VALUES
 (UUID(), 'ticket:upload_attachment', 'ticket', 'อัปโหลดรูป/ไฟล์แนบ'),
 (UUID(), 'ticket:cancel',         'ticket',    'ยกเลิกใบแจ้งซ่อม'),
 (UUID(), 'ticket:close',          'ticket',    'ปิดงานซ่อม'),
+(UUID(), 'ticket:approve',        'ticket',    'ลงนามอนุมัติ (หัวหน้างาน/หัวหน้ากลุ่มงาน)'),
 (UUID(), 'user:create',           'user',      'สร้างผู้ใช้'),
 (UUID(), 'user:read',             'user',      'ดูรายชื่อผู้ใช้'),
 (UUID(), 'user:update',           'user',      'แก้ไขผู้ใช้'),
@@ -74,7 +75,7 @@ WHERE `code` IN (
   'asset:create','asset:read','asset:update','asset:delete','asset:view_history','asset:loan',
   'qrcode:generate','qrcode:print',
   'ticket:create','ticket:read','ticket:receive','ticket:assign','ticket:update_status',
-  'ticket:upload_attachment','ticket:cancel','ticket:close',
+  'ticket:upload_attachment','ticket:cancel','ticket:close','ticket:approve',
   'user:create','user:read','user:update','user:delete','user:reset_password',
   'department:manage','report:view','report:export',
   'document:print','document:generate'
@@ -85,7 +86,7 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_it_officer, `id` FROM `permissions`
 WHERE `code` IN (
   'dashboard:view','asset:read','asset:loan','qrcode:generate',
-  'ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment',
+  'ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment','ticket:approve',
   'document:print','document:generate'
 );
 

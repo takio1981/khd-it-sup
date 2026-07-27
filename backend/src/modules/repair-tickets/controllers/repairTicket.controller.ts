@@ -5,6 +5,7 @@ import type {
   CancelTicketDto,
   CommentTicketDto,
   CreateTicketDto,
+  InspectionDto,
   ListTicketsQueryDto,
   RepairSummaryDto,
   TransitionTicketDto,
@@ -71,6 +72,21 @@ export const commentOnTicket = asyncHandler(async (req: Request, res: Response) 
 
 export const updateRepairSummary = asyncHandler(async (req: Request, res: Response) => {
   const ticket = await repairTicketService.updateRepairSummary(req.params.id, req.body as RepairSummaryDto, contextOf(req));
+  sendSuccess(res, ticket);
+});
+
+export const approveUnitHead = asyncHandler(async (req: Request, res: Response) => {
+  const ticket = await repairTicketService.approveUnitHead(req.params.id, contextOf(req));
+  sendSuccess(res, ticket);
+});
+
+export const recordInspection = asyncHandler(async (req: Request, res: Response) => {
+  const ticket = await repairTicketService.recordInspection(req.params.id, req.body as InspectionDto, contextOf(req));
+  sendSuccess(res, ticket);
+});
+
+export const approveDigitalHealthHead = asyncHandler(async (req: Request, res: Response) => {
+  const ticket = await repairTicketService.approveDigitalHealthHead(req.params.id, contextOf(req));
   sendSuccess(res, ticket);
 });
 

@@ -148,6 +148,9 @@ model User {
   reportedTickets     RepairTicket[]               @relation("TicketReporter")
   assignedTickets     RepairTicket[]               @relation("TicketTechnician")
   repairSummaries     RepairTicket[]               @relation("TicketSummaryBy")
+  unitHeadApprovedTickets          RepairTicket[]  @relation("TicketUnitHeadApprover")
+  inspectedTickets                 RepairTicket[]  @relation("TicketInspectedBy")
+  digitalHealthHeadApprovedTickets RepairTicket[]  @relation("TicketDigitalHealthHeadApprover")
   timelineEvents      RepairTicketTimelineEvent[]
   approvals           Approval[]
   auditLogs           AuditLog[]
@@ -541,11 +544,45 @@ model RepairTicket {
   summaryByUserId   String?      @map("summary_by_user_id") @db.Char(36)
   summaryAt         DateTime?    @map("summary_at")
 
+  // ส่วนที่ 1 ของแบบฟอร์มกระดาษ — ข้อมูลอุปกรณ์/อุปกรณ์เสริมที่ผู้แจ้งซ่อมกรอกตอนแจ้ง
+  equipmentType      String?   @map("equipment_type") @db.VarChar(30)
+  equipmentTypeOther String?   @map("equipment_type_other") @db.VarChar(150)
+  deviceColor        String?   @map("device_color") @db.VarChar(50)
+  hasAdapterCable    Boolean   @default(false) @map("has_adapter_cable")
+  hasVgaCable        Boolean   @default(false) @map("has_vga_cable")
+  hasPowerCable      Boolean   @default(false) @map("has_power_cable")
+  hasOtherAccessory  Boolean   @default(false) @map("has_other_accessory")
+  otherAccessoryNote String?   @map("other_accessory_note") @db.VarChar(255)
+
+  // ส่วนที่ 1 — ลงนามหัวหน้างาน/กลุ่มงานของผู้แจ้งซ่อม (endorsement, ไม่ใช่ workflow gate)
+  unitHeadApprovedByUserId String?   @map("unit_head_approved_by") @db.Char(36)
+  unitHeadApprovedAt       DateTime? @map("unit_head_approved_at")
+
+  // ส่วนที่ 2 ของแบบฟอร์มกระดาษ — ผลการตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที (ก่อนเริ่มซ่อมจริง)
+  inspectedByUserId  String?   @map("inspected_by") @db.Char(36)
+  inspectedAt        DateTime? @map("inspected_at")
+  inspectionOutcome  String?   @map("inspection_outcome") @db.VarChar(20)
+  requestPartsNeeded Boolean   @default(false) @map("request_parts_needed")
+  requestedPart1Name String?   @map("requested_part1_name") @db.VarChar(200)
+  requestedPart1Qty  Int?      @map("requested_part1_qty")
+  requestedPart2Name String?   @map("requested_part2_name") @db.VarChar(200)
+  requestedPart2Qty  Int?      @map("requested_part2_qty")
+  requestedPart3Name String?   @map("requested_part3_name") @db.VarChar(200)
+  requestedPart3Qty  Int?      @map("requested_part3_qty")
+  sendExternalReason String?   @map("send_external_reason") @db.Text
+
+  // ส่วนที่ 2 — ลงนามหัวหน้ากลุ่มงานสุขภาพดิจิทัล (endorsement, ไม่ใช่ workflow gate)
+  digitalHealthHeadApprovedByUserId String?   @map("digital_health_head_approved_by") @db.Char(36)
+  digitalHealthHeadApprovedAt       DateTime? @map("digital_health_head_approved_at")
+
   asset             Asset?                      @relation(fields: [assetId], references: [id], onDelete: SetNull)
   reportedBy        User                        @relation("TicketReporter", fields: [reportedByUserId], references: [id])
   department        Department?                 @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   assignedTechnician User?                       @relation("TicketTechnician", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
   summaryByUser     User?                       @relation("TicketSummaryBy", fields: [summaryByUserId], references: [id], onDelete: SetNull)
+  unitHeadApprovedBy User?                       @relation("TicketUnitHeadApprover", fields: [unitHeadApprovedByUserId], references: [id], onDelete: SetNull)
+  inspectedBy       User?                        @relation("TicketInspectedBy", fields: [inspectedByUserId], references: [id], onDelete: SetNull)
+  digitalHealthHeadApprovedBy User?              @relation("TicketDigitalHealthHeadApprover", fields: [digitalHealthHeadApprovedByUserId], references: [id], onDelete: SetNull)
   workflowInstance  WorkflowInstance?            @relation(fields: [workflowInstanceId], references: [id], onDelete: SetNull)
   attachments       RepairTicketAttachment[]
   timeline          RepairTicketTimelineEvent[]

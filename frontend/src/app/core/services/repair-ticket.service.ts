@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import type { IApiSuccessResponse, IPaginationMeta } from '../models/api-response.model';
 import type {
   ICreateTicketPayload,
+  IInspectionPayload,
   IRepairSummary,
   IRepairTicketDetail,
   IRepairTicketListItem,
@@ -104,6 +105,24 @@ export class RepairTicketService {
   updateRepairSummary(id: string, payload: IRepairSummaryPayload): Observable<IRepairTicketDetail> {
     return this.http
       .patch<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/summary`, payload)
+      .pipe(map((res) => res.data));
+  }
+
+  approveUnitHead(id: string): Observable<IRepairTicketDetail> {
+    return this.http
+      .post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/approve-unit-head`, {})
+      .pipe(map((res) => res.data));
+  }
+
+  recordInspection(id: string, payload: IInspectionPayload): Observable<IRepairTicketDetail> {
+    return this.http
+      .post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/inspection`, payload)
+      .pipe(map((res) => res.data));
+  }
+
+  approveDigitalHealthHead(id: string): Observable<IRepairTicketDetail> {
+    return this.http
+      .post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/approve-digital-health-head`, {})
       .pipe(map((res) => res.data));
   }
 

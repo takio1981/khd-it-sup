@@ -17,10 +17,15 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { TicketPrintPreviewComponent } from '../../../shared/components/ticket-print-preview/ticket-print-preview.component';
 import { AttachmentThumbnailComponent } from '../../../shared/components/attachment-thumbnail/attachment-thumbnail.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
-import { URGENCY_LABEL_TH } from '../../../core/constants/status.const';
-import { CancelTicketDialogComponent, AssignTechnicianDialogComponent, RepairSummaryDialogComponent } from './ticket-dialogs';
+import { EQUIPMENT_TYPE_LABEL_TH, INSPECTION_OUTCOME_LABEL_TH, URGENCY_LABEL_TH } from '../../../core/constants/status.const';
+import {
+  CancelTicketDialogComponent,
+  AssignTechnicianDialogComponent,
+  RepairSummaryDialogComponent,
+  InspectionDialogComponent,
+} from './ticket-dialogs';
 import type { IRepairSummaryPayload } from '../../../core/services/repair-ticket.service';
-import type { IRepairTicketDetail, ITimelineEvent } from '../../../core/models/repair-ticket.model';
+import type { IInspectionPayload, IRepairTicketDetail, ITimelineEvent } from '../../../core/models/repair-ticket.model';
 
 @Component({
   selector: 'khd-ticket-detail',
@@ -63,6 +68,8 @@ export class TicketDetailComponent {
   readonly acting = signal(false);
   readonly commentText = signal('');
   readonly urgencyLabels = URGENCY_LABEL_TH;
+  readonly equipmentTypeLabels = EQUIPMENT_TYPE_LABEL_TH;
+  readonly outcomeLabels = INSPECTION_OUTCOME_LABEL_TH;
 
   readonly availableTransitions = computed(() => {
     const t = this.ticket();
@@ -80,6 +87,10 @@ export class TicketDetailComponent {
 
   readonly canReceive = computed(() => this.ticket()?.status === 'SUBMITTED');
   readonly canClose = computed(() => this.ticket()?.status === 'USER_ACCEPTANCE');
+  readonly canApproveUnitHead = computed(() => !!this.ticket() && !this.ticket()!.unitHeadApprovedAt);
+  readonly canApproveDigitalHealthHead = computed(
+    () => !!this.ticket() && !!this.ticket()!.inspectedAt && !this.ticket()!.digitalHealthHeadApprovedAt,
+  );
 
   constructor() {
     // ใช้ effect() แทนการเรียก load() ตรง ๆ เพราะ withComponentInputBinding() ผูกค่า id
@@ -155,6 +166,27 @@ export class TicketDetailComponent {
   close(): void {
     this.acting.set(true);
     this.repairTicketService.close(this.id()).subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
+  }
+
+  approveUnitHead(): void {
+    this.acting.set(true);
+    this.repairTicketService.approveUnitHead(this.id()).subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
+  }
+
+  openInspectionDialog(): void {
+    const ref = this.dialog.open(InspectionDialogComponent, { width: '480px' });
+    ref.afterClosed().subscribe((payload: IInspectionPayload | undefined) => {
+      if (!payload) return;
+      this.acting.set(true);
+      this.repairTicketService.recordInspection(this.id(), payload).subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
+    });
+  }
+
+  approveDigitalHealthHead(): void {
+    this.acting.set(true);
+    this.repairTicketService
+      .approveDigitalHealthHead(this.id())
+      .subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
   }
 
   openPrintPreview(): void {

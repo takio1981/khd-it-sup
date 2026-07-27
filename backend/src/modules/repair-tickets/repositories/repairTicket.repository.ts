@@ -80,10 +80,15 @@ export class RepairTicketRepository {
             category: { select: { nameTh: true } },
           },
         },
-        reportedBy: { select: { id: true, fullName: true, username: true, email: true } },
+        reportedBy: {
+          select: { id: true, fullName: true, username: true, email: true, position: { select: { nameTh: true } } },
+        },
         department: { select: { id: true, nameTh: true } },
         assignedTechnician: { select: { id: true, fullName: true, username: true, email: true } },
         summaryByUser: { select: { id: true, fullName: true } },
+        unitHeadApprovedBy: { select: { id: true, fullName: true } },
+        inspectedBy: { select: { id: true, fullName: true } },
+        digitalHealthHeadApprovedBy: { select: { id: true, fullName: true } },
         attachments: { orderBy: { uploadedAt: 'desc' } },
         workflowInstance: {
           include: {

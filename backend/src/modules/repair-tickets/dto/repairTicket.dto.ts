@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 const urgencyEnum = z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
+const equipmentTypeEnum = z.enum(['COMPUTER_CASE', 'NOTEBOOK', 'PRINTER', 'SCANNER', 'MONITOR', 'OTHER']);
+const inspectionOutcomeEnum = z.enum(['IN_HOUSE', 'SEND_EXTERNAL', 'REPLACE_NEW']);
 
 export const createTicketSchema = z.object({
   assetId: z.string().uuid().optional(),
@@ -10,6 +12,15 @@ export const createTicketSchema = z.object({
   locationNote: z.string().max(255).optional(),
   contactPhone: z.string().max(30).optional(),
   departmentId: z.string().uuid().optional(),
+  // ส่วนที่ 1 ของแบบฟอร์มกระดาษ — ข้อมูลอุปกรณ์/อุปกรณ์เสริมที่ผู้แจ้งซ่อมกรอกตอนแจ้ง
+  equipmentType: equipmentTypeEnum.optional(),
+  equipmentTypeOther: z.string().max(150).optional(),
+  deviceColor: z.string().max(50).optional(),
+  hasAdapterCable: z.boolean().optional(),
+  hasVgaCable: z.boolean().optional(),
+  hasPowerCable: z.boolean().optional(),
+  hasOtherAccessory: z.boolean().optional(),
+  otherAccessoryNote: z.string().max(255).optional(),
 });
 export type CreateTicketDto = z.infer<typeof createTicketSchema>;
 
@@ -34,6 +45,25 @@ export const transitionTicketSchema = z.object({
   repairSummary: repairSummarySchema.optional(),
 });
 export type TransitionTicketDto = z.infer<typeof transitionTicketSchema>;
+
+/** ส่วนที่ 2 ของแบบฟอร์มกระดาษ — ผลตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที ก่อนเริ่มซ่อมจริง */
+export const inspectionSchema = z
+  .object({
+    inspectionOutcome: inspectionOutcomeEnum,
+    requestPartsNeeded: z.boolean().optional(),
+    requestedPart1Name: z.string().max(200).optional(),
+    requestedPart1Qty: z.coerce.number().int().positive().optional(),
+    requestedPart2Name: z.string().max(200).optional(),
+    requestedPart2Qty: z.coerce.number().int().positive().optional(),
+    requestedPart3Name: z.string().max(200).optional(),
+    requestedPart3Qty: z.coerce.number().int().positive().optional(),
+    sendExternalReason: z.string().max(2000).optional(),
+  })
+  .refine((v) => v.inspectionOutcome !== 'SEND_EXTERNAL' || !!v.sendExternalReason, {
+    message: 'กรุณาระบุเหตุผลที่ส่งซ่อมภายนอก',
+    path: ['sendExternalReason'],
+  });
+export type InspectionDto = z.infer<typeof inspectionSchema>;
 
 export const cancelTicketSchema = z.object({
   reason: z.string().min(1, 'กรุณาระบุเหตุผลการยกเลิก').max(500),

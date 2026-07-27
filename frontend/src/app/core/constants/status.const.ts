@@ -76,3 +76,20 @@ export const URGENCY_COLOR: Record<string, string> = {
   HIGH: '#EA580C',
   CRITICAL: '#EF4444',
 };
+
+export const EQUIPMENT_TYPE_OPTIONS: string[] = ['COMPUTER_CASE', 'NOTEBOOK', 'PRINTER', 'SCANNER', 'MONITOR', 'OTHER'];
+
+export const EQUIPMENT_TYPE_LABEL_TH: Record<string, string> = {
+  COMPUTER_CASE: 'Computer (Case)',
+  NOTEBOOK: 'Notebook',
+  PRINTER: 'Printer',
+  SCANNER: 'Scanner',
+  MONITOR: 'Monitor (จอคอมพิวเตอร์)',
+  OTHER: 'อื่นๆ',
+};
+
+export const INSPECTION_OUTCOME_LABEL_TH: Record<string, string> = {
+  IN_HOUSE: 'ตรวจสอบแล้ว ดำเนินการซ่อมได้',
+  SEND_EXTERNAL: 'ตรวจสอบแล้ว ไม่สามารถซ่อมเองได้ เห็นควรส่งซ่อมภายนอก',
+  REPLACE_NEW: 'ตรวจสอบแล้ว ซ่อมไม่คุ้มค่า เห็นควรซื้อใหม่ทดแทน',
+};

@@ -5,6 +5,7 @@ import {
   cancelTicketSchema,
   commentTicketSchema,
   createTicketSchema,
+  inspectionSchema,
   listTicketsQuerySchema,
   repairSummarySchema,
   ticketIdParamSchema,
@@ -127,6 +128,51 @@ router.patch(
   requirePermission(PERMISSIONS.TICKET_UPDATE_STATUS),
   validateRequest({ params: ticketIdParamSchema, body: repairSummarySchema }),
   ticketController.updateRepairSummary,
+);
+
+/**
+ * @openapi
+ * /repair-tickets/{id}/approve-unit-head:
+ *   post:
+ *     tags: [Repair Tickets]
+ *     summary: หัวหน้างาน/กลุ่มงานของผู้แจ้งซ่อมลงนามรับทราบคำขอ (ส่วนที่ 1 ของแบบฟอร์ม, endorsement เท่านั้น)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post(
+  '/:id/approve-unit-head',
+  requirePermission(PERMISSIONS.TICKET_APPROVE),
+  validateRequest({ params: ticketIdParamSchema }),
+  ticketController.approveUnitHead,
+);
+
+/**
+ * @openapi
+ * /repair-tickets/{id}/inspection:
+ *   post:
+ *     tags: [Repair Tickets]
+ *     summary: บันทึกผลตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที (ส่วนที่ 2 ของแบบฟอร์ม — ก่อนเริ่มซ่อมจริง)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post(
+  '/:id/inspection',
+  requirePermission(PERMISSIONS.TICKET_UPDATE_STATUS),
+  validateRequest({ params: ticketIdParamSchema, body: inspectionSchema }),
+  ticketController.recordInspection,
+);
+
+/**
+ * @openapi
+ * /repair-tickets/{id}/approve-digital-health-head:
+ *   post:
+ *     tags: [Repair Tickets]
+ *     summary: หัวหน้ากลุ่มงานสุขภาพดิจิทัลลงนามรับรองผลตรวจสอบ (ส่วนที่ 2 ของแบบฟอร์ม, endorsement เท่านั้น)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post(
+  '/:id/approve-digital-health-head',
+  requirePermission(PERMISSIONS.TICKET_APPROVE),
+  validateRequest({ params: ticketIdParamSchema }),
+  ticketController.approveDigitalHealthHead,
 );
 
 /**

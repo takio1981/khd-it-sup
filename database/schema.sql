@@ -423,6 +423,38 @@ CREATE TABLE `repair_tickets` (
   `recommendation`         TEXT         NULL COMMENT 'สรุปผลการซ่อมจากช่าง: ข้อเสนอแนะ/คำแนะนำป้องกัน',
   `summary_by_user_id`     CHAR(36)     NULL COMMENT 'ช่างผู้บันทึกสรุปผลการซ่อม',
   `summary_at`             DATETIME(3)  NULL,
+
+  -- ส่วนที่ 1 ของแบบฟอร์มกระดาษ: ข้อมูลอุปกรณ์/อุปกรณ์เสริมที่ผู้แจ้งซ่อมกรอกตอนแจ้ง
+  `equipment_type`       VARCHAR(30)  NULL COMMENT 'COMPUTER_CASE|NOTEBOOK|PRINTER|SCANNER|MONITOR|OTHER',
+  `equipment_type_other` VARCHAR(150) NULL,
+  `device_color`         VARCHAR(50)  NULL,
+  `has_adapter_cable`    TINYINT(1)   NOT NULL DEFAULT 0,
+  `has_vga_cable`        TINYINT(1)   NOT NULL DEFAULT 0,
+  `has_power_cable`      TINYINT(1)   NOT NULL DEFAULT 0,
+  `has_other_accessory`  TINYINT(1)   NOT NULL DEFAULT 0,
+  `other_accessory_note` VARCHAR(255) NULL,
+
+  -- ส่วนที่ 1: ลงนามหัวหน้างาน/กลุ่มงานของผู้แจ้งซ่อม (endorsement เท่านั้น ไม่ใช่ workflow gate)
+  `unit_head_approved_by` CHAR(36)    NULL,
+  `unit_head_approved_at` DATETIME(3) NULL,
+
+  -- ส่วนที่ 2 ของแบบฟอร์มกระดาษ: ผลตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที (ก่อนเริ่มซ่อมจริง)
+  `inspected_by`          CHAR(36)     NULL,
+  `inspected_at`          DATETIME(3)  NULL,
+  `inspection_outcome`    VARCHAR(20)  NULL COMMENT 'IN_HOUSE|SEND_EXTERNAL|REPLACE_NEW',
+  `request_parts_needed`  TINYINT(1)   NOT NULL DEFAULT 0,
+  `requested_part1_name`  VARCHAR(200) NULL,
+  `requested_part1_qty`   INT          NULL,
+  `requested_part2_name`  VARCHAR(200) NULL,
+  `requested_part2_qty`   INT          NULL,
+  `requested_part3_name`  VARCHAR(200) NULL,
+  `requested_part3_qty`   INT          NULL,
+  `send_external_reason`  TEXT         NULL,
+
+  -- ส่วนที่ 2: ลงนามหัวหน้ากลุ่มงานสุขภาพดิจิทัล (endorsement เท่านั้น ไม่ใช่ workflow gate)
+  `digital_health_head_approved_by` CHAR(36)    NULL,
+  `digital_health_head_approved_at` DATETIME(3) NULL,
+
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_repair_tickets_number` (`ticket_number`),
   KEY `idx_repair_tickets_asset` (`asset_id`),
@@ -435,7 +467,10 @@ CREATE TABLE `repair_tickets` (
   CONSTRAINT `fk_repair_tickets_department` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_repair_tickets_technician` FOREIGN KEY (`assigned_technician_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_repair_tickets_workflow_instance` FOREIGN KEY (`workflow_instance_id`) REFERENCES `workflow_instances` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_repair_tickets_summary_by` FOREIGN KEY (`summary_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_repair_tickets_summary_by` FOREIGN KEY (`summary_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_repair_tickets_unit_head` FOREIGN KEY (`unit_head_approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_repair_tickets_inspected_by` FOREIGN KEY (`inspected_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_repair_tickets_dh_head` FOREIGN KEY (`digital_health_head_approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `repair_ticket_attachments` (
