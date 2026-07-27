@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>คืนครุภัณฑ์</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="!flex !flex-col !gap-1">
+    <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">
+      ยืนยันการคืนครุภัณฑ์ <strong>{{ data.loan.asset.assetNumber }}</strong> จาก <strong>{{ data.loan.borrower.fullName }}</strong> ใช่หรือไม่?
+    </p>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>สภาพเครื่องตอนคืน</mat-label>
+      <mat-select formControlName="conditionOnReturn">
+        @for (o of conditionOptions; track o) {
+          <mat-option [value]="o">{{ o }}</mat-option>
+        }
+        <mat-option [value]="otherOption">{{ otherOption }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    @if (form.value.conditionOnReturn === otherOption) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>ระบุสภาพเครื่องเพิ่มเติม</mat-label>
+        <input matInput formControlName="conditionOnReturnOther" />
+      </mat-form-field>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>ยกเลิก</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+      @if (saving()) {
+        <mat-spinner diameter="18" class="!inline-block !mr-2" />
+      }
+      ยืนยันคืนครุภัณฑ์
+    </button>
+  </mat-dialog-actions>
+</form>

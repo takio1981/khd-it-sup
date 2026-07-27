@@ -82,7 +82,7 @@ export class DashboardComponent {
   readonly notifFailed = signal(0);
   readonly notifByChannel = signal<{ channel: NotificationChannel; count: number }[]>([]);
 
-  // --- ยืม-คืนอุปกรณ์ ---
+  // --- ยืมครุภัณฑ์-อุปกรณ์ ---
   readonly loanStats = signal<IAssetLoanStats | null>(null);
   readonly loanChartData = signal<IAssetLoanChartData | null>(null);
 

@@ -13,6 +13,8 @@ const BOOL_KEYS = {
   notifyStatusChange: 'notification.event.status_change',
   notifyComplete: 'notification.event.complete',
   notifyCancel: 'notification.event.cancel',
+  notifyAssetBorrowed: 'notification.event.asset_borrowed',
+  notifyAssetReturned: 'notification.event.asset_returned',
 } as const;
 type BoolKey = keyof typeof BOOL_KEYS;
 
@@ -25,6 +27,8 @@ const BOOL_DEFAULTS: Record<BoolKey, boolean> = {
   notifyStatusChange: true,
   notifyComplete: true,
   notifyCancel: true,
+  notifyAssetBorrowed: true,
+  notifyAssetReturned: true,
 };
 
 const TELEGRAM_CHAT_ID_KEY = 'notification.telegram.chat_id';

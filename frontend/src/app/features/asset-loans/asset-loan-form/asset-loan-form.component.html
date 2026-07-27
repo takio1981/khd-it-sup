@@ -29,13 +29,35 @@
 
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>วัตถุประสงค์/เหตุผลที่ยืม</mat-label>
-      <textarea matInput formControlName="purpose" rows="2"></textarea>
+      <mat-select formControlName="purpose">
+        @for (o of purposeOptions; track o) {
+          <mat-option [value]="o">{{ o }}</mat-option>
+        }
+        <mat-option [value]="otherOption">{{ otherOption }}</mat-option>
+      </mat-select>
     </mat-form-field>
+    @if (form.value.purpose === otherOption) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>ระบุวัตถุประสงค์เพิ่มเติม</mat-label>
+        <input matInput formControlName="purposeOther" />
+      </mat-form-field>
+    }
 
     <mat-form-field appearance="outline" class="w-full">
-      <mat-label>สภาพเครื่องตอนยืม (ถ้ามี)</mat-label>
-      <textarea matInput formControlName="conditionOnBorrow" rows="2"></textarea>
+      <mat-label>สภาพเครื่องตอนยืม</mat-label>
+      <mat-select formControlName="conditionOnBorrow">
+        @for (o of conditionOptions; track o) {
+          <mat-option [value]="o">{{ o }}</mat-option>
+        }
+        <mat-option [value]="otherOption">{{ otherOption }}</mat-option>
+      </mat-select>
     </mat-form-field>
+    @if (form.value.conditionOnBorrow === otherOption) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>ระบุสภาพเครื่องเพิ่มเติม</mat-label>
+        <input matInput formControlName="conditionOnBorrowOther" />
+      </mat-form-field>
+    }
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">

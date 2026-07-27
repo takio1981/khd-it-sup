@@ -13,5 +13,7 @@ export const updateNotificationSettingsSchema = z.object({
   notifyStatusChange: z.boolean().optional(),
   notifyComplete: z.boolean().optional(),
   notifyCancel: z.boolean().optional(),
+  notifyAssetBorrowed: z.boolean().optional(),
+  notifyAssetReturned: z.boolean().optional(),
 });
 export type UpdateNotificationSettingsDto = z.infer<typeof updateNotificationSettingsSchema>;

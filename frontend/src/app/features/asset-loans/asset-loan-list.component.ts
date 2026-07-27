@@ -11,8 +11,8 @@ import { DatePipe } from '@angular/common';
 import { AssetLoanService } from '../../core/services/asset-loan.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
-import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { AssetLoanFormComponent } from './asset-loan-form/asset-loan-form.component';
+import { AssetLoanReturnFormComponent } from './asset-loan-return-form/asset-loan-return-form.component';
 import type { IAssetLoan, AssetLoanStatus } from '../../core/models/asset-loan.model';
 
 const STATUS_LABEL_TH: Record<string, string> = {
@@ -104,17 +104,7 @@ export class AssetLoanListComponent {
   }
 
   returnLoan(loan: IAssetLoan): void {
-    const ref = this.dialog.open(ConfirmDialogComponent, {
-      width: '420px',
-      data: {
-        title: 'คืนครุภัณฑ์',
-        message: `ยืนยันการคืนครุภัณฑ์ ${loan.asset.assetNumber} จาก ${loan.borrower.fullName} ใช่หรือไม่?`,
-      },
-    });
-    ref.afterClosed().subscribe((confirmed) => {
-      if (confirmed) {
-        this.assetLoanService.returnLoan(loan.id).subscribe(() => this.fetch());
-      }
-    });
+    const ref = this.dialog.open(AssetLoanReturnFormComponent, { width: '420px', data: { loan } });
+    ref.afterClosed().subscribe((result) => result && this.fetch());
   }
 }

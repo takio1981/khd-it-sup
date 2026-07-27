@@ -153,6 +153,30 @@
       </div>
     </div>
 
+    <div class="khd-card">
+      <div class="flex items-center gap-2 mb-1">
+        <khd-icon name="arrow-path" [size]="18" class="text-teal-500" />
+        <h2 class="text-sm font-medium">แจ้งเตือนยืม-คืนครุภัณฑ์-อุปกรณ์</h2>
+      </div>
+      <p class="text-xs text-neutral-500 mb-4">แจ้งผู้ยืมทางอีเมล และแจ้งเข้าช่องทาง Telegram/LINE ที่ตั้งค่าไว้ (มีผลกับทุกช่องทางที่เปิดใช้งานด้านบน)</p>
+
+      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
+        <div>
+          <p class="text-sm font-medium">มีการยืมครุภัณฑ์-อุปกรณ์</p>
+          <p class="text-xs text-neutral-500">แจ้งผู้ยืมเมื่อบันทึกการยืมสำเร็จ</p>
+        </div>
+        <mat-slide-toggle [checked]="s.notifyAssetBorrowed" [disabled]="!canManage() || saving()" (change)="toggle('notifyAssetBorrowed')" />
+      </div>
+
+      <div class="flex items-center justify-between py-2">
+        <div>
+          <p class="text-sm font-medium">มีการคืนครุภัณฑ์-อุปกรณ์</p>
+          <p class="text-xs text-neutral-500">แจ้งผู้ยืมเมื่อบันทึกการคืนสำเร็จ</p>
+        </div>
+        <mat-slide-toggle [checked]="s.notifyAssetReturned" [disabled]="!canManage() || saving()" (change)="toggle('notifyAssetReturned')" />
+      </div>
+    </div>
+
     @if (!canManage()) {
       <p class="text-xs text-neutral-400">คุณมีสิทธิ์ดูการตั้งค่าเท่านั้น ไม่สามารถแก้ไขได้</p>
     }

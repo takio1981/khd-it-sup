@@ -6,6 +6,8 @@ import type { CreateAssetLoanDto, ListAssetLoansQueryDto, ReturnAssetLoanDto } f
 import { BadRequestError, ConflictError, NotFoundError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
+import { notificationService, type AssetLoanNotificationEvent } from '@modules/notifications/services/notification.service';
+import { logger } from '@infrastructure/logger/logger';
 import type { IRequestContext } from '@common/interfaces';
 
 export type AssetLoanStatus = 'BORROWED' | 'OVERDUE' | 'RETURNED';
@@ -85,6 +87,8 @@ export class AssetLoanService {
       ctx,
     );
 
+    await this.notifySafe('BORROWED', loan);
+
     return withStatus(loan);
   }
 
@@ -106,6 +110,20 @@ export class AssetLoanService {
       ctx,
     );
 
+    await this.notifySafe('RETURNED', loan);
+
     return withStatus(loan);
+  }
+
+  /** ห่อการแจ้งเตือน (Email/Telegram/LINE) ไม่ให้ error จากช่องทางแจ้งเตือนไปกระทบ flow หลักของการยืม-คืน */
+  private async notifySafe(
+    event: AssetLoanNotificationEvent,
+    loan: Parameters<typeof notificationService.notifyAssetLoanEvent>[1],
+  ): Promise<void> {
+    try {
+      await notificationService.notifyAssetLoanEvent(event, loan);
+    } catch (err) {
+      logger.error(`[asset-loan] แจ้งเตือน ${event} ล้มเหลว: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 }

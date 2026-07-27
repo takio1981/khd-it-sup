@@ -2,6 +2,8 @@ import { NotificationRepository } from '@modules/notifications/repositories/noti
 import { buildTicketEmailHtml } from '@modules/notifications/templates/ticketEmail.template';
 import { buildPasswordResetEmailHtml } from '@modules/notifications/templates/passwordResetEmail.template';
 import { buildTicketMessageText } from '@modules/notifications/templates/ticketMessage.template';
+import { buildAssetLoanEmailHtml } from '@modules/notifications/templates/assetLoanEmail.template';
+import { buildAssetLoanMessageText } from '@modules/notifications/templates/assetLoanMessage.template';
 import { sendMail } from '@infrastructure/mailer/mailer';
 import { sendTelegramMessage } from '@infrastructure/telegram/telegram.client';
 import { sendLinePush } from '@infrastructure/line/line.client';
@@ -40,6 +42,28 @@ interface ITicketForNotification {
   reportedBy: { id: string; fullName: string; email?: string | null } | null;
   assignedTechnician?: { id: string; fullName: string; email?: string | null } | null;
   asset: { assetNumber: string; model: string | null; brand: string | null } | null;
+}
+
+export type AssetLoanNotificationEvent = 'BORROWED' | 'RETURNED';
+
+const ASSET_LOAN_EVENT_SETTING_KEY: Record<AssetLoanNotificationEvent, 'notifyAssetBorrowed' | 'notifyAssetReturned'> = {
+  BORROWED: 'notifyAssetBorrowed',
+  RETURNED: 'notifyAssetReturned',
+};
+
+const ASSET_LOAN_EVENT_LABEL_TH: Record<AssetLoanNotificationEvent, string> = {
+  BORROWED: 'มีการยืมครุภัณฑ์-อุปกรณ์',
+  RETURNED: 'มีการคืนครุภัณฑ์-อุปกรณ์',
+};
+
+interface IAssetLoanForNotification {
+  id: string;
+  asset: { assetNumber: string; brand: string | null; model: string | null };
+  borrower: { fullName: string; email: string };
+  borrowDate: Date;
+  expectedReturnDate: Date | null;
+  actualReturnDate: Date | null;
+  purpose: string | null;
 }
 
 /**
@@ -116,6 +140,46 @@ export class NotificationService {
       } catch {
         // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
       }
+    }
+  }
+
+  /** เรียกจาก AssetLoanService หลังบันทึกยืม/คืนสำเร็จเสมอ (ไม่ block flow หลักถ้าแจ้งเตือนล้มเหลว) */
+  async notifyAssetLoanEvent(event: AssetLoanNotificationEvent, loan: IAssetLoanForNotification): Promise<void> {
+    const settings = await systemSettingService.getNotificationSettings();
+    if (!settings[ASSET_LOAN_EVENT_SETTING_KEY[event]]) return;
+
+    const assetLabel = `${loan.asset.assetNumber} — ${loan.asset.brand ?? ''} ${loan.asset.model ?? ''}`.trim();
+    const actionLabel = ASSET_LOAN_EVENT_LABEL_TH[event];
+    const detailUrl = `${env.FRONTEND_BASE_URL}/asset-loans`;
+
+    if (settings.emailEnabled && loan.borrower.email) {
+      const html = buildAssetLoanEmailHtml({
+        assetLabel,
+        borrowerName: loan.borrower.fullName,
+        actionLabel,
+        borrowDate: loan.borrowDate,
+        expectedReturnDate: loan.expectedReturnDate,
+        actualReturnDate: loan.actualReturnDate,
+        purpose: loan.purpose,
+        detailUrl,
+      });
+      const subject = `[ยืมครุภัณฑ์-อุปกรณ์] ${actionLabel}`;
+      await this.sendEmail(loan.borrower.email, subject, html, 'AssetLoan', loan.id);
+    }
+
+    if (settings.telegramEnabled || settings.lineEnabled) {
+      const text = buildAssetLoanMessageText({
+        assetLabel,
+        borrowerName: loan.borrower.fullName,
+        actionLabel,
+        borrowDate: loan.borrowDate,
+        expectedReturnDate: loan.expectedReturnDate,
+        actualReturnDate: loan.actualReturnDate,
+        purpose: loan.purpose,
+        detailUrl,
+      });
+      if (settings.telegramEnabled) await this.sendTelegram(text, 'AssetLoan', loan.id);
+      if (settings.lineEnabled) await this.sendLine(text, 'AssetLoan', loan.id);
     }
   }
 

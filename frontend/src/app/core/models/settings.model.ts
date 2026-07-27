@@ -11,6 +11,8 @@ export interface INotificationSettings {
   notifyStatusChange: boolean;
   notifyComplete: boolean;
   notifyCancel: boolean;
+  notifyAssetBorrowed: boolean;
+  notifyAssetReturned: boolean;
 }
 
 export interface IUpdateNotificationSettingsPayload {
@@ -26,4 +28,6 @@ export interface IUpdateNotificationSettingsPayload {
   notifyStatusChange?: boolean;
   notifyComplete?: boolean;
   notifyCancel?: boolean;
+  notifyAssetBorrowed?: boolean;
+  notifyAssetReturned?: boolean;
 }

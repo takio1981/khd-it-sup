@@ -3,7 +3,7 @@ import { prisma } from '@infrastructure/database/prisma';
 
 const loanInclude = {
   asset: { select: { id: true, assetNumber: true, brand: true, model: true, category: { select: { nameTh: true } } } },
-  borrower: { select: { id: true, fullName: true } },
+  borrower: { select: { id: true, fullName: true, email: true } },
   recorder: { select: { id: true, fullName: true } },
   returner: { select: { id: true, fullName: true } },
 } satisfies Prisma.AssetLoanInclude;

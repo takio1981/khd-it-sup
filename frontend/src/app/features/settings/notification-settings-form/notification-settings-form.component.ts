@@ -18,7 +18,9 @@ type ToggleKey =
   | 'notifyAssign'
   | 'notifyStatusChange'
   | 'notifyComplete'
-  | 'notifyCancel';
+  | 'notifyCancel'
+  | 'notifyAssetBorrowed'
+  | 'notifyAssetReturned';
 
 @Component({
   selector: 'khd-notification-settings-form',

@@ -9,6 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AssetLoanService } from '../../../core/services/asset-loan.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { UserService } from '../../../core/services/user.service';
+import { LOAN_CONDITION_OPTIONS, LOAN_PURPOSE_OPTIONS, OTHER_OPTION } from '../asset-loan.const';
 import type { IAsset } from '../../../core/models/asset.model';
 import type { IUserListItem } from '../../../core/models/user.model';
 
@@ -42,15 +43,20 @@ export class AssetLoanFormComponent {
   readonly saving = signal(false);
   readonly assets = signal<IAsset[]>([]);
   readonly users = signal<IUserListItem[]>([]);
-
   readonly availableAssets = signal<IAsset[]>([]);
+
+  readonly purposeOptions = LOAN_PURPOSE_OPTIONS;
+  readonly conditionOptions = LOAN_CONDITION_OPTIONS;
+  readonly otherOption = OTHER_OPTION;
 
   readonly form = this.fb.nonNullable.group({
     assetId: ['', Validators.required],
     borrowerId: ['', Validators.required],
     expectedReturnDate: [''],
     purpose: [''],
+    purposeOther: [''],
     conditionOnBorrow: [''],
+    conditionOnBorrowOther: [''],
   });
 
   constructor() {
@@ -65,12 +71,15 @@ export class AssetLoanFormComponent {
     if (this.form.invalid || this.saving()) return;
     this.saving.set(true);
 
-    const { assetId, borrowerId, expectedReturnDate, purpose, conditionOnBorrow } = this.form.getRawValue();
+    const raw = this.form.getRawValue();
+    const purpose = raw.purpose === this.otherOption ? raw.purposeOther : raw.purpose;
+    const conditionOnBorrow = raw.conditionOnBorrow === this.otherOption ? raw.conditionOnBorrowOther : raw.conditionOnBorrow;
+
     this.assetLoanService
       .create({
-        assetId,
-        borrowerId,
-        expectedReturnDate: expectedReturnDate || undefined,
+        assetId: raw.assetId,
+        borrowerId: raw.borrowerId,
+        expectedReturnDate: raw.expectedReturnDate || undefined,
         purpose: purpose || undefined,
         conditionOnBorrow: conditionOnBorrow || undefined,
       })
