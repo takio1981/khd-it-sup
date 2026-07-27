@@ -9,6 +9,7 @@ import type {
   IAssetLoanStats,
   AssetLoanStatus,
   ICreateAssetLoanPayload,
+  IUpdateAssetLoanPayload,
 } from '../models/asset-loan.model';
 
 export interface IListAssetLoansParams {
@@ -43,8 +44,20 @@ export class AssetLoanService {
     return this.http.get<IApiSuccessResponse<IAssetLoanChartData>>(`${this.base}/chart`).pipe(map((res) => res.data));
   }
 
+  getById(id: string): Observable<IAssetLoan> {
+    return this.http.get<IApiSuccessResponse<IAssetLoan>>(`${this.base}/${id}`).pipe(map((res) => res.data));
+  }
+
   create(payload: ICreateAssetLoanPayload): Observable<IAssetLoan> {
     return this.http.post<IApiSuccessResponse<IAssetLoan>>(this.base, payload).pipe(map((res) => res.data));
+  }
+
+  update(id: string, payload: IUpdateAssetLoanPayload): Observable<IAssetLoan> {
+    return this.http.patch<IApiSuccessResponse<IAssetLoan>>(`${this.base}/${id}`, payload).pipe(map((res) => res.data));
+  }
+
+  remove(id: string): Observable<void> {
+    return this.http.delete<IApiSuccessResponse<unknown>>(`${this.base}/${id}`).pipe(map(() => undefined));
   }
 
   returnLoan(id: string, conditionOnReturn?: string): Observable<IAssetLoan> {

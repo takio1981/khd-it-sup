@@ -6,6 +6,8 @@ export interface IAssetLoanMessageData {
   expectedReturnDate: Date | null;
   actualReturnDate: Date | null;
   purpose: string | null;
+  conditionOnBorrow: string | null;
+  conditionOnReturn: string | null;
   detailUrl: string;
 }
 
@@ -24,6 +26,8 @@ export function buildAssetLoanMessageText(data: IAssetLoanMessageData): string {
   if (data.expectedReturnDate) lines.push(`กำหนดคืน: ${formatThaiDate(data.expectedReturnDate)}`);
   if (data.actualReturnDate) lines.push(`วันที่คืน: ${formatThaiDate(data.actualReturnDate)}`);
   if (data.purpose) lines.push(`วัตถุประสงค์: ${data.purpose}`);
+  if (data.conditionOnBorrow) lines.push(`สภาพเครื่องตอนยืม: ${data.conditionOnBorrow}`);
+  if (data.conditionOnReturn) lines.push(`สภาพเครื่องตอนคืน: ${data.conditionOnReturn}`);
   lines.push('');
   lines.push(`ดูรายละเอียด: ${data.detailUrl}`);
   return lines.join('\n');

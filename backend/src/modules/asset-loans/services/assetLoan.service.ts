@@ -2,7 +2,12 @@ import { randomUUID } from 'node:crypto';
 import type { AssetLoan } from '@prisma/client';
 import { prisma } from '@infrastructure/database/prisma';
 import { AssetLoanRepository, type IAssetLoanFilter } from '@modules/asset-loans/repositories/assetLoan.repository';
-import type { CreateAssetLoanDto, ListAssetLoansQueryDto, ReturnAssetLoanDto } from '@modules/asset-loans/dto/assetLoan.dto';
+import type {
+  CreateAssetLoanDto,
+  ListAssetLoansQueryDto,
+  ReturnAssetLoanDto,
+  UpdateAssetLoanDto,
+} from '@modules/asset-loans/dto/assetLoan.dto';
 import { BadRequestError, ConflictError, NotFoundError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
@@ -34,6 +39,12 @@ export class AssetLoanService {
 
   async getStats() {
     return this.repo.getStats();
+  }
+
+  async getById(id: string) {
+    const loan = await this.repo.findById(id);
+    if (!loan) throw new NotFoundError('ไม่พบรายการยืม');
+    return withStatus(loan);
   }
 
   async getChartData() {
@@ -113,6 +124,52 @@ export class AssetLoanService {
     await this.notifySafe('RETURNED', loan);
 
     return withStatus(loan);
+  }
+
+  async update(id: string, dto: UpdateAssetLoanDto, ctx: IRequestContext) {
+    const existing = await this.repo.findById(id);
+    if (!existing) throw new NotFoundError('ไม่พบรายการยืม');
+
+    if (dto.assetId && dto.assetId !== existing.assetId) {
+      const asset = await prisma.asset.findFirst({ where: { id: dto.assetId, deletedAt: null } });
+      if (!asset) throw new NotFoundError('ไม่พบครุภัณฑ์ที่ระบุ');
+
+      const activeLoan = await this.repo.findActiveByAsset(dto.assetId);
+      if (activeLoan && activeLoan.id !== id) throw new ConflictError('ครุภัณฑ์นี้ถูกยืมอยู่แล้ว ยังไม่ได้คืน');
+    }
+
+    if (dto.borrowerId) {
+      const borrower = await prisma.user.findFirst({ where: { id: dto.borrowerId, deletedAt: null } });
+      if (!borrower) throw new NotFoundError('ไม่พบผู้ยืมที่ระบุ');
+    }
+
+    const loan = await this.repo.update(id, dto);
+
+    await auditLogService.record(
+      { action: 'UPDATE', module: 'asset', entityType: 'AssetLoan', entityId: id, beforeData: existing, afterData: loan },
+      ctx,
+    );
+
+    return withStatus(loan);
+  }
+
+  async remove(id: string, ctx: IRequestContext) {
+    const existing = await this.repo.findById(id);
+    if (!existing) throw new NotFoundError('ไม่พบรายการยืม');
+
+    await this.repo.delete(id);
+
+    await auditLogService.record(
+      {
+        action: 'DELETE',
+        module: 'asset',
+        entityType: 'AssetLoan',
+        entityId: id,
+        description: `ลบรายการยืมครุภัณฑ์ ${existing.asset.assetNumber} (ผู้ยืม ${existing.borrower.fullName})`,
+        beforeData: existing,
+      },
+      ctx,
+    );
   }
 
   /** ห่อการแจ้งเตือน (Email/Telegram/LINE) ไม่ให้ error จากช่องทางแจ้งเตือนไปกระทบ flow หลักของการยืม-คืน */

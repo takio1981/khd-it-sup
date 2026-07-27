@@ -5,6 +5,7 @@ import {
   createAssetLoanSchema,
   listAssetLoansQuerySchema,
   returnAssetLoanSchema,
+  updateAssetLoanSchema,
 } from '@modules/asset-loans/dto/assetLoan.dto';
 import { authenticate, requirePermission, validateRequest } from '@common/middleware';
 import { PERMISSIONS } from '@common/constants/permissions.const';
@@ -45,6 +46,16 @@ router.get('/chart', assetLoanController.getAssetLoanChartData);
 
 /**
  * @openapi
+ * /asset-loans/{id}:
+ *   get:
+ *     tags: [AssetLoans]
+ *     summary: ดูรายละเอียดรายการยืม-คืน
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/:id', validateRequest({ params: assetLoanIdParamSchema }), assetLoanController.getAssetLoan);
+
+/**
+ * @openapi
  * /asset-loans:
  *   post:
  *     tags: [AssetLoans]
@@ -52,6 +63,30 @@ router.get('/chart', assetLoanController.getAssetLoanChartData);
  *     security: [{ bearerAuth: [] }]
  */
 router.post('/', validateRequest({ body: createAssetLoanSchema }), assetLoanController.createAssetLoan);
+
+/**
+ * @openapi
+ * /asset-loans/{id}:
+ *   patch:
+ *     tags: [AssetLoans]
+ *     summary: แก้ไขรายการยืม-คืน
+ *     security: [{ bearerAuth: [] }]
+ */
+router.patch(
+  '/:id',
+  validateRequest({ params: assetLoanIdParamSchema, body: updateAssetLoanSchema }),
+  assetLoanController.updateAssetLoan,
+);
+
+/**
+ * @openapi
+ * /asset-loans/{id}:
+ *   delete:
+ *     tags: [AssetLoans]
+ *     summary: ลบรายการยืม-คืน
+ *     security: [{ bearerAuth: [] }]
+ */
+router.delete('/:id', validateRequest({ params: assetLoanIdParamSchema }), assetLoanController.deleteAssetLoan);
 
 /**
  * @openapi

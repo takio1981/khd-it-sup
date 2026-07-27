@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>ยืมครุภัณฑ์</h2>
+<h2 mat-dialog-title>{{ isEdit ? 'แก้ไขรายการยืมครุภัณฑ์' : 'ยืมครุภัณฑ์' }}</h2>
 
 <form [formGroup]="form" (ngSubmit)="submit()">
   <mat-dialog-content class="!flex !flex-col !gap-1">
@@ -58,6 +58,24 @@
         <input matInput formControlName="conditionOnBorrowOther" />
       </mat-form-field>
     }
+
+    @if (showReturnFields) {
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>สภาพเครื่องตอนคืน</mat-label>
+        <mat-select formControlName="conditionOnReturn">
+          @for (o of conditionOptions; track o) {
+            <mat-option [value]="o">{{ o }}</mat-option>
+          }
+          <mat-option [value]="otherOption">{{ otherOption }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      @if (form.value.conditionOnReturn === otherOption) {
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>ระบุสภาพเครื่องเพิ่มเติม</mat-label>
+          <input matInput formControlName="conditionOnReturnOther" />
+        </mat-form-field>
+      }
+    }
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
@@ -66,7 +84,7 @@
       @if (saving()) {
         <mat-spinner diameter="18" class="!inline-block !mr-2" />
       }
-      บันทึกการยืม
+      {{ isEdit ? 'บันทึกการแก้ไข' : 'บันทึกการยืม' }}
     </button>
   </mat-dialog-actions>
 </form>

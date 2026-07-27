@@ -71,6 +71,14 @@ export class AssetLoanRepository {
     });
   }
 
+  async update(id: string, data: Prisma.AssetLoanUncheckedUpdateInput) {
+    return prisma.assetLoan.update({ where: { id }, data, include: loanInclude });
+  }
+
+  async delete(id: string) {
+    await prisma.assetLoan.delete({ where: { id } });
+  }
+
   async getStats() {
     const [total, returned, overdue] = await Promise.all([
       prisma.assetLoan.count(),

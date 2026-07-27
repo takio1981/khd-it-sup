@@ -9,6 +9,11 @@ export const createAssetLoanSchema = z.object({
 });
 export type CreateAssetLoanDto = z.infer<typeof createAssetLoanSchema>;
 
+export const updateAssetLoanSchema = createAssetLoanSchema.partial().extend({
+  conditionOnReturn: z.string().max(500).optional(),
+});
+export type UpdateAssetLoanDto = z.infer<typeof updateAssetLoanSchema>;
+
 export const returnAssetLoanSchema = z.object({
   conditionOnReturn: z.string().max(500).optional(),
 });

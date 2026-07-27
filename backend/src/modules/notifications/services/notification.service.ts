@@ -64,6 +64,8 @@ interface IAssetLoanForNotification {
   expectedReturnDate: Date | null;
   actualReturnDate: Date | null;
   purpose: string | null;
+  conditionOnBorrow: string | null;
+  conditionOnReturn: string | null;
 }
 
 /**
@@ -161,6 +163,8 @@ export class NotificationService {
         expectedReturnDate: loan.expectedReturnDate,
         actualReturnDate: loan.actualReturnDate,
         purpose: loan.purpose,
+        conditionOnBorrow: loan.conditionOnBorrow,
+        conditionOnReturn: loan.conditionOnReturn,
         detailUrl,
       });
       const subject = `[ยืมครุภัณฑ์-อุปกรณ์] ${actionLabel}`;
@@ -176,6 +180,8 @@ export class NotificationService {
         expectedReturnDate: loan.expectedReturnDate,
         actualReturnDate: loan.actualReturnDate,
         purpose: loan.purpose,
+        conditionOnBorrow: loan.conditionOnBorrow,
+        conditionOnReturn: loan.conditionOnReturn,
         detailUrl,
       });
       if (settings.telegramEnabled) await this.sendTelegram(text, 'AssetLoan', loan.id);

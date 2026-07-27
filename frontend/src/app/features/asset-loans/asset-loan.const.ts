@@ -12,3 +12,10 @@ export const LOAN_CONDITION_OPTIONS: string[] = [
 ];
 
 export const OTHER_OPTION = 'อื่นๆ (ระบุเพิ่มเติม)';
+
+/** แยกค่าที่บันทึกไว้แล้วว่าตรงกับตัวเลือกสำเร็จรูปหรือไม่ ถ้าไม่ตรงให้ถือเป็นค่ากำหนดเอง (Other) */
+export function resolveDropdownPrefill(value: string | null | undefined, options: string[]): { select: string; other: string } {
+  if (!value) return { select: '', other: '' };
+  if (options.includes(value)) return { select: value, other: '' };
+  return { select: OTHER_OPTION, other: value };
+}

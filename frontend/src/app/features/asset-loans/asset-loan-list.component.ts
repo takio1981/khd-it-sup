@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { forkJoin, type Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
@@ -6,11 +8,14 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import { AssetLoanService } from '../../core/services/asset-loan.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+
 import { AssetLoanFormComponent } from './asset-loan-form/asset-loan-form.component';
 import { AssetLoanReturnFormComponent } from './asset-loan-return-form/asset-loan-return-form.component';
 import type { IAssetLoan, AssetLoanStatus } from '../../core/models/asset-loan.model';
@@ -40,6 +45,7 @@ const STATUS_COLOR: Record<string, string> = {
     MatSelectModule,
     MatInputModule,
     MatButtonModule,
+    MatMenuModule,
     IconComponent,
     HasPermissionDirective,
   ],
@@ -93,18 +99,43 @@ export class AssetLoanListComponent {
       });
   }
 
+  private fetchBorrowedAssetIds(): Observable<Set<string>> {
+    return forkJoin([
+      this.assetLoanService.list({ page: 1, limit: 500, status: 'BORROWED' }),
+      this.assetLoanService.list({ page: 1, limit: 500, status: 'OVERDUE' }),
+    ]).pipe(map(([borrowed, overdue]) => new Set([...borrowed.items, ...overdue.items].map((l) => l.assetId))));
+  }
+
   openCreateForm(): void {
-    this.assetLoanService.list({ page: 1, limit: 500, status: 'BORROWED' }).subscribe((borrowed) => {
-      this.assetLoanService.list({ page: 1, limit: 500, status: 'OVERDUE' }).subscribe((overdue) => {
-        const borrowedAssetIds = new Set([...borrowed.items, ...overdue.items].map((l) => l.assetId));
-        const ref = this.dialog.open(AssetLoanFormComponent, { width: '480px', data: { borrowedAssetIds } });
-        ref.afterClosed().subscribe((result) => result && this.fetch());
-      });
+    this.fetchBorrowedAssetIds().subscribe((borrowedAssetIds) => {
+      const ref = this.dialog.open(AssetLoanFormComponent, { width: '480px', data: { loan: null, borrowedAssetIds } });
+      ref.afterClosed().subscribe((result) => result && this.fetch());
+    });
+  }
+
+  openEditForm(loan: IAssetLoan): void {
+    this.fetchBorrowedAssetIds().subscribe((borrowedAssetIds) => {
+      const ref = this.dialog.open(AssetLoanFormComponent, { width: '480px', data: { loan, borrowedAssetIds } });
+      ref.afterClosed().subscribe((result) => result && this.fetch());
     });
   }
 
   returnLoan(loan: IAssetLoan): void {
     const ref = this.dialog.open(AssetLoanReturnFormComponent, { width: '420px', data: { loan } });
     ref.afterClosed().subscribe((result) => result && this.fetch());
+  }
+
+  deleteLoan(loan: IAssetLoan): void {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: {
+        title: 'ลบรายการยืม',
+        message: `ยืนยันการลบรายการยืมครุภัณฑ์ ${loan.asset.assetNumber} ของ ${loan.borrower.fullName} ใช่หรือไม่?`,
+        danger: true,
+      },
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) this.assetLoanService.remove(loan.id).subscribe(() => this.fetch());
+    });
   }
 }

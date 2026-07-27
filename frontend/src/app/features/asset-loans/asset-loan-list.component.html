@@ -65,18 +65,31 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let l">
-          @if (l.status !== 'RETURNED') {
-            <button
-              *khdHasPermission="'asset:loan'"
-              (click)="returnLoan(l)"
-              class="appearance-none inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 text-xs font-medium px-3 py-1 transition-colors"
-            >
-              <khd-icon name="check-circle" [size]="14" />
-              คืนอุปกรณ์
+          <div class="flex items-center gap-2 justify-end">
+            @if (l.status !== 'RETURNED') {
+              <button
+                *khdHasPermission="'asset:loan'"
+                (click)="returnLoan(l)"
+                class="appearance-none inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 text-xs font-medium px-3 py-1 transition-colors"
+              >
+                <khd-icon name="check-circle" [size]="14" />
+                คืนอุปกรณ์
+              </button>
+            } @else {
+              <span class="text-xs text-neutral-400">คืนเมื่อ {{ l.actualReturnDate | date: 'd MMM yyyy' }}</span>
+            }
+            <button mat-icon-button *khdHasPermission="'asset:loan'" [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+              <khd-icon name="chevron-down" [size]="18" />
             </button>
-          } @else {
-            <span class="text-xs text-neutral-400">คืนเมื่อ {{ l.actualReturnDate | date: 'd MMM yyyy' }}</span>
-          }
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="openEditForm(l)">
+                <khd-icon name="pencil-square" [size]="16" class="!mr-2" />แก้ไข
+              </button>
+              <button mat-menu-item (click)="deleteLoan(l)" class="!text-red-600">
+                <khd-icon name="trash" [size]="16" class="!mr-2" />ลบ
+              </button>
+            </mat-menu>
+          </div>
         </td>
       </ng-container>
 

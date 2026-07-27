@@ -27,6 +27,15 @@ export interface ICreateAssetLoanPayload {
   conditionOnBorrow?: string;
 }
 
+export interface IUpdateAssetLoanPayload {
+  assetId?: string;
+  borrowerId?: string;
+  expectedReturnDate?: string;
+  purpose?: string;
+  conditionOnBorrow?: string;
+  conditionOnReturn?: string;
+}
+
 export interface IAssetLoanStats {
   total: number;
   borrowed: number;

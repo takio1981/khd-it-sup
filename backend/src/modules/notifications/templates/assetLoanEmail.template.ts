@@ -6,6 +6,8 @@ export interface IAssetLoanEmailData {
   expectedReturnDate: Date | null;
   actualReturnDate: Date | null;
   purpose: string | null;
+  conditionOnBorrow: string | null;
+  conditionOnReturn: string | null;
   detailUrl: string;
 }
 
@@ -40,6 +42,8 @@ export function buildAssetLoanEmailHtml(data: IAssetLoanEmailData): string {
                 ${data.expectedReturnDate ? `<tr><td style="padding:6px 0;color:#6B7280;font-size:13px;">กำหนดคืน</td><td style="padding:6px 0;color:#111827;font-size:13px;">${formatThaiDate(data.expectedReturnDate)}</td></tr>` : ''}
                 ${data.actualReturnDate ? `<tr><td style="padding:6px 0;color:#6B7280;font-size:13px;">วันที่คืน</td><td style="padding:6px 0;color:#111827;font-size:13px;">${formatThaiDate(data.actualReturnDate)}</td></tr>` : ''}
                 ${data.purpose ? `<tr><td style="padding:6px 0;color:#6B7280;font-size:13px;">วัตถุประสงค์</td><td style="padding:6px 0;color:#111827;font-size:13px;">${escapeHtml(data.purpose)}</td></tr>` : ''}
+                ${data.conditionOnBorrow ? `<tr><td style="padding:6px 0;color:#6B7280;font-size:13px;">สภาพเครื่องตอนยืม</td><td style="padding:6px 0;color:#111827;font-size:13px;">${escapeHtml(data.conditionOnBorrow)}</td></tr>` : ''}
+                ${data.conditionOnReturn ? `<tr><td style="padding:6px 0;color:#6B7280;font-size:13px;">สภาพเครื่องตอนคืน</td><td style="padding:6px 0;color:#111827;font-size:13px;">${escapeHtml(data.conditionOnReturn)}</td></tr>` : ''}
               </table>
 
               <a href="${escapeAttribute(data.detailUrl)}" style="display:inline-block;background-color:#00A86B;color:#FFFFFF;text-decoration:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;">ดูรายการยืม-คืน</a>
