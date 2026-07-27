@@ -23,8 +23,10 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="w-full">
-      <mat-label>กำหนดคืน (ถ้ามี)</mat-label>
-      <input matInput type="date" formControlName="expectedReturnDate" />
+      <mat-label>กำหนดคืน</mat-label>
+      <input matInput [matDatepicker]="expectedReturnPicker" formControlName="expectedReturnDate" readonly (click)="expectedReturnPicker.open()" />
+      <mat-datepicker-toggle matSuffix [for]="expectedReturnPicker" />
+      <mat-datepicker #expectedReturnPicker />
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="w-full">
