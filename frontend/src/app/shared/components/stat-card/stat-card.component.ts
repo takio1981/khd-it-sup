@@ -26,7 +26,7 @@ const SOLID_CLASSES: Record<StatCardColor, string> = {
   template: `
     @if (variant() === 'solid') {
       <div
-        class="relative overflow-hidden rounded-2xl p-5 flex flex-col items-center justify-center text-center gap-0.5 transition-transform hover:-translate-y-0.5 border-0 border-solid border-t-4 border-r-4"
+        class="relative overflow-hidden rounded-2xl px-5 py-3 flex flex-col items-center justify-center text-center gap-0.5 transition-transform hover:-translate-y-0.5 border-0 border-solid border-t-4 border-r-4"
         [class]="solidClasses()"
       >
         <div class="absolute inset-0 flex items-center justify-end opacity-15 pointer-events-none">
