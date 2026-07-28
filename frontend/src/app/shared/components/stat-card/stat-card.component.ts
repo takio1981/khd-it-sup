@@ -4,13 +4,13 @@ import { IconComponent } from '../icon/icon.component';
 export type StatCardColor = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'teal' | 'gray';
 
 const SOLID_CLASSES: Record<StatCardColor, string> = {
-  blue: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
-  green: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
-  amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-  red: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
-  purple: 'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
-  teal: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
-  gray: 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300',
+  blue: 'bg-blue-50 text-blue-700 border-blue-400 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-700',
+  green: 'bg-emerald-50 text-emerald-700 border-emerald-400 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700',
+  amber: 'bg-amber-50 text-amber-700 border-amber-400 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700',
+  red: 'bg-rose-50 text-rose-700 border-rose-400 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-700',
+  purple: 'bg-violet-50 text-violet-700 border-violet-400 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-700',
+  teal: 'bg-teal-50 text-teal-700 border-teal-400 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-700',
+  gray: 'bg-neutral-100 text-neutral-600 border-neutral-400 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-600',
 };
 
 /**
@@ -25,7 +25,10 @@ const SOLID_CLASSES: Record<StatCardColor, string> = {
   imports: [IconComponent],
   template: `
     @if (variant() === 'solid') {
-      <div class="rounded-2xl p-5 flex flex-col items-center justify-center text-center gap-0.5 transition-transform hover:-translate-y-0.5" [class]="solidClasses()">
+      <div
+        class="rounded-2xl p-5 flex flex-col items-center justify-center text-center gap-0.5 transition-transform hover:-translate-y-0.5 border-t-2 border-r-2"
+        [class]="solidClasses()"
+      >
         <p class="text-3xl font-bold leading-tight tabular-nums">{{ value() }}</p>
         <p class="text-sm font-medium">{{ label() }}</p>
       </div>
