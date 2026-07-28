@@ -26,7 +26,7 @@ const SOLID_CLASSES: Record<StatCardColor, string> = {
   template: `
     @if (variant() === 'solid') {
       <div
-        class="rounded-2xl p-5 flex flex-col items-center justify-center text-center gap-0.5 transition-transform hover:-translate-y-0.5 border-t-2 border-r-2"
+        class="rounded-2xl p-5 flex flex-col items-center justify-center text-center gap-0.5 transition-transform hover:-translate-y-0.5 border-solid border-t-2 border-r-2"
         [class]="solidClasses()"
       >
         <p class="text-3xl font-bold leading-tight tabular-nums">{{ value() }}</p>
