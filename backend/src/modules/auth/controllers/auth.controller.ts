@@ -1,6 +1,6 @@
 import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from '@modules/auth/services/auth.service';
-import type { ChangePasswordDto, LoginDto } from '@modules/auth/dto/auth.dto';
+import type { ChangePasswordDto, LoginDto, UpdateNotificationChannelsDto } from '@modules/auth/dto/auth.dto';
 import { asyncHandler } from '@common/utils/asyncHandler';
 import { sendSuccess } from '@common/utils/apiResponse';
 import { UnauthorizedError } from '@common/errors';
@@ -65,4 +65,13 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
   const { currentPassword, newPassword } = req.body as ChangePasswordDto;
   await authService.changePassword(req.user!.id, currentPassword, newPassword);
   sendSuccess(res, { message: 'เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่อีกครั้ง' });
+});
+
+export const getNotificationChannels = asyncHandler(async (req: Request, res: Response) => {
+  sendSuccess(res, await authService.getNotificationChannels(req.user!.id));
+});
+
+export const updateNotificationChannels = asyncHandler(async (req: Request, res: Response) => {
+  const result = await authService.updateNotificationChannels(req.user!.id, req.body as UpdateNotificationChannelsDto);
+  sendSuccess(res, result);
 });

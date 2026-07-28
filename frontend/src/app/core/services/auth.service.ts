@@ -4,7 +4,14 @@ import { Router } from '@angular/router';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { IApiSuccessResponse } from '../models/api-response.model';
-import type { IAuthUser, ILoginRequest, ILoginResponse, Permission } from '../models/auth.model';
+import type {
+  IAuthUser,
+  ILoginRequest,
+  ILoginResponse,
+  INotificationChannels,
+  IUpdateNotificationChannelsPayload,
+  Permission,
+} from '../models/auth.model';
 
 /**
  * AuthService — เก็บ Access Token ใน memory เท่านั้น (ไม่ใช้ localStorage) เพื่อลดความเสี่ยง XSS
@@ -65,6 +72,18 @@ export class AuthService {
     return this.http
       .post<IApiSuccessResponse<unknown>>(`${environment.apiBaseUrl}/auth/change-password`, payload, { withCredentials: true })
       .pipe(map(() => undefined));
+  }
+
+  getNotificationChannels(): Observable<INotificationChannels> {
+    return this.http
+      .get<IApiSuccessResponse<INotificationChannels>>(`${environment.apiBaseUrl}/auth/notification-channels`)
+      .pipe(map((res) => res.data));
+  }
+
+  updateNotificationChannels(payload: IUpdateNotificationChannelsPayload): Observable<INotificationChannels> {
+    return this.http
+      .patch<IApiSuccessResponse<INotificationChannels>>(`${environment.apiBaseUrl}/auth/notification-channels`, payload)
+      .pipe(map((res) => res.data));
   }
 
   logout(): void {

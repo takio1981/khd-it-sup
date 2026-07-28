@@ -22,3 +22,9 @@ export const changePasswordSchema = z
     path: ['confirmPassword'],
   });
 export type ChangePasswordDto = z.infer<typeof changePasswordSchema>;
+
+export const updateNotificationChannelsSchema = z.object({
+  telegramChatId: z.string().trim().max(50).nullable().optional(),
+  lineUserId: z.string().trim().max(50).nullable().optional(),
+});
+export type UpdateNotificationChannelsDto = z.infer<typeof updateNotificationChannelsSchema>;

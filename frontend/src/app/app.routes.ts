@@ -15,6 +15,12 @@ export const routes: Routes = [
       import('./features/auth/change-password/change-password.component').then((m) => m.ChangePasswordComponent),
   },
   {
+    path: 'auth/notification-channels',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/auth/notification-channels/notification-channels.component').then((m) => m.NotificationChannelsComponent),
+  },
+  {
     path: 'qr/scan/:token',
     loadComponent: () => import('./features/qr/qr-scan/qr-scan.component').then((m) => m.QrScanComponent),
   },

@@ -54,3 +54,13 @@ export interface ILoginResponse {
   accessToken: string;
   user: IAuthUser;
 }
+
+export interface INotificationChannels {
+  telegramChatId: string | null;
+  lineUserId: string | null;
+}
+
+export interface IUpdateNotificationChannelsPayload {
+  telegramChatId?: string | null;
+  lineUserId?: string | null;
+}

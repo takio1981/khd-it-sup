@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as authController from '@modules/auth/controllers/auth.controller';
-import { changePasswordSchema, loginSchema } from '@modules/auth/dto/auth.dto';
+import { changePasswordSchema, loginSchema, updateNotificationChannelsSchema } from '@modules/auth/dto/auth.dto';
 import { authenticate, loginRateLimiter, validateRequest } from '@common/middleware';
 
 const router = Router();
@@ -78,6 +78,31 @@ router.post(
   authenticate,
   validateRequest({ body: changePasswordSchema }),
   authController.changePassword,
+);
+
+/**
+ * @openapi
+ * /auth/notification-channels:
+ *   get:
+ *     tags: [Auth]
+ *     summary: ดูช่องทางการแจ้งเตือนส่วนตัว (Telegram/LINE) ของตนเอง
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/notification-channels', authenticate, authController.getNotificationChannels);
+
+/**
+ * @openapi
+ * /auth/notification-channels:
+ *   patch:
+ *     tags: [Auth]
+ *     summary: ตั้งค่าช่องทางการแจ้งเตือนส่วนตัว (Telegram Chat ID / LINE User ID) ของตนเอง
+ *     security: [{ bearerAuth: [] }]
+ */
+router.patch(
+  '/notification-channels',
+  authenticate,
+  validateRequest({ body: updateNotificationChannelsSchema }),
+  authController.updateNotificationChannels,
 );
 
 export default router;

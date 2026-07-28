@@ -88,6 +88,8 @@ CREATE TABLE `users` (
   `phone`            VARCHAR(30)  NULL,
   `avatar_url`       VARCHAR(500) NULL,
   `employee_code`    VARCHAR(50)  NULL,
+  `telegram_chat_id` VARCHAR(50)  NULL COMMENT 'ช่องทางแจ้งเตือน Telegram ส่วนตัวของผู้ใช้ (แยกจากกลุ่มไอทีกลาง)',
+  `line_user_id`     VARCHAR(50)  NULL COMMENT 'ช่องทางแจ้งเตือน LINE ส่วนตัวของผู้ใช้ (แยกจากกลุ่มไอทีกลาง)',
   `role_id`          CHAR(36)     NOT NULL,
   `department_id`    CHAR(36)     NULL,
   `position_id`      CHAR(36)     NULL,

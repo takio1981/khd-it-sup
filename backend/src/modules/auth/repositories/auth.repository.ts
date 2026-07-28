@@ -42,6 +42,17 @@ export class AuthRepository {
     });
   }
 
+  async getNotificationChannels(userId: string): Promise<{ telegramChatId: string | null; lineUserId: string | null } | null> {
+    return prisma.user.findUnique({ where: { id: userId }, select: { telegramChatId: true, lineUserId: true } });
+  }
+
+  async updateNotificationChannels(
+    userId: string,
+    data: { telegramChatId?: string | null; lineUserId?: string | null },
+  ): Promise<{ telegramChatId: string | null; lineUserId: string | null }> {
+    return prisma.user.update({ where: { id: userId }, data, select: { telegramChatId: true, lineUserId: true } });
+  }
+
   async createRefreshToken(data: Prisma.RefreshTokenUncheckedCreateInput) {
     return prisma.refreshToken.create({ data });
   }

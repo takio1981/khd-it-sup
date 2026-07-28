@@ -59,7 +59,7 @@ const ASSET_LOAN_EVENT_LABEL_TH: Record<AssetLoanNotificationEvent, string> = {
 interface IAssetLoanForNotification {
   id: string;
   asset: { assetNumber: string; brand: string | null; model: string | null };
-  borrower: { fullName: string; email: string };
+  borrower: { id: string; fullName: string; email: string };
   borrowDate: Date;
   expectedReturnDate: Date | null;
   actualReturnDate: Date | null;
@@ -131,8 +131,18 @@ export class NotificationService {
         actionLabel,
         detailUrl,
       });
-      if (settings.telegramEnabled) await this.sendTelegram(text, 'RepairTicket', ticket.id);
-      if (settings.lineEnabled) await this.sendLine(text, 'RepairTicket', ticket.id);
+      if (settings.telegramEnabled) {
+        await this.sendTelegram(text, 'RepairTicket', ticket.id);
+        for (const r of recipients) {
+          if (r.telegramChatId) await this.sendTelegramPersonal(r.telegramChatId, text, 'RepairTicket', ticket.id);
+        }
+      }
+      if (settings.lineEnabled) {
+        await this.sendLine(text, 'RepairTicket', ticket.id);
+        for (const r of recipients) {
+          if (r.lineUserId) await this.sendLinePersonal(r.lineUserId, text, 'RepairTicket', ticket.id);
+        }
+      }
     }
 
     // Realtime push ผ่าน Socket.IO ให้ผู้ใช้ที่เกี่ยวข้อง (ถ้า client เชื่อมต่ออยู่) — ทำงานอิสระจากช่องทางภายนอก (email/telegram/line)
@@ -184,8 +194,24 @@ export class NotificationService {
         conditionOnReturn: loan.conditionOnReturn,
         detailUrl,
       });
-      if (settings.telegramEnabled) await this.sendTelegram(text, 'AssetLoan', loan.id);
-      if (settings.lineEnabled) await this.sendLine(text, 'AssetLoan', loan.id);
+
+      const borrowerChannels = await prisma.user.findUnique({
+        where: { id: loan.borrower.id },
+        select: { telegramChatId: true, lineUserId: true },
+      });
+
+      if (settings.telegramEnabled) {
+        await this.sendTelegram(text, 'AssetLoan', loan.id);
+        if (borrowerChannels?.telegramChatId) {
+          await this.sendTelegramPersonal(borrowerChannels.telegramChatId, text, 'AssetLoan', loan.id);
+        }
+      }
+      if (settings.lineEnabled) {
+        await this.sendLine(text, 'AssetLoan', loan.id);
+        if (borrowerChannels?.lineUserId) {
+          await this.sendLinePersonal(borrowerChannels.lineUserId, text, 'AssetLoan', loan.id);
+        }
+      }
     }
   }
 
@@ -231,6 +257,36 @@ export class NotificationService {
     }
   }
 
+  /** ส่ง Telegram ตรงถึง Chat ID ส่วนตัวของผู้ใช้แต่ละคน (คู่ขนานกับกลุ่มไอทีกลาง ใช้ Bot Token เดียวกัน) */
+  private async sendTelegramPersonal(chatId: string, text: string, relatedEntityType?: string, relatedEntityId?: string): Promise<void> {
+    const config = await systemSettingService.getTelegramConfig();
+    if (!config) return; // ไม่มี Bot Token ตั้งค่าไว้ — sendTelegram (กลุ่มกลาง) จะ log ความล้มเหลวนี้ให้แล้ว ไม่ต้อง log ซ้ำ
+    const log = await this.repo.create({ channel: 'TELEGRAM', recipient: chatId, message: text, relatedEntityType, relatedEntityId });
+    try {
+      await sendTelegramMessage(config.botToken, chatId, text);
+      await this.repo.markSent(log.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error(`[notification] ส่ง Telegram ส่วนตัวไม่สำเร็จ (${chatId}): ${message}`);
+      await this.repo.markFailed(log.id, message);
+    }
+  }
+
+  /** ส่ง LINE push ตรงถึง User ID ส่วนตัวของผู้ใช้แต่ละคน (คู่ขนานกับกลุ่มไอทีกลาง ใช้ Channel Access Token เดียวกัน) */
+  private async sendLinePersonal(userId: string, text: string, relatedEntityType?: string, relatedEntityId?: string): Promise<void> {
+    const config = await systemSettingService.getLineConfig();
+    if (!config) return; // ไม่มี Channel Access Token ตั้งค่าไว้ — sendLine (กลุ่มกลาง) จะ log ความล้มเหลวนี้ให้แล้ว ไม่ต้อง log ซ้ำ
+    const log = await this.repo.create({ channel: 'LINE', recipient: userId, message: text, relatedEntityType, relatedEntityId });
+    try {
+      await sendLinePush(config.accessToken, userId, text);
+      await this.repo.markSent(log.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error(`[notification] ส่ง LINE ส่วนตัวไม่สำเร็จ (${userId}): ${message}`);
+      await this.repo.markFailed(log.id, message);
+    }
+  }
+
   /** เรียกจาก UserService หลังรีเซ็ตรหัสผ่านสำเร็จ — ส่งรหัสผ่านชั่วคราวไปยังอีเมลผู้ใช้แทนการแสดงให้ admin คัดลอก */
   async sendPasswordResetEmail(user: { fullName: string; username: string; email: string }, temporaryPassword: string): Promise<void> {
     const html = buildPasswordResetEmailHtml({
@@ -246,7 +302,7 @@ export class NotificationService {
   private async resolveRecipients(
     event: TicketNotificationEvent,
     ticket: ITicketForNotification,
-  ): Promise<{ userId: string; email: string }[]> {
+  ): Promise<{ userId: string; email: string; telegramChatId: string | null; lineUserId: string | null }[]> {
     const recipients = new Map<string, string>();
 
     if (event === 'NEW_TICKET') {
@@ -265,7 +321,22 @@ export class NotificationService {
       recipients.set(ticket.assignedTechnician.id, ticket.assignedTechnician.email);
     }
 
-    return Array.from(recipients.entries()).map(([userId, email]) => ({ userId, email }));
+    if (recipients.size === 0) return [];
+
+    // ดึงช่องทางส่วนตัว (Telegram/LINE) ของผู้รับแต่ละคนเพิ่มเติมจาก email — ทำแยกจาก query หลักเพื่อไม่ให้ ticketListInclude
+    // ต้อง select ฟิลด์ส่วนตัวนี้ (ซึ่งจะรั่วไปกับ response ของ list/detail API ที่ frontend เรียกใช้ตรง ๆ)
+    const channels = await prisma.user.findMany({
+      where: { id: { in: Array.from(recipients.keys()) } },
+      select: { id: true, telegramChatId: true, lineUserId: true },
+    });
+    const channelById = new Map(channels.map((c) => [c.id, c]));
+
+    return Array.from(recipients.entries()).map(([userId, email]) => ({
+      userId,
+      email,
+      telegramChatId: channelById.get(userId)?.telegramChatId ?? null,
+      lineUserId: channelById.get(userId)?.lineUserId ?? null,
+    }));
   }
 
   async listLogs(query: ListNotificationLogsQueryDto) {

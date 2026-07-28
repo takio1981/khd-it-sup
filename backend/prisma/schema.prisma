@@ -127,6 +127,8 @@ model User {
   phone               String?   @db.VarChar(30)
   avatarUrl           String?   @map("avatar_url") @db.VarChar(500)
   employeeCode        String?   @map("employee_code") @db.VarChar(50)
+  telegramChatId      String?   @map("telegram_chat_id") @db.VarChar(50)
+  lineUserId          String?   @map("line_user_id") @db.VarChar(50)
   roleId              String    @map("role_id") @db.Char(36)
   departmentId        String?   @map("department_id") @db.Char(36)
   positionId          String?   @map("position_id") @db.Char(36)

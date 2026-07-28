@@ -1,0 +1,64 @@
+<div class="min-h-screen flex items-center justify-center bg-brand-background dark:bg-neutral-950 px-4 py-10">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-6">
+      <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-primary text-white text-2xl font-bold shadow-softLg">
+        IT
+      </div>
+      <h1 class="text-lg font-semibold text-neutral-900 dark:text-white">ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์</h1>
+      <p class="text-sm text-neutral-500 mt-1">{{ orgName }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card !shadow-softLg space-y-4">
+      <h2 class="text-base font-medium text-neutral-700 dark:text-neutral-200">ช่องทางการแจ้งเตือนส่วนตัว</h2>
+      <p class="text-sm text-neutral-500 -mt-2">
+        รับแจ้งเตือนสถานะงานแจ้งซ่อมและยืม-คืนครุภัณฑ์ของคุณโดยตรง นอกเหนือจากที่ส่งเข้ากลุ่มไอทีกลางตามปกติ
+      </p>
+
+      @if (savedMessage()) {
+        <div class="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-sm px-3 py-2">
+          {{ savedMessage() }}
+        </div>
+      }
+      @if (errorMessage()) {
+        <div class="rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm px-3 py-2">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      @if (loading()) {
+        <div class="flex justify-center py-6">
+          <mat-spinner diameter="28" />
+        </div>
+      } @else {
+        <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+          <mat-label>Telegram Chat ID</mat-label>
+          <input matInput formControlName="telegramChatId" placeholder="เช่น 123456789" />
+        </mat-form-field>
+        <p class="text-xs text-neutral-400">
+          หาได้โดยส่งข้อความหาบอท <span class="font-medium">@userinfobot</span> ใน Telegram แล้วนำ Chat ID ที่ได้มาวางที่นี่
+        </p>
+
+        <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+          <mat-label>LINE User ID</mat-label>
+          <input matInput formControlName="lineUserId" placeholder="เช่น U1234567890abcdef1234567890abcdef" />
+        </mat-form-field>
+        <p class="text-xs text-neutral-400">หากไม่ทราบ LINE User ID ของตนเอง ติดต่อเจ้าหน้าที่ไอทีเพื่อขอความช่วยเหลือ</p>
+
+        <button mat-flat-button color="primary" type="submit" class="!w-full !h-11" [disabled]="saving()">
+          @if (saving()) {
+            <mat-spinner diameter="20" class="!inline-block !mr-2" />
+          }
+          บันทึกช่องทางการแจ้งเตือน
+        </button>
+      }
+    </form>
+
+    <p class="text-center text-sm mt-4">
+      <a routerLink="/dashboard" class="text-brand-primary hover:underline">กลับไปแดชบอร์ด</a>
+    </p>
+
+    <p class="text-center text-xs text-neutral-400 mt-6">
+      © สำนักงานสาธารณสุขจังหวัดนครราชสีมา — IT Service Desk
+    </p>
+  </div>
+</div>

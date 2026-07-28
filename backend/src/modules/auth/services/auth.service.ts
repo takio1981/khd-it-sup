@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import ms from 'ms';
 import { env } from '@config/env';
 import { AuthRepository, type UserWithRole } from '@modules/auth/repositories/auth.repository';
+import type { UpdateNotificationChannelsDto } from '@modules/auth/dto/auth.dto';
 import { BadRequestError, ForbiddenError, UnauthorizedError } from '@common/errors';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '@common/utils/jwt.util';
 import type { IAuthUser } from '@common/interfaces';
@@ -179,6 +180,20 @@ export class AuthService {
     await this.repo.updatePassword(userId, newHash, false);
     await this.repo.revokeAllUserRefreshTokens(userId);
     logger.info(`[auth] password changed for user ${userId}`);
+  }
+
+  async getNotificationChannels(userId: string): Promise<{ telegramChatId: string | null; lineUserId: string | null }> {
+    const result = await this.repo.getNotificationChannels(userId);
+    if (!result) throw new UnauthorizedError();
+    return result;
+  }
+
+  /** ให้ผู้ใช้แต่ละคนผูกช่องทาง Telegram/LINE ส่วนตัวของตนเอง เพื่อรับแจ้งเตือนสถานะงานซ่อม/ยืม-คืนโดยตรง (คู่ขนานกับกลุ่มไอทีกลาง) */
+  async updateNotificationChannels(
+    userId: string,
+    data: UpdateNotificationChannelsDto,
+  ): Promise<{ telegramChatId: string | null; lineUserId: string | null }> {
+    return this.repo.updateNotificationChannels(userId, data);
   }
 
   toAuthUser = toAuthUser;
