@@ -29,6 +29,7 @@ const SOLID_CLASSES: Record<StatCardColor, string> = {
         class="rounded-2xl p-5 flex flex-col items-center justify-center text-center gap-0.5 transition-transform hover:-translate-y-0.5 border-0 border-solid border-t-4 border-r-4"
         [class]="solidClasses()"
       >
+        <khd-icon [name]="icon()" [size]="22" class="!mb-1 opacity-70" />
         <p class="text-3xl font-bold leading-tight tabular-nums">{{ value() }}</p>
         <p class="text-sm font-medium">{{ label() }}</p>
       </div>

@@ -9,12 +9,12 @@
       <div class="pt-4 space-y-4">
         @if (summary(); as s) {
           <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-            <khd-stat-card variant="solid" color="amber" label="รอดำเนินการ" [value]="s.tickets.pending" />
-            <khd-stat-card variant="solid" color="green" label="เสร็จสิ้นแล้ว" [value]="s.tickets.completed" />
-            <khd-stat-card variant="solid" color="purple" label="รออะไหล่" [value]="s.tickets.waitingParts" />
-            <khd-stat-card variant="solid" color="red" label="ยกเลิก" [value]="s.tickets.cancelled" />
+            <khd-stat-card variant="solid" color="amber" icon="clock" label="รอดำเนินการ" [value]="s.tickets.pending" />
+            <khd-stat-card variant="solid" color="green" icon="check-circle" label="เสร็จสิ้นแล้ว" [value]="s.tickets.completed" />
+            <khd-stat-card variant="solid" color="purple" icon="archive-box" label="รออะไหล่" [value]="s.tickets.waitingParts" />
+            <khd-stat-card variant="solid" color="red" icon="x-circle" label="ยกเลิก" [value]="s.tickets.cancelled" />
             @if (analytics(); as a) {
-              <khd-stat-card variant="solid" color="teal" label="เวลาซ่อมเฉลี่ย (ชม.)" [value]="a.averageRepairTimeHours ?? '-'" />
+              <khd-stat-card variant="solid" color="teal" icon="clock" label="เวลาซ่อมเฉลี่ย (ชม.)" [value]="a.averageRepairTimeHours ?? '-'" />
             }
           </div>
         }
@@ -48,10 +48,10 @@
       <div class="pt-4 space-y-4">
         @if (summary(); as s) {
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <khd-stat-card variant="solid" color="blue" label="ทั้งหมด" [value]="s.assets.total" />
-            <khd-stat-card variant="solid" color="green" label="ใช้งานปกติ" [value]="assetActiveCount()" />
-            <khd-stat-card variant="solid" color="amber" label="อยู่ระหว่างซ่อม/บำรุง" [value]="assetInProgressCount()" />
-            <khd-stat-card variant="solid" color="gray" label="ปิดใช้งาน/จำหน่ายแล้ว" [value]="assetOffCount()" />
+            <khd-stat-card variant="solid" color="blue" icon="computer-desktop" label="ทั้งหมด" [value]="s.assets.total" />
+            <khd-stat-card variant="solid" color="green" icon="check-circle" label="ใช้งานปกติ" [value]="assetActiveCount()" />
+            <khd-stat-card variant="solid" color="amber" icon="wrench-screwdriver" label="อยู่ระหว่างซ่อม/บำรุง" [value]="assetInProgressCount()" />
+            <khd-stat-card variant="solid" color="gray" icon="archive-box" label="ปิดใช้งาน/จำหน่ายแล้ว" [value]="assetOffCount()" />
           </div>
         }
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -77,10 +77,10 @@
       <div class="pt-4 space-y-4">
         @if (loanStats(); as ls) {
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <khd-stat-card variant="solid" color="blue" label="ทั้งหมด" [value]="ls.total" />
-            <khd-stat-card variant="solid" color="amber" label="กำลังยืม" [value]="ls.borrowed" />
-            <khd-stat-card variant="solid" color="red" label="เกินกำหนด" [value]="ls.overdue" />
-            <khd-stat-card variant="solid" color="green" label="คืนแล้ว" [value]="ls.returned" />
+            <khd-stat-card variant="solid" color="blue" icon="arrow-path" label="ทั้งหมด" [value]="ls.total" />
+            <khd-stat-card variant="solid" color="amber" icon="clock" label="กำลังยืม" [value]="ls.borrowed" />
+            <khd-stat-card variant="solid" color="red" icon="exclamation-triangle" label="เกินกำหนด" [value]="ls.overdue" />
+            <khd-stat-card variant="solid" color="green" icon="check-circle" label="คืนแล้ว" [value]="ls.returned" />
           </div>
         }
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -106,12 +106,12 @@
       <div class="pt-4 space-y-4">
         @if (userStats(); as us) {
           <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-            <khd-stat-card variant="solid" color="blue" label="ทั้งหมด" [value]="us.total" />
-            <khd-stat-card variant="solid" color="green" label="ใช้งานอยู่" [value]="us.active" />
-            <khd-stat-card variant="solid" color="gray" label="ปิดใช้งาน" [value]="us.inactive" />
-            <khd-stat-card variant="solid" color="amber" label="ต้องเปลี่ยนรหัสผ่าน" [value]="us.mustChangePassword" />
-            <khd-stat-card variant="solid" color="purple" label="สิทธิ์การใช้งาน" [value]="us.byRole.length" />
-            <khd-stat-card variant="solid" color="teal" label="หน่วยงาน" [value]="us.byDepartment.length" />
+            <khd-stat-card variant="solid" color="blue" icon="users" label="ทั้งหมด" [value]="us.total" />
+            <khd-stat-card variant="solid" color="green" icon="check-circle" label="ใช้งานอยู่" [value]="us.active" />
+            <khd-stat-card variant="solid" color="gray" icon="x-circle" label="ปิดใช้งาน" [value]="us.inactive" />
+            <khd-stat-card variant="solid" color="amber" icon="exclamation-triangle" label="ต้องเปลี่ยนรหัสผ่าน" [value]="us.mustChangePassword" />
+            <khd-stat-card variant="solid" color="purple" icon="shield-check" label="สิทธิ์การใช้งาน" [value]="us.byRole.length" />
+            <khd-stat-card variant="solid" color="teal" icon="building-office-2" label="หน่วยงาน" [value]="us.byDepartment.length" />
           </div>
         }
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -136,7 +136,7 @@
     <mat-tab label="ตำแหน่งงาน" *khdHasPermission="['user:create', 'user:update']">
       <div class="pt-4 space-y-4">
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md">
-          <khd-stat-card variant="solid" color="blue" label="ทั้งหมด" [value]="positions().length" />
+          <khd-stat-card variant="solid" color="blue" icon="user-circle" label="ทั้งหมด" [value]="positions().length" />
         </div>
         <div class="khd-card">
           <div class="flex items-center gap-2 mb-4">
@@ -151,9 +151,9 @@
     <mat-tab label="หน่วยงาน" *khdHasPermission="'department:manage'">
       <div class="pt-4 space-y-4">
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl">
-          <khd-stat-card variant="solid" color="blue" label="ทั้งหมด" [value]="departments().length" />
-          <khd-stat-card variant="solid" color="green" label="หน่วยงานระดับบนสุด" [value]="topLevelDeptCount()" />
-          <khd-stat-card variant="solid" color="teal" label="หน่วยงานย่อย" [value]="subDeptCount()" />
+          <khd-stat-card variant="solid" color="blue" icon="building-office-2" label="ทั้งหมด" [value]="departments().length" />
+          <khd-stat-card variant="solid" color="green" icon="building-office-2" label="หน่วยงานระดับบนสุด" [value]="topLevelDeptCount()" />
+          <khd-stat-card variant="solid" color="teal" icon="building-office-2" label="หน่วยงานย่อย" [value]="subDeptCount()" />
         </div>
         <div class="khd-card">
           <div class="flex items-center gap-2 mb-4">
@@ -168,7 +168,7 @@
     <mat-tab label="แผนก" *khdHasPermission="'department:manage'">
       <div class="pt-4 space-y-4">
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md">
-          <khd-stat-card variant="solid" color="blue" label="ทั้งหมด" [value]="divisions().length" />
+          <khd-stat-card variant="solid" color="blue" icon="bars-3" label="ทั้งหมด" [value]="divisions().length" />
         </div>
         <div class="khd-card">
           <div class="flex items-center gap-2 mb-4">
@@ -183,10 +183,10 @@
     <mat-tab label="การแจ้งเตือน" *khdHasPermission="['settings:manage', 'audit:view']">
       <div class="pt-4 space-y-4">
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <khd-stat-card variant="solid" color="blue" label="ทั้งหมด" [value]="notifTotal()" />
-          <khd-stat-card variant="solid" color="green" label="ส่งสำเร็จ" [value]="notifSent()" />
-          <khd-stat-card variant="solid" color="amber" label="รอดำเนินการ" [value]="notifPending()" />
-          <khd-stat-card variant="solid" color="red" label="ส่งไม่สำเร็จ" [value]="notifFailed()" />
+          <khd-stat-card variant="solid" color="blue" icon="bell" label="ทั้งหมด" [value]="notifTotal()" />
+          <khd-stat-card variant="solid" color="green" icon="check-circle" label="ส่งสำเร็จ" [value]="notifSent()" />
+          <khd-stat-card variant="solid" color="amber" icon="clock" label="รอดำเนินการ" [value]="notifPending()" />
+          <khd-stat-card variant="solid" color="red" icon="x-circle" label="ส่งไม่สำเร็จ" [value]="notifFailed()" />
         </div>
         <div class="khd-card">
           <div class="flex items-center gap-2 mb-4">
