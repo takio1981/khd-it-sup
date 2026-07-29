@@ -26,15 +26,15 @@ const SOLID_CLASSES: Record<StatCardColor, string> = {
   template: `
     @if (variant() === 'solid') {
       <div
-        class="relative overflow-hidden rounded-2xl px-5 py-3 flex flex-col items-center justify-center text-center gap-0.5 transition-transform hover:-translate-y-0.5 border-0 border-solid border-t-4 border-r-4"
+        class="relative overflow-hidden rounded-2xl px-5 py-5 flex flex-col items-center justify-center text-center gap-0 transition-transform hover:-translate-y-0.5 border-0 border-solid border-t-4 border-r-4"
         [class]="solidClasses()"
       >
         <div class="absolute inset-0 flex items-center justify-end opacity-15 pointer-events-none">
           <khd-icon [name]="icon()" [size]="180" class="!translate-x-10" />
         </div>
-        <div class="relative z-10 flex flex-col items-center gap-0.5">
-          <p class="text-5xl font-bold leading-tight tabular-nums">{{ value() }}</p>
-          <p class="text-sm font-medium">{{ label() }}</p>
+        <div class="relative z-10 flex flex-col items-center gap-0">
+          <p class="m-0 text-5xl font-bold leading-none tabular-nums">{{ value() }}</p>
+          <p class="m-0 mt-1 text-xs font-medium leading-tight">{{ label() }}</p>
         </div>
       </div>
     } @else {
