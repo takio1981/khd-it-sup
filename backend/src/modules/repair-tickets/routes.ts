@@ -225,14 +225,14 @@ router.post(
  * /repair-tickets/{id}/attachments:
  *   post:
  *     tags: [Repair Tickets]
- *     summary: อัปโหลดรูป/ไฟล์แนบ (multipart/form-data, field name "attachments", สูงสุด 10 ไฟล์)
+ *     summary: อัปโหลดรูป/ไฟล์แนบ (multipart/form-data, field name "attachments", สูงสุด 5 ไฟล์)
  *     security: [{ bearerAuth: [] }]
  */
 router.post(
   '/:id/attachments',
   requirePermission(PERMISSIONS.TICKET_UPLOAD_ATTACHMENT),
   validateRequest({ params: ticketIdParamSchema }),
-  ticketAttachmentUploader.array('attachments', 10),
+  ticketAttachmentUploader.array('attachments', 5),
   ticketController.uploadTicketAttachments,
 );
 

@@ -55,6 +55,7 @@ export class TicketDetailComponent {
   private readonly snackBar = inject(MatSnackBar);
 
   private static readonly MAX_ATTACHMENT_SIZE_BYTES = 5 * 1024 * 1024;
+  private static readonly MAX_ATTACHMENT_COUNT = 5;
   private static readonly ALLOWED_ATTACHMENT_PREFIXES = ['image/', 'video/'];
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
@@ -232,6 +233,12 @@ export class TicketDetailComponent {
     if (!files?.length) return;
 
     const fileList = Array.from(files);
+    if (fileList.length > TicketDetailComponent.MAX_ATTACHMENT_COUNT) {
+      this.snackBar.open(`แนบไฟล์ได้สูงสุด ${TicketDetailComponent.MAX_ATTACHMENT_COUNT} ไฟล์ต่อครั้ง`, 'ปิด', { duration: 4000 });
+      input.value = '';
+      return;
+    }
+
     const invalidType = fileList.find(
       (f) => !TicketDetailComponent.ALLOWED_ATTACHMENT_PREFIXES.some((prefix) => f.type.startsWith(prefix)),
     );

@@ -143,7 +143,7 @@
             </button>
             <input #fileInput type="file" multiple accept="image/*,video/*" class="hidden" (change)="onFilesSelected($event)" />
           </div>
-          <p class="text-[11px] text-neutral-400 !mt-[-4px] mb-2">รองรับไฟล์รูปภาพหรือวิดีโอ ขนาดไม่เกิน 5 MB ต่อไฟล์</p>
+          <p class="text-[11px] text-neutral-400 !mt-[-4px] mb-2">รองรับไฟล์รูปภาพหรือวิดีโอ ขนาดไม่เกิน 5 MB ต่อไฟล์ (สูงสุด 5 ไฟล์ต่อครั้ง)</p>
           @if (t.attachments.length > 0) {
             <div class="flex flex-wrap gap-2">
               @for (att of t.attachments; track att.id) {

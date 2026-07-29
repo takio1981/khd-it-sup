@@ -403,6 +403,7 @@ export class RepairTicketService {
       departmentId: existing.departmentId,
       comment: `แนบไฟล์ ${attachments.length} รายการ`,
       attachmentUrl: attachments[0]?.fileUrl,
+      attachmentUrls: attachments.map((a) => ({ fileUrl: a.fileUrl, fileType: a.fileType })),
       ipAddress: ctx.ipAddress,
     });
 

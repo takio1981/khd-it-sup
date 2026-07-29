@@ -97,6 +97,11 @@ export interface IRepairTicketDetail extends IRepairTicketListItem, IRepairSumma
   digitalHealthHeadApprovedBy: { id: string; fullName: string } | null;
 }
 
+export interface ITimelineAttachment {
+  fileUrl: string;
+  fileType: string | null;
+}
+
 export interface ITimelineEvent {
   id: string;
   eventTime: string;
@@ -105,6 +110,8 @@ export interface ITimelineEvent {
   currentStatus: string;
   comment: string | null;
   attachmentUrl: string | null;
+  /** ไฟล์แนบทั้งหมดของ event นี้ — event เก่าก่อนมีฟิลด์นี้จะเป็น null ให้ fallback ไปใช้ attachmentUrl แทน */
+  attachmentUrls: ITimelineAttachment[] | null;
   approvalResult: string | null;
   elapsedSeconds: number | null;
   slaRemainingSeconds: number | null;

@@ -2,6 +2,11 @@ import type { ApprovalResult, Prisma } from '@prisma/client';
 import { TimelineRepository } from '@modules/timeline/repositories/timeline.repository';
 import { prisma, type PrismaClientOrTx } from '@infrastructure/database/prisma';
 
+export interface IAttachmentUrlEntry {
+  fileUrl: string;
+  fileType: string | null;
+}
+
 export interface IRecordEventInput {
   ticketId: string;
   eventType: string;
@@ -11,6 +16,8 @@ export interface IRecordEventInput {
   departmentId?: string | null;
   comment?: string | null;
   attachmentUrl?: string | null;
+  /** ไฟล์แนบทั้งหมดของ event นี้ (กรณีแนบหลายไฟล์พร้อมกัน) — attachmentUrl เก็บไฟล์แรกไว้เพื่อ backward-compat */
+  attachmentUrls?: IAttachmentUrlEntry[] | null;
   approvalResult?: ApprovalResult | null;
   ipAddress?: string | null;
   /** ชั่วโมง SLA ของ step ที่เพิ่งเข้าใหม่ (ถ้ามี) — ใช้คำนวณ slaRemainingSeconds ณ เวลาที่เข้า step นี้ */
@@ -43,6 +50,7 @@ export class TimelineService {
       departmentId: input.departmentId,
       comment: input.comment,
       attachmentUrl: input.attachmentUrl,
+      attachmentUrls: input.attachmentUrls ? (input.attachmentUrls as unknown as Prisma.InputJsonValue) : undefined,
       approvalResult: input.approvalResult,
       ipAddress: input.ipAddress,
       elapsedSeconds,

@@ -637,6 +637,7 @@ model RepairTicketTimelineEvent {
   departmentId         String?         @map("department_id") @db.Char(36)
   comment              String?         @db.Text
   attachmentUrl        String?         @map("attachment_url") @db.VarChar(500)
+  attachmentUrls       Json?           @map("attachment_urls")
   approvalResult       ApprovalResult? @map("approval_result")
   signatureUrl         String?         @map("signature_url") @db.VarChar(500)
   gpsLat               Decimal?        @map("gps_lat") @db.Decimal(10, 7)

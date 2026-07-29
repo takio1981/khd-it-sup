@@ -503,6 +503,7 @@ CREATE TABLE `repair_ticket_timeline` (
   `department_id`          CHAR(36)     NULL,
   `comment`                TEXT         NULL,
   `attachment_url`         VARCHAR(500) NULL,
+  `attachment_urls`       JSON         NULL COMMENT 'ไฟล์แนบทั้งหมดของ event นี้ (array ของ {fileUrl, fileType}) — attachment_url เดี่ยวเก็บไว้เพื่อ backward-compat',
   `approval_result`        ENUM('WAITING','APPROVED','REJECTED','RETURNED','SKIPPED') NULL,
   `signature_url`          VARCHAR(500) NULL,
   `gps_lat`                DECIMAL(10,7) NULL,
