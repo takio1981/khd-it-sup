@@ -4,6 +4,8 @@ export interface IUserListItem {
   email: string;
   fullName: string;
   phone: string | null;
+  avatarUrl: string | null;
+  gender: 'MALE' | 'FEMALE' | null;
   isActive: boolean;
   mustChangePassword: boolean;
   lastLoginAt: string | null;
@@ -18,6 +20,7 @@ export interface ICreateUserPayload {
   password: string;
   fullName: string;
   phone?: string;
+  gender?: 'MALE' | 'FEMALE';
   roleId: string;
   departmentId?: string;
   positionId?: string;

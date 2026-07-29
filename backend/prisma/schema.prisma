@@ -118,6 +118,11 @@ model Position {
   @@map("positions")
 }
 
+enum Gender {
+  MALE
+  FEMALE
+}
+
 model User {
   id                  String    @id @db.Char(36)
   username            String    @unique @db.VarChar(100)
@@ -126,6 +131,7 @@ model User {
   fullName            String    @map("full_name") @db.VarChar(200)
   phone               String?   @db.VarChar(30)
   avatarUrl           String?   @map("avatar_url") @db.VarChar(500)
+  gender              Gender?
   employeeCode        String?   @map("employee_code") @db.VarChar(50)
   telegramChatId      String?   @map("telegram_chat_id") @db.VarChar(50)
   lineUserId          String?   @map("line_user_id") @db.VarChar(50)

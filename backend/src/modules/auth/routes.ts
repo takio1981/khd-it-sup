@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import * as authController from '@modules/auth/controllers/auth.controller';
-import { changePasswordSchema, loginSchema, updateNotificationChannelsSchema } from '@modules/auth/dto/auth.dto';
+import { changePasswordSchema, loginSchema, updateNotificationChannelsSchema, updateProfileSchema } from '@modules/auth/dto/auth.dto';
 import { authenticate, loginRateLimiter, validateRequest } from '@common/middleware';
+import { avatarUploader } from '@infrastructure/storage/multer.config';
 
 const router = Router();
 
@@ -104,5 +105,35 @@ router.patch(
   validateRequest({ body: updateNotificationChannelsSchema }),
   authController.updateNotificationChannels,
 );
+
+/**
+ * @openapi
+ * /auth/profile:
+ *   patch:
+ *     tags: [Auth]
+ *     summary: ตั้งค่าเพศของตนเอง (ใช้เลือกภาพ avatar เริ่มต้นเมื่อยังไม่อัปโหลดรูปโปรไฟล์)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.patch('/profile', authenticate, validateRequest({ body: updateProfileSchema }), authController.updateProfile);
+
+/**
+ * @openapi
+ * /auth/avatar:
+ *   post:
+ *     tags: [Auth]
+ *     summary: อัปโหลดรูปโปรไฟล์ของตนเอง (multipart/form-data, field name "avatar")
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post('/avatar', authenticate, avatarUploader.single('avatar'), authController.uploadMyAvatar);
+
+/**
+ * @openapi
+ * /auth/avatar:
+ *   delete:
+ *     tags: [Auth]
+ *     summary: ลบรูปโปรไฟล์ของตนเอง (กลับไปใช้ avatar เริ่มต้นตามเพศ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.delete('/avatar', authenticate, authController.removeMyAvatar);
 
 export default router;

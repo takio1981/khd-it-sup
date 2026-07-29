@@ -9,11 +9,14 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { MatDialog } from '@angular/material/dialog';
 import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { PageWatermarkComponent } from '../../shared/components/page-watermark/page-watermark.component';
+import { UserAvatarComponent } from '../../shared/components/user-avatar/user-avatar.component';
+import { ProfileDialogComponent } from '../../shared/components/profile-dialog/profile-dialog.component';
 import { NAV_ITEMS } from '../nav-items';
 import { environment } from '../../../environments/environment';
 
@@ -34,6 +37,7 @@ import { environment } from '../../../environments/environment';
     MatTooltipModule,
     IconComponent,
     PageWatermarkComponent,
+    UserAvatarComponent,
   ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
@@ -42,6 +46,7 @@ export class ShellComponent {
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly dialog = inject(MatDialog);
 
   readonly authService = inject(AuthService);
   readonly themeService = inject(ThemeService);
@@ -75,6 +80,10 @@ export class ShellComponent {
 
   toggleTheme(): void {
     this.themeService.toggle();
+  }
+
+  openProfileDialog(): void {
+    this.dialog.open(ProfileDialogComponent, { width: '380px' });
   }
 
   logout(): void {

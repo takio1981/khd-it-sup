@@ -42,6 +42,30 @@ export class AuthRepository {
     });
   }
 
+  async updateAvatar(userId: string, avatarUrl: string | null): Promise<UserWithRole> {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      include: {
+        role: {
+          include: { rolePermissions: { include: { permission: { select: { code: true } } } } },
+        },
+      },
+    }) as Promise<UserWithRole>;
+  }
+
+  async updateGender(userId: string, gender: 'MALE' | 'FEMALE'): Promise<UserWithRole> {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { gender },
+      include: {
+        role: {
+          include: { rolePermissions: { include: { permission: { select: { code: true } } } } },
+        },
+      },
+    }) as Promise<UserWithRole>;
+  }
+
   async getNotificationChannels(userId: string): Promise<{ telegramChatId: string | null; lineUserId: string | null } | null> {
     return prisma.user.findUnique({ where: { id: userId }, select: { telegramChatId: true, lineUserId: true } });
   }

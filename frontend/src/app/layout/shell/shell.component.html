@@ -51,7 +51,12 @@
       </button>
 
       <button mat-button [matMenuTriggerFor]="userMenu" class="!ml-1 !normal-case">
-        <khd-icon name="user-circle" [size]="22" class="!mr-1" />
+        <khd-user-avatar
+          [avatarUrl]="authService.currentUser()?.avatarUrl ?? null"
+          [gender]="authService.currentUser()?.gender ?? null"
+          [size]="26"
+          class="!mr-1.5"
+        />
         <span class="hidden sm:inline max-w-[140px] truncate align-middle">{{ authService.currentUser()?.fullName }}</span>
       </button>
       <mat-menu #userMenu="matMenu">
@@ -60,6 +65,10 @@
           <p class="text-xs text-neutral-500">{{ authService.currentUser()?.role }}</p>
         </div>
         <mat-divider />
+        <button mat-menu-item (click)="openProfileDialog()">
+          <khd-icon name="user-circle" [size]="18" class="!mr-2" />
+          รูปโปรไฟล์
+        </button>
         <button mat-menu-item routerLink="/auth/change-password">
           <khd-icon name="pencil-square" [size]="18" class="!mr-2" />
           เปลี่ยนรหัสผ่าน

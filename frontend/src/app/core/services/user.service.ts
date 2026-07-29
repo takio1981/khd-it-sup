@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { resolveBackendFileUrl } from '../utils/file-url.util';
 import type { IApiSuccessResponse, IPaginationMeta } from '../models/api-response.model';
 import type { ICreateUserPayload, IUserListItem, IUserStats } from '../models/user.model';
 
@@ -71,5 +72,19 @@ export class UserService {
     return this.http
       .post<IApiSuccessResponse<{ message: string }>>(`${this.base}/${id}/reset-password`, {})
       .pipe(map((res) => res.data));
+  }
+
+  uploadAvatar(id: string, file: File): Observable<IUserListItem> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return this.http.post<IApiSuccessResponse<IUserListItem>>(`${this.base}/${id}/avatar`, formData).pipe(map((res) => res.data));
+  }
+
+  removeAvatar(id: string): Observable<IUserListItem> {
+    return this.http.delete<IApiSuccessResponse<IUserListItem>>(`${this.base}/${id}/avatar`).pipe(map((res) => res.data));
+  }
+
+  getAvatarBlob(fileUrl: string): Observable<Blob> {
+    return this.http.get(resolveBackendFileUrl(fileUrl), { responseType: 'blob' });
   }
 }

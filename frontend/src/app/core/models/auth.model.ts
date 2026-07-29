@@ -1,5 +1,7 @@
 export type RoleCode = 'SUPER_ADMIN' | 'ADMIN' | 'IT_OFFICER' | 'TECHNICIAN' | 'USER';
 
+export type Gender = 'MALE' | 'FEMALE';
+
 /** ต้องตรงกับ backend/src/common/constants/permissions.const.ts เสมอ (source of truth คือฝั่ง backend) */
 export type Permission =
   | 'dashboard:view'
@@ -43,6 +45,8 @@ export interface IAuthUser {
   permissions: Permission[];
   departmentId: string | null;
   mustChangePassword: boolean;
+  avatarUrl: string | null;
+  gender: Gender | null;
 }
 
 export interface ILoginRequest {

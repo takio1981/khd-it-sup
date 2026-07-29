@@ -3,6 +3,7 @@ import * as userController from '@modules/users/controllers/user.controller';
 import { createUserSchema, listUsersQuerySchema, updateUserSchema, userIdParamSchema } from '@modules/users/dto/user.dto';
 import { authenticate, requirePermission, validateRequest } from '@common/middleware';
 import { PERMISSIONS } from '@common/constants/permissions.const';
+import { avatarUploader } from '@infrastructure/storage/multer.config';
 
 const router = Router();
 router.use(authenticate);
@@ -107,6 +108,37 @@ router.post(
   requirePermission(PERMISSIONS.USER_RESET_PASSWORD),
   validateRequest({ params: userIdParamSchema }),
   userController.resetPassword,
+);
+
+/**
+ * @openapi
+ * /users/{id}/avatar:
+ *   post:
+ *     tags: [Users]
+ *     summary: อัปโหลดรูปโปรไฟล์ผู้ใช้ (multipart/form-data, field name "avatar")
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post(
+  '/:id/avatar',
+  requirePermission(PERMISSIONS.USER_UPDATE),
+  validateRequest({ params: userIdParamSchema }),
+  avatarUploader.single('avatar'),
+  userController.uploadAvatar,
+);
+
+/**
+ * @openapi
+ * /users/{id}/avatar:
+ *   delete:
+ *     tags: [Users]
+ *     summary: ลบรูปโปรไฟล์ผู้ใช้ (กลับไปใช้ avatar เริ่มต้นตามเพศ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.delete(
+  '/:id/avatar',
+  requirePermission(PERMISSIONS.USER_UPDATE),
+  validateRequest({ params: userIdParamSchema }),
+  userController.removeAvatar,
 );
 
 export default router;

@@ -2,6 +2,26 @@
 
 <form [formGroup]="form" (ngSubmit)="submit()">
   <mat-dialog-content class="!flex !flex-col !gap-1 !max-h-[70vh]">
+    @if (isEdit) {
+      <div class="flex items-center gap-3 mb-2">
+        <khd-user-avatar [avatarUrl]="avatarUrl()" [gender]="genderPreview() || null" [size]="56" />
+        <div class="flex flex-col gap-1">
+          <div class="flex gap-2">
+            <button mat-stroked-button type="button" [disabled]="uploadingAvatar()" (click)="triggerAvatarInput()">
+              @if (uploadingAvatar()) {
+                <mat-spinner diameter="16" class="!inline-block !mr-1" />
+              }
+              เปลี่ยนรูป
+            </button>
+            @if (avatarUrl()) {
+              <button mat-button type="button" color="warn" [disabled]="uploadingAvatar()" (click)="removeAvatar()">ลบรูป</button>
+            }
+          </div>
+          <input #avatarInput type="file" accept="image/*" class="hidden" (change)="onAvatarSelected($event)" />
+        </div>
+      </div>
+    }
+
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>ชื่อผู้ใช้ (username)</mat-label>
       <input matInput formControlName="username" />
@@ -27,6 +47,15 @@
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>เบอร์โทร</mat-label>
       <input matInput formControlName="phone" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>เพศ</mat-label>
+      <mat-select formControlName="gender">
+        <mat-option value="">ไม่ระบุ</mat-option>
+        <mat-option value="MALE">ชาย</mat-option>
+        <mat-option value="FEMALE">หญิง</mat-option>
+      </mat-select>
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="w-full">

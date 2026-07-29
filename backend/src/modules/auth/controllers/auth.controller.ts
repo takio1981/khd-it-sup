@@ -1,9 +1,9 @@
 import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from '@modules/auth/services/auth.service';
-import type { ChangePasswordDto, LoginDto, UpdateNotificationChannelsDto } from '@modules/auth/dto/auth.dto';
+import type { ChangePasswordDto, LoginDto, UpdateNotificationChannelsDto, UpdateProfileDto } from '@modules/auth/dto/auth.dto';
 import { asyncHandler } from '@common/utils/asyncHandler';
 import { sendSuccess } from '@common/utils/apiResponse';
-import { UnauthorizedError } from '@common/errors';
+import { BadRequestError, UnauthorizedError } from '@common/errors';
 import { env, isProduction } from '@config/env';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 
@@ -87,4 +87,22 @@ export const getNotificationChannels = asyncHandler(async (req: Request, res: Re
 export const updateNotificationChannels = asyncHandler(async (req: Request, res: Response) => {
   const result = await authService.updateNotificationChannels(req.user!.id, req.body as UpdateNotificationChannelsDto);
   sendSuccess(res, result);
+});
+
+export const uploadMyAvatar = asyncHandler(async (req: Request, res: Response) => {
+  const file = req.file as Express.Multer.File | undefined;
+  if (!file) throw new BadRequestError('กรุณาแนบไฟล์รูปภาพ');
+  const user = await authService.setMyAvatar(req.user!.id, file);
+  sendSuccess(res, user);
+});
+
+export const removeMyAvatar = asyncHandler(async (req: Request, res: Response) => {
+  const user = await authService.removeMyAvatar(req.user!.id);
+  sendSuccess(res, user);
+});
+
+export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
+  const { gender } = req.body as UpdateProfileDto;
+  const user = await authService.updateMyGender(req.user!.id, gender);
+  sendSuccess(res, user);
 });

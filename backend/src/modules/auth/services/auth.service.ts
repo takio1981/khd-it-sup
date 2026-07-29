@@ -11,6 +11,7 @@ import type { IAuthUser } from '@common/interfaces';
 import type { Permission } from '@common/constants/permissions.const';
 import type { RoleCode } from '@common/constants/roles.const';
 import { logger } from '@infrastructure/logger/logger';
+import { deleteUploadedFileByUrl } from '@infrastructure/storage/multer.config';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 
 export interface ILoginResult {
@@ -34,6 +35,8 @@ function toAuthUser(user: UserWithRole): IAuthUser {
     permissions: user.role.rolePermissions.map((rp) => rp.permission.code) as Permission[],
     departmentId: user.departmentId,
     mustChangePassword: user.mustChangePassword,
+    avatarUrl: user.avatarUrl,
+    gender: user.gender,
   };
 }
 
@@ -194,6 +197,34 @@ export class AuthService {
     data: UpdateNotificationChannelsDto,
   ): Promise<{ telegramChatId: string | null; lineUserId: string | null }> {
     return this.repo.updateNotificationChannels(userId, data);
+  }
+
+  /** ให้ผู้ใช้แต่ละคนอัปโหลดรูปโปรไฟล์ของตนเองผ่านเมนูโปรไฟล์ */
+  async setMyAvatar(userId: string, file: Express.Multer.File): Promise<IAuthUser> {
+    const existing = await this.repo.findUserById(userId);
+    if (!existing) throw new UnauthorizedError();
+
+    if (existing.avatarUrl) deleteUploadedFileByUrl(existing.avatarUrl, 'avatars');
+
+    const avatarUrl = `${env.API_PREFIX}/files/avatars/${file.filename}`;
+    const updated = await this.repo.updateAvatar(userId, avatarUrl);
+    return toAuthUser(updated);
+  }
+
+  async removeMyAvatar(userId: string): Promise<IAuthUser> {
+    const existing = await this.repo.findUserById(userId);
+    if (!existing) throw new UnauthorizedError();
+
+    if (existing.avatarUrl) deleteUploadedFileByUrl(existing.avatarUrl, 'avatars');
+
+    const updated = await this.repo.updateAvatar(userId, null);
+    return toAuthUser(updated);
+  }
+
+  /** ให้ผู้ใช้เลือกเพศของตนเอง (ใช้เลือกภาพ avatar เริ่มต้นเมื่อยังไม่อัปโหลดรูปโปรไฟล์) */
+  async updateMyGender(userId: string, gender: 'MALE' | 'FEMALE'): Promise<IAuthUser> {
+    const updated = await this.repo.updateGender(userId, gender);
+    return toAuthUser(updated);
   }
 
   toAuthUser = toAuthUser;

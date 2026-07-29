@@ -28,3 +28,8 @@ export const updateNotificationChannelsSchema = z.object({
   lineUserId: z.string().trim().max(50).nullable().optional(),
 });
 export type UpdateNotificationChannelsDto = z.infer<typeof updateNotificationChannelsSchema>;
+
+export const updateProfileSchema = z.object({
+  gender: z.enum(['MALE', 'FEMALE']),
+});
+export type UpdateProfileDto = z.infer<typeof updateProfileSchema>;

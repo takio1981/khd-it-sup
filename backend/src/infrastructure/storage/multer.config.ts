@@ -25,6 +25,9 @@ const IMAGE_AND_VIDEO_MIME_TYPES = new Set([
   'video/quicktime',
 ]);
 
+/** ใช้กับรูปโปรไฟล์ผู้ใช้ — เฉพาะรูปภาพเท่านั้น ไม่รับ PDF/วิดีโอ */
+const AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
 /** จัดเก็บไฟล์แยกโฟลเดอร์ตามประเภท (subDir) นอก web root — เข้าถึงผ่าน API endpoint ที่ตรวจสิทธิ์เท่านั้น ไม่ serve static ตรง ๆ */
 function buildStorage(subDir: string): multer.StorageEngine {
   const uploadPath = path.resolve(env.UPLOAD_DIR, subDir);
@@ -66,4 +69,15 @@ export const ticketAttachmentUploader = createUploader('tickets', {
   allowedMimeTypes: IMAGE_AND_VIDEO_MIME_TYPES,
   maxFileSizeMB: 5,
 });
-export const avatarUploader = createUploader('avatars');
+/** รูปโปรไฟล์ผู้ใช้ — เฉพาะรูปภาพ ขนาดไม่เกิน 2 MB */
+export const avatarUploader = createUploader('avatars', {
+  allowedMimeTypes: AVATAR_MIME_TYPES,
+  maxFileSizeMB: 2,
+});
+
+/** ลบไฟล์ที่เคยอัปโหลดไว้ตาม fileUrl เดิม (best-effort — ไม่ throw ถ้าไฟล์ไม่มีอยู่แล้ว) ใช้ตอนแทนที่รูปเดิมด้วยรูปใหม่ */
+export function deleteUploadedFileByUrl(fileUrl: string, subDir: string): void {
+  const filename = path.basename(fileUrl);
+  const filePath = path.resolve(env.UPLOAD_DIR, subDir, filename);
+  fs.unlink(filePath, () => undefined);
+}

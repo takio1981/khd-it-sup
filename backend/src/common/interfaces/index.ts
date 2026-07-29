@@ -1,6 +1,8 @@
 import type { Permission } from '@common/constants/permissions.const';
 import type { RoleCode } from '@common/constants/roles.const';
 
+export type Gender = 'MALE' | 'FEMALE';
+
 /** Payload ที่ decode ได้จาก JWT Access Token และแนบไว้ที่ req.user */
 export interface IAuthUser {
   id: string;
@@ -10,6 +12,8 @@ export interface IAuthUser {
   permissions: Permission[];
   departmentId: string | null;
   mustChangePassword: boolean;
+  avatarUrl: string | null;
+  gender: Gender | null;
 }
 
 export interface IPaginationQuery {

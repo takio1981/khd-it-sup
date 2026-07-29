@@ -15,6 +15,7 @@ import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { UserAvatarComponent } from '../../../shared/components/user-avatar/user-avatar.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { UserFormComponent } from '../user-form/user-form.component';
 import type { IUserListItem } from '../../../core/models/user.model';
@@ -34,6 +35,7 @@ import type { IUserListItem } from '../../../core/models/user.model';
     MatMenuModule,
     MatChipsModule,
     IconComponent,
+    UserAvatarComponent,
     HasPermissionDirective,
   ],
   templateUrl: './user-list.component.html',

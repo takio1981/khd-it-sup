@@ -3,6 +3,7 @@ import { UserService } from '@modules/users/services/user.service';
 import type { CreateUserDto, ListUsersQueryDto, UpdateUserDto } from '@modules/users/dto/user.dto';
 import { asyncHandler } from '@common/utils/asyncHandler';
 import { sendCreated, sendSuccess } from '@common/utils/apiResponse';
+import { BadRequestError } from '@common/errors';
 import type { IRequestContext } from '@common/interfaces';
 
 const userService = new UserService();
@@ -54,4 +55,16 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
   const result = await userService.resetPassword(req.params.id, contextOf(req));
   sendSuccess(res, result);
+});
+
+export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => {
+  const file = req.file as Express.Multer.File | undefined;
+  if (!file) throw new BadRequestError('กรุณาแนบไฟล์รูปภาพ');
+  const user = await userService.setAvatar(req.params.id, file, contextOf(req));
+  sendSuccess(res, user);
+});
+
+export const removeAvatar = asyncHandler(async (req: Request, res: Response) => {
+  const user = await userService.removeAvatar(req.params.id, contextOf(req));
+  sendSuccess(res, user);
 });

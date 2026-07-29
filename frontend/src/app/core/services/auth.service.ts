@@ -86,6 +86,29 @@ export class AuthService {
       .pipe(map((res) => res.data));
   }
 
+  updateMyGender(gender: 'MALE' | 'FEMALE'): Observable<IAuthUser> {
+    return this.http.patch<IApiSuccessResponse<IAuthUser>>(`${environment.apiBaseUrl}/auth/profile`, { gender }).pipe(
+      map((res) => res.data),
+      tap((user) => this._currentUser.set(user)),
+    );
+  }
+
+  uploadMyAvatar(file: File): Observable<IAuthUser> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return this.http.post<IApiSuccessResponse<IAuthUser>>(`${environment.apiBaseUrl}/auth/avatar`, formData).pipe(
+      map((res) => res.data),
+      tap((user) => this._currentUser.set(user)),
+    );
+  }
+
+  removeMyAvatar(): Observable<IAuthUser> {
+    return this.http.delete<IApiSuccessResponse<IAuthUser>>(`${environment.apiBaseUrl}/auth/avatar`).pipe(
+      map((res) => res.data),
+      tap((user) => this._currentUser.set(user)),
+    );
+  }
+
   logout(): void {
     this.http.post(`${environment.apiBaseUrl}/auth/logout`, {}, { withCredentials: true }).subscribe({
       complete: () => this.finishLogout(),

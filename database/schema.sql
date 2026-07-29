@@ -87,6 +87,7 @@ CREATE TABLE `users` (
   `full_name`        VARCHAR(200) NOT NULL,
   `phone`            VARCHAR(30)  NULL,
   `avatar_url`       VARCHAR(500) NULL,
+  `gender`           ENUM('MALE','FEMALE') NULL COMMENT 'ใช้เลือกภาพ avatar เริ่มต้นเมื่อยังไม่อัปโหลดรูปโปรไฟล์',
   `employee_code`    VARCHAR(50)  NULL,
   `telegram_chat_id` VARCHAR(50)  NULL COMMENT 'ช่องทางแจ้งเตือน Telegram ส่วนตัวของผู้ใช้ (แยกจากกลุ่มไอทีกลาง)',
   `line_user_id`     VARCHAR(50)  NULL COMMENT 'ช่องทางแจ้งเตือน LINE ส่วนตัวของผู้ใช้ (แยกจากกลุ่มไอทีกลาง)',

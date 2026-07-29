@@ -6,6 +6,7 @@ import type { CreateUserDto, ListUsersQueryDto, UpdateUserDto } from '@modules/u
 import { ConflictError, ForbiddenError, NotFoundError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { env } from '@config/env';
+import { deleteUploadedFileByUrl } from '@infrastructure/storage/multer.config';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import { notificationService } from '@modules/notifications/services/notification.service';
 import type { IRequestContext } from '@common/interfaces';
@@ -61,6 +62,7 @@ export class UserService {
       passwordHash,
       fullName: dto.fullName,
       phone: dto.phone,
+      gender: dto.gender,
       employeeCode: dto.employeeCode,
       roleId: dto.roleId,
       departmentId: dto.departmentId,
@@ -105,6 +107,41 @@ export class UserService {
       { action: 'DELETE', module: 'user', entityType: 'User', entityId: id, description: `ลบผู้ใช้ ${existing.username}` },
       ctx,
     );
+  }
+
+  async setAvatar(id: string, file: Express.Multer.File, ctx: IRequestContext) {
+    const existing = await this.repo.findById(id);
+    if (!existing) throw new NotFoundError('ไม่พบผู้ใช้');
+
+    if (existing.avatarUrl) deleteUploadedFileByUrl(existing.avatarUrl, 'avatars');
+
+    const avatarUrl = `${env.API_PREFIX}/files/avatars/${file.filename}`;
+    const user = await this.repo.update(id, { avatarUrl, updatedBy: ctx.user.id });
+
+    await auditLogService.record(
+      { action: 'UPDATE', module: 'user', entityType: 'User', entityId: id, description: `อัปเดตรูปโปรไฟล์ผู้ใช้ ${existing.username}` },
+      ctx,
+    );
+
+    const { passwordHash: _ph, ...rest } = user;
+    return rest;
+  }
+
+  async removeAvatar(id: string, ctx: IRequestContext) {
+    const existing = await this.repo.findById(id);
+    if (!existing) throw new NotFoundError('ไม่พบผู้ใช้');
+
+    if (existing.avatarUrl) deleteUploadedFileByUrl(existing.avatarUrl, 'avatars');
+
+    const user = await this.repo.update(id, { avatarUrl: null, updatedBy: ctx.user.id });
+
+    await auditLogService.record(
+      { action: 'UPDATE', module: 'user', entityType: 'User', entityId: id, description: `ลบรูปโปรไฟล์ผู้ใช้ ${existing.username}` },
+      ctx,
+    );
+
+    const { passwordHash: _ph, ...rest } = user;
+    return rest;
   }
 
   async resetPassword(id: string, ctx: IRequestContext): Promise<{ message: string }> {
