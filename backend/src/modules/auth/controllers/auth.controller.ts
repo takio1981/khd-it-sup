@@ -9,12 +9,25 @@ import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 
 const authService = new AuthService();
 
+/**
+ * เส้นทางจริงที่ browser เห็น (ผ่าน reverse proxy) อาจมี path prefix เพิ่มจาก FRONTEND_BASE_URL
+ * (เช่น "/khd-it-sup") ซึ่ง backend เองไม่รู้จัก — ต้องรวม prefix นี้เข้ากับ path ของ cookie เสมอ
+ * ไม่งั้น browser จะไม่แนบ cookie กลับมาให้ตอนเรียก /refresh เพราะ path ไม่ตรงกับ request จริง
+ */
+function externalPathPrefix(): string {
+  try {
+    return new URL(env.FRONTEND_BASE_URL).pathname.replace(/\/$/, '');
+  } catch {
+    return '';
+  }
+}
+
 function refreshCookieOptions(expiresAt: Date): CookieOptions {
   return {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'strict',
-    path: `${env.API_PREFIX}/auth`,
+    path: `${externalPathPrefix()}${env.API_PREFIX}/auth`,
     expires: expiresAt,
   };
 }
@@ -53,7 +66,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
       { user: req.user, ...getContext(req) },
     );
   }
-  res.clearCookie(env.REFRESH_TOKEN_COOKIE_NAME, { path: `${env.API_PREFIX}/auth` });
+  res.clearCookie(env.REFRESH_TOKEN_COOKIE_NAME, { path: `${externalPathPrefix()}${env.API_PREFIX}/auth` });
   sendSuccess(res, { message: 'ออกจากระบบสำเร็จ' });
 });
 

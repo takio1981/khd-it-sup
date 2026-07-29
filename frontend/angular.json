@@ -48,6 +48,7 @@
                 }
               ],
               "outputHashing": "all",
+              "baseHref": "/khd-it-sup/",
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",

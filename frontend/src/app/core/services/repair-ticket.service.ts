@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { resolveBackendFileUrl } from '../utils/file-url.util';
 import type { IApiSuccessResponse, IPaginationMeta } from '../models/api-response.model';
 import type {
   ICreateTicketPayload,
@@ -128,6 +129,6 @@ export class RepairTicketService {
 
   /** ไฟล์แนบต้องแนบ Authorization header เสมอ (ดู serveFile.controller.ts) — โหลดผ่าน HttpClient เป็น blob แทน <img src>/<a href> ตรง ๆ */
   getAttachmentBlob(fileUrl: string): Observable<Blob> {
-    return this.http.get(fileUrl, { responseType: 'blob' });
+    return this.http.get(resolveBackendFileUrl(fileUrl), { responseType: 'blob' });
   }
 }
