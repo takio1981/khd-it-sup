@@ -34,8 +34,12 @@
     </mat-nav-list>
   </mat-sidenav>
 
-  <mat-sidenav-content class="flex flex-col">
-    <mat-toolbar class="!bg-white dark:!bg-neutral-900 !border-b !border-black/5 dark:!border-white/10 !px-3 md:!px-6 shadow-soft">
+  <mat-sidenav-content class="relative bg-brand-background dark:bg-neutral-950">
+    @if (watermarkSrc(); as src) {
+      <khd-page-watermark [src]="src" />
+    }
+
+    <mat-toolbar class="relative z-10 !bg-white dark:!bg-neutral-900 !border-b !border-black/5 dark:!border-white/10 !px-3 md:!px-6 shadow-soft">
       @if (isMobile()) {
         <button mat-icon-button (click)="toggleSidenav()" aria-label="เปิดเมนู">
           <khd-icon name="bars-3" [size]="22" />
@@ -78,13 +82,8 @@
       </mat-menu>
     </mat-toolbar>
 
-    <main class="relative flex-1 overflow-y-auto bg-brand-background dark:bg-neutral-950 p-4 md:p-6">
-      @if (watermarkSrc(); as src) {
-        <khd-page-watermark [src]="src" />
-      }
-      <div class="relative z-10">
-        <router-outlet />
-      </div>
+    <main class="relative z-10 p-4 md:p-6">
+      <router-outlet />
     </main>
   </mat-sidenav-content>
 </mat-sidenav-container>
