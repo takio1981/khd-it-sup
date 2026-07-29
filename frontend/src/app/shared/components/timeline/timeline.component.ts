@@ -3,7 +3,28 @@ import { DatePipe } from '@angular/common';
 import { getStatusColor, getStatusLabel } from '../../../core/constants/status.const';
 import { IconComponent } from '../icon/icon.component';
 import { AttachmentThumbnailComponent } from '../attachment-thumbnail/attachment-thumbnail.component';
-import type { ITimelineEvent } from '../../../core/models/repair-ticket.model';
+import type { ITimelineAttachment, ITimelineEvent } from '../../../core/models/repair-ticket.model';
+
+export interface ITicketAttachmentRef {
+  fileUrl: string;
+  fileType: string | null;
+  uploadedAt: string;
+}
+
+/** event เก่าก่อนมี attachmentUrls จะมีแค่ attachmentUrl เดี่ยว — จับคู่กับไฟล์แนบจริงของ ticket ด้วยเวลาที่ใกล้กัน
+ *  (ไฟล์ที่แนบพร้อมกันใน request เดียวจะมี uploadedAt ห่างกันแค่หลักมิลลิวินาที) เพื่อกู้คืนไฟล์ที่เหลือมาแสดงด้วย */
+const CORRELATION_WINDOW_MS = 5000;
+
+function resolveEventAttachments(event: ITimelineEvent, allAttachments: ITicketAttachmentRef[]): ITimelineAttachment[] {
+  if (event.attachmentUrls && event.attachmentUrls.length > 0) return event.attachmentUrls;
+  if (event.eventType !== 'ATTACHMENT' || !event.attachmentUrl) return [];
+
+  const eventMs = new Date(event.eventTime).getTime();
+  const correlated = allAttachments.filter((a) => Math.abs(new Date(a.uploadedAt).getTime() - eventMs) <= CORRELATION_WINDOW_MS);
+  if (correlated.length > 0) return correlated.map((a) => ({ fileUrl: a.fileUrl, fileType: a.fileType }));
+
+  return [{ fileUrl: event.attachmentUrl, fileType: null }];
+}
 
 const EVENT_ICON: Record<string, string> = {
   SUBMIT: 'paper-airplane',
@@ -37,9 +58,12 @@ function formatDuration(seconds: number | null): string | null {
 })
 export class TimelineComponent {
   readonly events = input.required<ITimelineEvent[]>();
+  /** ไฟล์แนบทั้งหมดของ ticket — ใช้จับคู่ย้อนหลังกับ event เก่าที่ยังไม่มี attachmentUrls */
+  readonly attachments = input<ITicketAttachmentRef[]>([]);
 
-  readonly rows = computed(() =>
-    this.events().map((e) => ({
+  readonly rows = computed(() => {
+    const allAttachments = this.attachments();
+    return this.events().map((e) => ({
       event: e,
       icon: EVENT_ICON[e.eventType] ?? 'clock',
       color: getStatusColor(e.currentStatus),
@@ -47,6 +71,7 @@ export class TimelineComponent {
       elapsedLabel: formatDuration(e.elapsedSeconds),
       slaLabel: e.slaRemainingSeconds !== null ? formatDuration(Math.abs(e.slaRemainingSeconds)) : null,
       slaOverdue: (e.slaRemainingSeconds ?? 0) < 0,
-    })),
-  );
+      displayAttachments: resolveEventAttachments(e, allAttachments),
+    }));
+  });
 }

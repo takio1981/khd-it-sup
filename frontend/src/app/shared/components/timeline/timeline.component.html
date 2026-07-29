@@ -34,15 +34,11 @@
           }
         </div>
 
-        @if (row.event.attachmentUrls && row.event.attachmentUrls.length > 0) {
+        @if (row.displayAttachments.length > 0) {
           <div class="mt-2 flex flex-wrap gap-2">
-            @for (att of row.event.attachmentUrls; track att.fileUrl) {
+            @for (att of row.displayAttachments; track att.fileUrl) {
               <khd-attachment-thumbnail [fileUrl]="att.fileUrl" [fileType]="att.fileType" />
             }
-          </div>
-        } @else if (row.event.attachmentUrl) {
-          <div class="mt-2">
-            <khd-attachment-thumbnail [fileUrl]="row.event.attachmentUrl" />
           </div>
         }
       </div>
