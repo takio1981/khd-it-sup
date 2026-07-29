@@ -24,6 +24,7 @@ export class NotificationChannelsComponent {
   readonly saving = signal(false);
   readonly savedMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
+  readonly alreadyConfigured = signal(false);
 
   readonly form = this.fb.nonNullable.group({
     telegramChatId: [''],
@@ -34,6 +35,7 @@ export class NotificationChannelsComponent {
     this.authService.getNotificationChannels().subscribe({
       next: (channels) => {
         this.form.patchValue({ telegramChatId: channels.telegramChatId ?? '', lineUserId: channels.lineUserId ?? '' });
+        this.alreadyConfigured.set(!!(channels.telegramChatId || channels.lineUserId));
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -53,9 +55,10 @@ export class NotificationChannelsComponent {
         lineUserId: raw.lineUserId.trim() || null,
       })
       .subscribe({
-        next: () => {
+        next: (channels) => {
           this.saving.set(false);
           this.savedMessage.set('บันทึกช่องทางการแจ้งเตือนสำเร็จ');
+          this.alreadyConfigured.set(!!(channels.telegramChatId || channels.lineUserId));
         },
         error: () => {
           this.saving.set(false);

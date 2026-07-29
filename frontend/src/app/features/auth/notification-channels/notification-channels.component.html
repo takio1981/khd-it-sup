@@ -30,6 +30,11 @@
           <mat-spinner diameter="28" />
         </div>
       } @else {
+        @if (alreadyConfigured() && !savedMessage()) {
+          <div class="rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-sm px-3 py-2">
+            คุณมีการตั้งค่าการแจ้งเตือนส่วนตัวไว้แล้ว — แก้ไขค่าด้านล่างแล้วกดบันทึกเพื่ออัปเดต
+          </div>
+        }
         <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
           <mat-label>Telegram Chat ID</mat-label>
           <input matInput formControlName="telegramChatId" placeholder="เช่น 123456789" />
