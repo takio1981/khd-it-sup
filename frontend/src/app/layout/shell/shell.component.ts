@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
@@ -9,10 +9,11 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
+import { PageWatermarkComponent } from '../../shared/components/page-watermark/page-watermark.component';
 import { NAV_ITEMS } from '../nav-items';
 import { environment } from '../../../environments/environment';
 
@@ -32,12 +33,15 @@ import { environment } from '../../../environments/environment';
     MatDividerModule,
     MatTooltipModule,
     IconComponent,
+    PageWatermarkComponent,
   ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
 export class ShellComponent {
   private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
 
   readonly authService = inject(AuthService);
   readonly themeService = inject(ThemeService);
@@ -47,6 +51,16 @@ export class ShellComponent {
   readonly isMobile = toSignal(
     this.breakpointObserver.observe('(max-width: 768px)').pipe(map((r) => r.matches)),
     { initialValue: false },
+  );
+
+  /** ภาพลายน้ำพื้นหลังของหน้าปัจจุบัน — อ่านจาก route data ของ child route ที่ลึกที่สุด (ดู watermark ใน app.routes.ts) */
+  readonly watermarkSrc = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => this.deepestRouteWatermark()),
+      startWith(this.deepestRouteWatermark()),
+    ),
+    { requireSync: true },
   );
 
   readonly sidenavOpened = signal(true);
@@ -65,5 +79,11 @@ export class ShellComponent {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  private deepestRouteWatermark(): string | undefined {
+    let route = this.activatedRoute.snapshot;
+    while (route.firstChild) route = route.firstChild;
+    return route.data['watermark'] as string | undefined;
   }
 }

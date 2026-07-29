@@ -78,8 +78,13 @@
       </mat-menu>
     </mat-toolbar>
 
-    <main class="flex-1 overflow-y-auto bg-brand-background dark:bg-neutral-950 p-4 md:p-6">
-      <router-outlet />
+    <main class="relative flex-1 overflow-y-auto bg-brand-background dark:bg-neutral-950 p-4 md:p-6">
+      @if (watermarkSrc(); as src) {
+        <khd-page-watermark [src]="src" />
+      }
+      <div class="relative z-10">
+        <router-outlet />
+      </div>
     </main>
   </mat-sidenav-content>
 </mat-sidenav-container>

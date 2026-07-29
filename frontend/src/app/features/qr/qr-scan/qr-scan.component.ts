@@ -11,6 +11,7 @@ import { RepairTicketService } from '../../../core/services/repair-ticket.servic
 import { AuthService } from '../../../core/services/auth.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
 import { URGENCY_LABEL_TH } from '../../../core/constants/status.const';
 import type { ICreateTicketPayload } from '../../../core/models/repair-ticket.model';
 
@@ -27,6 +28,7 @@ import type { ICreateTicketPayload } from '../../../core/models/repair-ticket.mo
     MatProgressSpinnerModule,
     StatusBadgeComponent,
     IconComponent,
+    PageWatermarkComponent,
   ],
   templateUrl: './qr-scan.component.html',
 })

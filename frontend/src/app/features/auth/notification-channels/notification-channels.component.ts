@@ -6,13 +6,22 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
+import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
 import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'khd-notification-channels',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, MatFormFieldModule, MatInputModule, MatButtonModule, MatProgressSpinnerModule],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    PageWatermarkComponent,
+  ],
   templateUrl: './notification-channels.component.html',
 })
 export class NotificationChannelsComponent {

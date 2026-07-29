@@ -1,0 +1,54 @@
+<div class="relative min-h-screen overflow-hidden flex flex-col items-center justify-center bg-brand-background dark:bg-neutral-950 px-4 py-12">
+  <div
+    class="pointer-events-none absolute inset-0 overflow-hidden flex items-center justify-center opacity-[0.16] dark:opacity-[0.22]"
+    aria-hidden="true"
+  >
+    <img src="logo-khd-it-sup-2.png" alt="" class="block w-[min(160vw,1100px)] max-w-none select-none" />
+  </div>
+
+  <div class="relative z-10 w-full max-w-2xl text-center">
+    <img
+      src="logo-khd-it-sup-2.png"
+      alt="โลโก้ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์"
+      class="block mx-auto mb-6 h-36 w-36 md:h-40 md:w-40 rounded-full bg-white shadow-softLg ring-1 ring-black/5 dark:ring-white/10"
+    />
+
+    <h1 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white">ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์</h1>
+    <p class="text-base text-neutral-500 mt-1">{{ orgName }}</p>
+    <p class="text-sm text-neutral-500 mt-4 max-w-lg mx-auto">
+      แจ้งซ่อมอุปกรณ์ ติดตามสถานะงาน และจัดการยืม-คืนครุภัณฑ์ไอที ได้ในที่เดียว
+    </p>
+
+    <a routerLink="/auth/login" mat-flat-button color="primary" class="!mt-8 !h-12 !px-10 inline-flex items-center justify-center">
+      เข้าสู่ระบบ
+    </a>
+
+    <div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+      <div class="khd-card !p-4 flex items-center gap-3">
+        <img src="logo1.png" alt="" class="h-11 w-11 rounded-full shrink-0" />
+        <div class="min-w-0">
+          <p class="text-sm font-medium">แจ้งซ่อม</p>
+          <p class="text-xs text-neutral-500">ติดตามสถานะงานซ่อมแบบเรียลไทม์</p>
+        </div>
+      </div>
+      <div class="khd-card !p-4 flex items-center gap-3">
+        <img src="logo2.png" alt="" class="h-11 w-11 rounded-full shrink-0" />
+        <div class="min-w-0">
+          <p class="text-sm font-medium">ยืม-คืนครุภัณฑ์</p>
+          <p class="text-xs text-neutral-500">บริหารการยืม-คืนอุปกรณ์ไอที</p>
+        </div>
+      </div>
+      <div class="khd-card !p-4 flex items-center gap-3">
+        <img src="logo3.png" alt="" class="h-11 w-11 rounded-full shrink-0" />
+        <div class="min-w-0">
+          <p class="text-sm font-medium">บริหารครุภัณฑ์</p>
+          <p class="text-xs text-neutral-500">ทะเบียนครุภัณฑ์และประวัติการใช้งาน</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="relative z-10 text-center text-xs text-neutral-400 mt-10">
+    © สำนักงานสาธารณสุขจังหวัดนครราชสีมา — IT Service Desk
+  </p>
+</div>
