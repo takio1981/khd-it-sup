@@ -101,3 +101,31 @@ Integration test (`tests/integration/`) ยิง request ผ่าน `createAp
   ทำงาน — ต้องอ่านใน `effect()` เท่านั้น
 - **Structural directive กับ `input.required()`**: จะโยน `NG0950` ถ้า effect รอบแรกอ่านค่าก่อน Angular bind เสร็จ — ใช้
   `input()` พร้อมค่า default แทนสำหรับ structural directive
+- **ไม่มี Tailwind Preflight/CSS reset ในโปรเจกต์นี้**: `border-t-2`/`border-r-2` เฉย ๆ จะไม่เห็นเส้นเลยถ้าไม่ใส่
+  `border-solid` ด้วย (ไม่มี default `border-style`), การบังคับ `border-style: solid` รวมกับการไม่มี `border-width: 0`
+  reset ทำให้ด้านที่ไม่ได้ระบุ width ได้ browser default (~3px) มาแทน (ต้องใส่ `border-0` ก่อนเสมอ), และ `<p>` ไม่มี
+  margin reset (browser default ~1em) — ถ้าเจอ element สูง/มี gap เกินคาดโดยไม่รู้สาเหตุ ให้สงสัยจุดนี้ก่อน
+- **Path-prefix deployment (`/khd-it-sup/`) กระทบหลายจุดที่ควรระวัง** เมื่อเพิ่ม prefix ใหม่หรือเปลี่ยน prefix:
+  - **Refresh-token cookie**: `Path` ของ cookie ต้องรวม prefix ภายนอก (`externalPathPrefix()` derive จาก
+    `env.FRONTEND_BASE_URL`) ไม่ใช่แค่ `env.API_PREFIX` ภายใน — ไม่งั้น browser จะไม่ส่ง cookie กลับมาหลัง reload
+  - **URL ไฟล์ที่ backend สร้าง** (`fileUrl` ของรูปครุภัณฑ์/ไฟล์แนบ/avatar) อ้างอิงจาก `API_PREFIX` ภายในเท่านั้น
+    ไม่รู้จัก prefix ภายนอก — ฝั่ง frontend ต้องแปลงผ่าน `resolveBackendFileUrl()` (`core/utils/file-url.util.ts`)
+    ก่อนเรียก blob fetch ทุกครั้ง
+  - **Socket.IO client**: การส่ง prefix ผ่าน connection URL เฉย ๆ **ไม่** ทำให้ client ต่อ path ที่ถูกต้อง (ต่างจาก
+    `HttpClient` ที่ resolve จาก `apiBaseUrl` ตรง ๆ) ต้องพับ prefix เข้าไปใน `path` option ของ `io()` ตรง ๆ
+    (ดู `frontend/src/app/core/services/socket.service.ts`) — ถ้าลืมจะเห็น WebSocket handshake วน 404 ไม่หยุด
+  - **Angular asset path ในโค้ด** (เช่น `<img src="logo1.png">`) ต้องเป็น relative path (ไม่ขึ้นต้นด้วย `/`) เพื่อให้
+    resolve ตาม `<base href>` ที่ตั้งจาก `baseHref` ใน `angular.json` (production config เท่านั้น) — path ที่ขึ้นต้น
+    ด้วย `/` จะ bypass `<base href>` และชี้ไปที่ root เสมอ ไม่ว่าจะ deploy ใต้ prefix ใดก็ตาม
+  - **หลัง `docker compose up -d <service>` ที่ recreate container ใดก็ตามที่ nginx proxy ไปหา**: ต้อง
+    `docker compose restart nginx` ตามด้วยเสมอ — nginx cache IP ของ container ไว้ตอน resolve ครั้งแรก ถ้า container
+    ถูกสร้างใหม่ (ได้ IP ใหม่) แต่ nginx ไม่ restart จะได้ `502 Bad Gateway` (`connect() failed ... Connection refused`)
+- **Timeline เป็น insert-only แม้แต่ backfill ก็ทำไม่ได้**: ถ้า schema ของ event เปลี่ยน (เช่น เพิ่ม field ใหม่) ข้อมูลเก่า
+  ที่ insert ไปแล้วจะไม่มี field ใหม่นี้ตลอดไป (DB trigger ปฏิเสธ UPDATE) — ถ้าต้องกู้คืนข้อมูลที่ "หายไป" จาก field เก่า
+  (เช่น `attachmentUrl` เดี่ยวก่อนมี `attachmentUrls` แบบ array) ให้ทำแบบ **read-time correlation** แทน (จับคู่กับข้อมูล
+  ที่เกี่ยวข้องด้วย timestamp ใกล้เคียงกันตอน query ไม่ใช่แก้ข้อมูลใน DB) ดูตัวอย่างที่ `timeline.component.ts`
+  (`resolveEventAttachments()`)
+- **ไฟล์แนบ/รูปโปรไฟล์ต้องโหลดผ่าน blob ไม่ใช่ `<img src>` ตรง ๆ**: endpoint `/files/:subdir/:filename` ต้อง
+  authenticate (Bearer header) เสมอ ไม่ใช่ static URL สาธารณะ — browser จะไม่แนบ header ให้กับ `<img src>` ธรรมดา
+  จึงต้อง fetch ผ่าน `HttpClient` (`responseType: 'blob'`) แล้วแปลงเป็น `URL.createObjectURL()` แทน (ดู
+  `khd-attachment-thumbnail`/`khd-user-avatar` เป็นตัวอย่าง — อย่าลืม `URL.revokeObjectURL()` ตอน component destroy)

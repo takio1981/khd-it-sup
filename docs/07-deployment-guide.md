@@ -45,6 +45,34 @@ nginx:
 
 ตั้งค่า `CORS_ORIGIN` และ `FRONTEND_BASE_URL` ใน `.env` ให้เป็น `https://your-domain.go.th`
 
+## 7.2b Path Prefix Deployment (`/khd-it-sup/`)
+
+ระบบนี้ถูกออกแบบให้ deploy อยู่ใต้ path prefix คงที่ (ค่า default คือ `/khd-it-sup/`) แทนที่จะอยู่ที่ root domain
+เพื่อให้แชร์ domain/server เดียวกับระบบอื่นได้ (path-based multi-tenant) ผ่าน reverse proxy ตัวเดียว —
+container ด้านในไม่รู้จัก prefix นี้เลย (nginx ตัดออกก่อน proxy เสมอ)
+
+หากต้องการเปลี่ยน prefix (หรือย้ายไปรันที่ root `/`) ต้องแก้ **4 จุดให้ตรงกัน**:
+
+| ไฟล์ | ค่าที่ต้องแก้ | ตัวอย่างปัจจุบัน |
+|---|---|---|
+| `.env` (root, ใช้โดย backend) | `FRONTEND_BASE_URL` — ใช้สร้างลิงก์เต็มในอีเมล/LINE/Telegram (ยืนยันบัญชี, ลืมรหัสผ่าน, QR scan) และคำนวณ cookie `Path` ของ refresh token | `FRONTEND_BASE_URL=http://localhost/khd-it-sup` |
+| `frontend/angular.json` | `projects.frontend.architect.build.configurations.production.baseHref` | `"baseHref": "/khd-it-sup/"` |
+| `frontend/src/environments/environment.prod.ts` | `apiBaseUrl`, `socketUrl` | `apiBaseUrl: '/khd-it-sup/api/v1'`, `socketUrl: '/khd-it-sup/'` |
+| `docker/nginx/nginx.conf` | ทุก `location /khd-it-sup/...` block + `rewrite ^/khd-it-sup(/.*)$ $1 break;` | ดูตัวอย่างในไฟล์จริง |
+
+ข้อควรระวัง:
+
+- **`FRONTEND_BASE_URL` ต้องมี path ต่อท้าย ไม่มี trailing slash** (`http://localhost/khd-it-sup` ไม่ใช่ `.../khd-it-sup/`) —
+  backend ใช้ `new URL(env.FRONTEND_BASE_URL).pathname` เพื่อคำนวณ cookie path ของ refresh token โดยตรง
+- **Socket.IO client ต้องพับ prefix เข้าไปใน `path` option ตรง ๆ** (`path: '/khd-it-sup/socket.io'`) — การส่ง prefix
+  ผ่าน connection URL เฉย ๆ จะไม่ทำให้ client ต่อ path ที่ถูกต้อง (ดู [docs/05-api-design.md](05-api-design.md) §5.13
+  และ [docs/10-developer-manual.md](10-developer-manual.md) §10.8)
+- `baseHref` ใน `angular.json` เป็นค่าเฉพาะ production configuration เท่านั้น — dev server (`ng serve`) ยังรันที่ root ตามปกติ
+- ถ้าย้ายไปรันที่ root domain ให้ตั้งทุกค่าข้างต้นเป็น `/` (หรือละ `baseHref`/`apiBaseUrl` prefix) และลบ `rewrite` +
+  เปลี่ยน `location /khd-it-sup/...` เป็น `location /...` ใน nginx.conf
+- หลังแก้ต้อง rebuild frontend image ใหม่เสมอ (`baseHref`/`environment.prod.ts` ถูก build เข้าไปใน static bundle
+  ตอน `ng build --configuration production` ไม่ใช่ runtime config)
+
 ## 7.3 Environment Variables (Production Checklist)
 
 | ตัวแปร | คำแนะนำสำหรับ Production |

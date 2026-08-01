@@ -10,6 +10,7 @@ erDiagram
     DEPARTMENTS ||--o{ USERS : belongs_to
     POSITIONS ||--o{ USERS : holds
     DEPARTMENTS ||--o{ DEPARTMENTS : parent_of
+    DEPARTMENTS ||--o{ DIVISIONS : has
     USERS ||--o{ REFRESH_TOKENS : owns
     USERS ||--o{ PASSWORD_RESET_TOKENS : owns
 
@@ -26,6 +27,10 @@ erDiagram
     ASSETS ||--o{ ASSET_PHOTOS : has
     ASSETS ||--|| ASSET_QRCODES : has
     ASSETS ||--o{ QR_SCAN_LOGS : scanned
+    ASSETS ||--o{ ASSET_LOANS : loaned_as
+    USERS ||--o{ ASSET_LOANS : borrows
+    USERS ||--o{ ASSET_LOANS : records
+    USERS ||--o{ ASSET_LOANS : returns
 
     WORKFLOW_TEMPLATES ||--o{ WORKFLOW_STEPS : defines
     WORKFLOW_TEMPLATES ||--o{ WORKFLOW_TRANSITIONS : defines
@@ -100,6 +105,25 @@ erDiagram
         tinyint is_active
     }
 
+    ASSET_LOANS {
+        char36 id PK
+        char36 asset_id FK
+        char36 borrower_id FK
+        char36 recorded_by FK
+        char36 returned_by FK
+        datetime borrow_date
+        date expected_return_date
+        datetime actual_return_date
+    }
+
+    DIVISIONS {
+        char36 id PK
+        char36 department_id FK
+        varchar code UK
+        varchar name_th
+        tinyint is_active
+    }
+
     REPAIR_TICKETS {
         char36 id PK
         varchar ticket_number UK
@@ -170,6 +194,12 @@ erDiagram
 
 - แผนภาพนี้ครอบคลุมทุกตารางใน [`database/schema.sql`](../database/schema.sql) ยกเว้นตารางที่ไม่กระทบความสัมพันธ์หลัก
   (`system_settings`, `running_number_sequences`, `backup_logs`, `notification_logs`, `document_templates` — เป็น
-  standalone/lookup table ไม่มี FK ขาเข้าสำคัญ)
+  standalone/lookup table ไม่มี FK ขาเข้าสำคัญ) — `notification_logs` แม้ไม่ปรากฏในแผนภาพ (เพราะ `recipient` เป็น
+  varchar อิสระ ไม่ใช่ FK) แต่เป็นตารางที่ใช้งานจริงหนักที่สุดตารางหนึ่ง ทั้งประวัติ Email/Telegram/LINE และ
+  inbox แจ้งเตือนในแอป (channel `PUSH`) — ดู [docs/05-api-design.md](05-api-design.md) §5.13
 - ความสัมพันธ์ `ASSETS ||--|| ASSET_QRCODES` เป็น 1:1 (1 ครุภัณฑ์ = 1 QR Code ที่ active ในเวลาหนึ่ง)
+- `ASSET_LOANS` ผูกกับ `USERS` สามความสัมพันธ์แยกกัน (`borrower_id` ผู้ยืม, `recorded_by` ผู้บันทึกรายการ,
+  `returned_by` ผู้บันทึกการคืน — อาจเป็นคนละคนกับผู้ยืม) — ครุภัณฑ์ 1 ชิ้นมีได้หลายรายการยืม-คืนตามประวัติ
+- `DIVISIONS` (แผนกย่อยภายใต้ `DEPARTMENTS`) ปัจจุบันยังไม่มีตารางอื่นอ้างอิงกลับ (ไม่มี FK ขาเข้า) — เตรียมไว้ใช้
+  แบ่งโครงสร้างองค์กรละเอียดขึ้นในอนาคต
 - `REPAIR_TICKET_TIMELINE` และ `AUDIT_LOGS` เป็นปลายทางแบบ insert-only เท่านั้น (ไม่มีความสัมพันธ์ที่ลบ cascade ย้อนกลับ)

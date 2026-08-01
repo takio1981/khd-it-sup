@@ -1,6 +1,7 @@
 # 5. API Design (REST)
 
-Base URL: `/api/v1` · รูปแบบ response มาตรฐาน:
+Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช่น `/khd-it-sup/api/v1` — ดู
+[docs/07-deployment-guide.md](07-deployment-guide.md)) · รูปแบบ response มาตรฐาน:
 
 ```jsonc
 // Success
@@ -11,97 +12,150 @@ Base URL: `/api/v1` · รูปแบบ response มาตรฐาน:
 ```
 
 - **Auth header:** `Authorization: Bearer <accessToken>`
-- **Full interactive spec:** เมื่อ Backend Phase 1 เสร็จ จะให้บริการที่ `/api-docs` (Swagger UI สร้างจาก `swagger-jsdoc`
-  annotations ในโค้ดจริงทุก endpoint — ไม่ maintain แยกจากโค้ด เพื่อไม่ให้เอกสารเพี้ยนจากของจริง)
-- เอกสารนี้คือ **endpoint inventory** ระดับออกแบบ ก่อนลงมือเขียนโค้ด Phase 1 เป็นต้นไป (`✅` = อยู่ใน MVP Phase 1-9, `🔜` = Phase 10+)
+- **Full interactive spec (ตรงกับโค้ดจริงเสมอ):** `/api-docs` (Swagger UI สร้างจาก `swagger-jsdoc` annotation เหนือทุก route
+  ในโค้ดจริง — เอกสารนี้คือสรุปภาพรวมสำหรับอ่านเร็ว ไม่ใช่แหล่งอ้างอิงหลัก)
+- `✅` = implement แล้วและใช้งานได้จริง, `🔜` = Phase 10+ ยังไม่เริ่ม
 
 ## 5.1 Auth — `/api/v1/auth` ✅
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
-| POST | `/auth/login` | public | เข้าสู่ระบบ (username/password) → accessToken + refreshToken (httpOnly cookie) |
+| POST | `/auth/login` | public (rate-limited) | เข้าสู่ระบบ (username/password) → accessToken + refreshToken (httpOnly cookie) |
 | POST | `/auth/refresh` | public (ต้องมี refresh cookie) | ขอ accessToken ใหม่ + rotate refresh token |
 | POST | `/auth/logout` | authenticated | revoke refresh token ปัจจุบัน |
-| GET  | `/auth/me` | authenticated | ข้อมูลผู้ใช้ปัจจุบัน + permission ทั้งหมด |
-| POST | `/auth/change-password` | authenticated | เปลี่ยนรหัสผ่านตนเอง |
+| GET | `/auth/me` | authenticated | ข้อมูลผู้ใช้ปัจจุบัน + permission ทั้งหมด (payload เดียวกับที่ decode จาก JWT) |
+| POST | `/auth/change-password` | authenticated | เปลี่ยนรหัสผ่านตนเอง (revoke ทุก session หลังเปลี่ยนสำเร็จ) |
+| POST | `/auth/forgot-password` | public (rate-limited) | ขอลิงก์ตั้งรหัสผ่านใหม่ทางอีเมล — ตอบสำเร็จเสมอไม่ว่าจะพบบัญชีหรือไม่ (กัน enumeration) token หมดอายุ 30 นาที ใช้ได้ครั้งเดียว |
+| POST | `/auth/reset-password` | public (rate-limited) | ตั้งรหัสผ่านใหม่ด้วย token จากอีเมล — revoke ทุก session หลังสำเร็จ |
+| GET | `/auth/notification-channels` | authenticated | ช่องทางแจ้งเตือนส่วนตัว (Telegram Chat ID / LINE User ID) ของตนเอง |
+| PATCH | `/auth/notification-channels` | authenticated | ตั้งค่าช่องทางแจ้งเตือนส่วนตัวของตนเอง |
+| PATCH | `/auth/profile` | authenticated | ตั้งค่าเพศของตนเอง (เลือกภาพ avatar เริ่มต้น) |
+| POST | `/auth/avatar` | authenticated | อัปโหลดรูปโปรไฟล์ของตนเอง (`multipart/form-data`, field `avatar`, รูปภาพเท่านั้น ≤ 2 MB) |
+| DELETE | `/auth/avatar` | authenticated | ลบรูปโปรไฟล์ของตนเอง (กลับไปใช้ avatar เริ่มต้นตามเพศ) |
 
 ## 5.2 Users — `/api/v1/users` ✅
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
-| GET | `/users` | `user:read` | รายชื่อผู้ใช้ (pagination, filter by role/department) |
-| GET | `/users/:id` | `user:read` | รายละเอียดผู้ใช้ |
-| POST | `/users` | `user:create` | สร้างผู้ใช้ |
-| PATCH | `/users/:id` | `user:update` | แก้ไขผู้ใช้ |
-| DELETE | `/users/:id` | `user:delete` | ลบผู้ใช้ (soft delete) |
-| POST | `/users/:id/reset-password` | `user:reset_password` | รีเซ็ตรหัสผ่าน (สุ่มรหัสชั่วคราว + บังคับเปลี่ยน) |
-| GET | `/users/roles` | authenticated | รายชื่อ role ทั้งหมด (เติม dropdown ตอนสร้าง/แก้ไขผู้ใช้) |
+| GET | `/users` | `user:read` | รายชื่อผู้ใช้ (pagination, filter by role/department/keyword) |
+| GET | `/users/roles` | authenticated | รายชื่อ role ทั้งหมด (เติม dropdown) |
 | GET | `/users/stats` | `user:read` | สรุปสถิติผู้ใช้งาน (ทั้งหมด/ใช้งานอยู่/ปิดใช้งาน/ต้องเปลี่ยนรหัสผ่าน) + แจกแจงตาม role/หน่วยงาน |
 | GET | `/users/technicians` | `ticket:assign` | รายชื่อช่างเทคนิค/เจ้าหน้าที่ไอทีที่ใช้งานอยู่ (เติม dropdown ตอนมอบหมายงาน) |
-| POST | `/users/:id/avatar` 🔜 | authenticated (self) หรือ `user:update` | อัปโหลด avatar (Multer uploader พร้อมใช้งานที่ระดับ infra แล้ว แต่ยังไม่ได้ผูก route/controller — Phase 10+) |
+| GET | `/users/:id` | `user:read` | รายละเอียดผู้ใช้ |
+| POST | `/users` | `user:create` | สร้างผู้ใช้ (รับฟิลด์ `gender` ด้วย, บังคับเปลี่ยนรหัสผ่านครั้งแรกเสมอ) |
+| PATCH | `/users/:id` | `user:update` | แก้ไขผู้ใช้ |
+| DELETE | `/users/:id` | `user:delete` | ลบผู้ใช้ (soft delete) |
+| POST | `/users/:id/reset-password` | `user:reset_password` | รีเซ็ตรหัสผ่าน (สุ่มรหัสชั่วคราว ส่งอีเมลอัตโนมัติ + บังคับเปลี่ยน) |
+| POST | `/users/:id/avatar` | `user:update` | อัปโหลดรูปโปรไฟล์ให้ผู้ใช้คนอื่น (`multipart/form-data`, field `avatar`) |
+| DELETE | `/users/:id/avatar` | `user:update` | ลบรูปโปรไฟล์ของผู้ใช้คนอื่น |
 
-## 5.3 Departments — `/api/v1/departments` ✅
-
-| Method | Path | Permission | คำอธิบาย |
-|---|---|---|---|
-| GET | `/departments` | authenticated | รายชื่อหน่วยงาน (tree) |
-| POST | `/departments` | `department:manage` | สร้างหน่วยงาน |
-| PATCH | `/departments/:id` | `department:manage` | แก้ไขหน่วยงาน |
-| DELETE | `/departments/:id` | `department:manage` | ลบหน่วยงาน |
-
-## 5.4 Assets — `/api/v1/assets` ✅
+## 5.3 Departments / Divisions / Positions ✅
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
+| GET | `/departments` | authenticated | รายชื่อหน่วยงานทั้งหมด |
+| GET | `/departments/:id` | authenticated | รายละเอียดหน่วยงาน |
+| POST/PATCH/DELETE | `/departments`, `/departments/:id` | `department:manage` | สร้าง/แก้ไข/ปิดใช้งานหน่วยงาน |
+| GET | `/divisions` | authenticated | รายชื่อแผนกทั้งหมด (เติม dropdown) |
+| GET | `/divisions/:id` | authenticated | รายละเอียดแผนก |
+| POST/PATCH/DELETE | `/divisions`, `/divisions/:id` | `department:manage` | สร้าง/แก้ไข/ปิดใช้งานแผนก |
+| GET | `/positions` | authenticated | รายชื่อตำแหน่งงานทั้งหมด (เติม dropdown) |
+| GET | `/positions/:id` | authenticated | รายละเอียดตำแหน่งงาน |
+| POST/PATCH/DELETE | `/positions`, `/positions/:id` | `user:create`/`user:update` | สร้าง/แก้ไข/ปิดใช้งานตำแหน่งงาน |
+
+## 5.4 Locations (อาคาร/ชั้น/ห้อง) — mount ที่ root `/api/v1` ✅
+
+| Method | Path | Permission | คำอธิบาย |
+|---|---|---|---|
+| GET | `/buildings`, `/floors`, `/rooms` | authenticated | รายชื่ออาคาร/ชั้น/ห้องทั้งหมด (`floors`/`rooms` กรองตาม parent ผ่าน query ได้) |
+| POST/PATCH/DELETE | เหมือนกัน | `asset:create`/`asset:update`/`asset:delete` | จัดการอาคาร/ชั้น/ห้อง (ใช้ผูกตำแหน่งครุภัณฑ์) |
+
+## 5.5 Assets — `/api/v1/assets` ✅
+
+| Method | Path | Permission | คำอธิบาย |
+|---|---|---|---|
+| GET | `/assets/categories` | authenticated | รายการประเภทครุภัณฑ์ทั้งหมด (14 ประเภท) |
+| POST/PATCH/DELETE | `/assets/categories`, `/assets/categories/:id` | `asset:create`/`asset:update` | จัดการประเภทครุภัณฑ์ |
 | GET | `/assets` | `asset:read` | รายการครุภัณฑ์ (filter: category, department, status, keyword — ใช้ FULLTEXT) |
 | GET | `/assets/:id` | `asset:read` | รายละเอียดครุภัณฑ์ |
-| GET | `/assets/:id/history` | `asset:view_history` | ประวัติ (repair tickets ที่ผูกกับครุภัณฑ์นี้) |
+| GET | `/assets/:id/history` | `asset:view_history` | ประวัติการซ่อมของครุภัณฑ์นี้ |
 | POST | `/assets` | `asset:create` | สร้างครุภัณฑ์ (auto-generate `asset_number` จาก `running_number_sequences`) |
 | PATCH | `/assets/:id` | `asset:update` | แก้ไขครุภัณฑ์ |
 | DELETE | `/assets/:id` | `asset:delete` | ลบครุภัณฑ์ (soft delete) |
-| POST | `/assets/:id/photos` | `asset:update` | อัปโหลดรูปครุภัณฑ์ (Multer, multi-file) |
-| GET | `/assets/categories` | authenticated | รายการประเภทครุภัณฑ์ (14 ประเภท) |
+| POST | `/assets/:id/photos` | `asset:update` | อัปโหลดรูปครุภัณฑ์ (`multipart/form-data`, field `photos`, สูงสุด 10 ไฟล์) |
+| DELETE | `/assets/:id/photos/:photoId` | `asset:update` | ลบรูปครุภัณฑ์ |
 
-## 5.5 QR Code — `/api/v1/qrcodes` ✅
+## 5.6 Asset Loans (ยืม-คืนครุภัณฑ์) — `/api/v1/asset-loans` ✅
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
-| POST | `/qrcodes/assets/:assetId/generate` | `qrcode:generate` | สร้าง/สร้างใหม่ QR (encrypt asset id ด้วย AES → `qr_token`) |
-| GET | `/qrcodes/assets/:assetId/print` | `qrcode:print` | คืนรูป QR เป็น PNG ความละเอียดสูงสำหรับพิมพ์ติดสติกเกอร์ (เลย์เอาต์ A4/สติกเกอร์แบบมีหัวกระดาษราชการเต็มรูปแบบอยู่ใน Document Printing module — Phase 10+) |
-| POST | `/qrcodes/bulk-print` | `qrcode:print` | พิมพ์ QR หลายรายการพร้อมกัน (array of assetId) |
-| GET | `/qrcodes/resolve/:token` | **public** | ถอดรหัส token → คืนข้อมูลครุภัณฑ์แบบย่อ สำหรับหน้า scan (ไม่ต้อง login) |
+| GET | `/asset-loans` | authenticated | รายการยืม-คืน (filter: status BORROWED/OVERDUE/RETURNED, keyword) |
+| GET | `/asset-loans/stats` | authenticated | สรุปจำนวน (ทั้งหมด/กำลังยืม/เกินกำหนด/คืนแล้ว) |
+| GET | `/asset-loans/chart` | authenticated | ข้อมูลกราฟ (ครุภัณฑ์/ผู้ยืมที่ถูกยืมบ่อยที่สุด) |
+| GET | `/asset-loans/:id` | authenticated | รายละเอียดรายการยืม-คืน |
+| POST | `/asset-loans` | `asset:loan` | บันทึกยืมครุภัณฑ์ (แจ้งเตือนผู้ยืมทุกช่องทางทันที) |
+| PATCH | `/asset-loans/:id` | `asset:loan` | แก้ไขรายการยืม-คืน |
+| DELETE | `/asset-loans/:id` | `asset:loan` | ลบรายการยืม-คืน |
+| POST | `/asset-loans/:id/return` | `asset:loan` | บันทึกคืนครุภัณฑ์ (แจ้งเตือนผู้ยืมทุกช่องทาง) |
 
-## 5.6 Repair Tickets — `/api/v1/repair-tickets` ✅
+> รายการที่เกินกำหนดคืน (`expected_return_date` ผ่านไปแล้วและยังไม่คืน) ถูกแจ้งเตือนซ้ำอัตโนมัติทุกวันเวลา 08:00
+> (Asia/Bangkok) ผ่าน cron job ภายใน backend — ดู § 5.8
+
+## 5.7 QR Code — `/api/v1/qrcodes` ✅
+
+| Method | Path | Permission | คำอธิบาย |
+|---|---|---|---|
+| POST | `/qrcodes/assets/:assetId/generate` | `qrcode:generate` | สร้าง/สร้างใหม่ QR (encrypt asset id ด้วย AES → `qr_token`, regenerate ทำให้สติกเกอร์เดิมใช้ไม่ได้) |
+| GET | `/qrcodes/assets/:assetId/print` | `qrcode:print` | คืนรูป QR เป็น PNG ความละเอียดสูงสำหรับพิมพ์ติดสติกเกอร์ |
+| POST | `/qrcodes/bulk-print` | `qrcode:print` | สร้าง QR หลายรายการพร้อมกัน (array of assetId) |
+| GET | `/qrcodes/resolve/:token` | **public** (optional auth) | ถอดรหัส token → คืนข้อมูลครุภัณฑ์แบบย่อ สำหรับหน้า scan |
+
+## 5.8 Repair Tickets — `/api/v1/repair-tickets` ✅
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
 | GET | `/repair-tickets` | `ticket:read` / `ticket:track` (เห็นเฉพาะของตน) | รายการใบแจ้งซ่อม (filter: status, urgency, department, technician, date range) |
-| GET | `/repair-tickets/:id` | `ticket:read` / เจ้าของ ticket | รายละเอียด + workflow ปัจจุบัน + SLA คำนวณสด |
-| POST | `/repair-tickets` | `ticket:create` (ต้อง login — QR scan page จะพาผู้ใช้ที่ยังไม่ login ไปหน้า login ก่อนเสมอ ไม่มี guest bypass) | สร้างใบแจ้งซ่อมใหม่ → auto-init workflow instance + timeline event แรก |
-| POST | `/repair-tickets/:id/receive` | `ticket:receive` | IT Officer รับเรื่อง → เปลี่ยน step เป็น RECEIVED |
-| POST | `/repair-tickets/:id/assign` | `ticket:assign` | มอบหมายช่างเทคนิค → step IT_REVIEW/DIAGNOSIS |
-| POST | `/repair-tickets/:id/transition` | `ticket:update_status` | เปลี่ยน step ตาม `workflow_transitions` ที่อนุญาตจาก step ปัจจุบัน |
-| POST | `/repair-tickets/:id/attachments` | `ticket:upload_attachment` | อัปโหลดรูป/ไฟล์แนบ (before/after) |
+| GET | `/repair-tickets/:id` | `ticket:read` / `ticket:track` | รายละเอียด + progress ของ workflow ปัจจุบัน |
+| GET | `/repair-tickets/:id/timeline` | `ticket:read` / `ticket:track` | Timeline แบบ immutable ทั้งหมด เรียงตามเวลา |
+| POST | `/repair-tickets` | `ticket:create` | สร้างใบแจ้งซ่อมใหม่ (auto-generate เลขที่ + เริ่ม workflow instance) |
+| POST | `/repair-tickets/:id/receive` | `ticket:receive` | IT Officer รับเรื่อง (SUBMITTED → RECEIVED) |
+| POST | `/repair-tickets/:id/assign` | `ticket:assign` | มอบหมายช่างผู้รับผิดชอบ (ไม่เปลี่ยนสถานะ workflow) |
+| POST | `/repair-tickets/:id/transition` | `ticket:update_status` | เปลี่ยนสถานะตาม `workflow_transitions` ที่อนุญาต (ไม่รวม close/cancel) |
+| PATCH | `/repair-tickets/:id/summary` | `ticket:update_status` | บันทึก/แก้ไขสรุปผลการซ่อม (สาเหตุ/วิธีแก้/อะไหล่/ข้อเสนอแนะ) |
+| POST | `/repair-tickets/:id/approve-unit-head` | `ticket:approve` | หัวหน้างานของผู้แจ้งลงนามรับทราบ (ส่วนที่ 1 ของแบบฟอร์ม) |
+| POST | `/repair-tickets/:id/inspection` | `ticket:update_status` | บันทึกผลตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที (ส่วนที่ 2) |
+| POST | `/repair-tickets/:id/approve-digital-health-head` | `ticket:approve` | หัวหน้ากลุ่มงานสุขภาพดิจิทัลลงนามรับรอง (ส่วนที่ 2) |
 | POST | `/repair-tickets/:id/cancel` | `ticket:cancel` | ยกเลิกใบแจ้งซ่อม (ต้องระบุเหตุผล) |
-| POST | `/repair-tickets/:id/close` | `ticket:close` | ปิดงาน (step CLOSED, terminal) |
-| GET | `/repair-tickets/:id/timeline` | `ticket:read` / เจ้าของ ticket | Timeline เต็มรูปแบบ (immutable event ทั้งหมด เรียงเวลา) |
+| POST | `/repair-tickets/:id/close` | `ticket:close` | ปิดงาน (จาก step USER_ACCEPTANCE เท่านั้น) |
+| POST | `/repair-tickets/:id/comment` | authenticated | เพิ่มความคิดเห็นลง Timeline โดยไม่เปลี่ยนสถานะ |
+| POST | `/repair-tickets/:id/attachments` | `ticket:upload_attachment` | อัปโหลดรูป/วิดีโอแนบ (`multipart/form-data`, field `attachments`, สูงสุด 5 ไฟล์ ไฟล์ละ ≤ 5 MB) |
 
-## 5.7 Workflow (read-only ใน MVP, config เต็มรูปแบบ 🔜 Phase 10+)
+## 5.9 Workflow (read-only ใน MVP, config เต็มรูปแบบ 🔜 Phase 10+)
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
-| GET | `/workflow-templates/:code` | authenticated | โครงสร้างผังงาน (steps + transitions) เพื่อ render ใน UI Timeline |
+| GET | `/workflow-templates/:code` | authenticated | โครงสร้างผังงาน (steps + transitions) เพื่อ render ใน UI Timeline (เช่น `REPAIR_INTERNAL`) |
 | PATCH | `/workflow-templates/:id/steps` 🔜 | `workflow:configure` | แก้ไข step/SLA/role ผู้รับผิดชอบ |
 | POST | `/workflow-templates/:id/flow-designer` 🔜 | `workflow:configure` | บันทึกผังจาก Visual Flow Designer (drag & drop) |
 
-## 5.8 Notifications ✅ (Email) / 🔜 (Telegram, LINE)
+> ปัจจุบัน seed ไว้เฉพาะ `REPAIR_INTERNAL` (12 ขั้นตอน) — ยังไม่มี workflow template สำหรับซ่อมภายนอก
+> (`REPAIR_EXTERNAL`) แม้ enum `applies_to` ใน schema จะรองรับอยู่แล้วก็ตาม
+
+## 5.10 Notifications — `/api/v1/notifications` ✅
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
-| GET | `/notifications/logs` | `audit:view` หรือ `settings:manage` | ประวัติการแจ้งเตือนทุกช่องทาง (ใช้ตรวจสอบ delivery) |
-| (internal) | — | — | `NotificationService` ถูกเรียกจาก `RepairTicketService`/`WorkflowService` โดยตรง ไม่มี public endpoint สำหรับ "ส่งแจ้งเตือน" ตรง ๆ |
+| GET | `/notifications/logs` | `audit:view` หรือ `settings:manage` | ประวัติการแจ้งเตือนทุกช่องทาง (Email/Telegram/LINE/Push) ใช้ตรวจสอบสถานะการส่ง |
+| GET | `/notifications/me` | authenticated | แจ้งเตือนในแอป (bell) ของตนเอง (channel="PUSH" เฉพาะของ userId ตนเอง) |
+| GET | `/notifications/me/unread-count` | authenticated | จำนวนแจ้งเตือนในแอปที่ยังไม่อ่าน |
+| PATCH | `/notifications/me/:id/read` | authenticated | อ่านแจ้งเตือนในแอปรายการเดียว |
+| PATCH | `/notifications/me/read-all` | authenticated | อ่านแจ้งเตือนในแอปทั้งหมด |
 
-## 5.9 Dashboard — `/api/v1/dashboard` ✅
+`NotificationService` ถูกเรียกจาก `RepairTicketService`/`AssetLoanService`/cron job โดยตรง ไม่มี public endpoint สำหรับ
+"ส่งแจ้งเตือน" ตรง ๆ — ทุกครั้งที่ส่งจะ (1) บันทึกลง `notification_logs` เสมอไม่ว่าสำเร็จหรือไม่ และ (2) ถ้าเป็นเหตุการณ์ที่ผูก
+กับผู้ใช้รายคน จะยิง Socket.IO event `notification:new` แบบ realtime ไปยังห้อง `user:<userId>` ด้วย (ดู § 5.13)
+
+## 5.11 Dashboard — `/api/v1/dashboard` ✅
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
@@ -110,23 +164,36 @@ Base URL: `/api/v1` · รูปแบบ response มาตรฐาน:
 | GET | `/dashboard/charts/yearly` | `dashboard:view` | ข้อมูลกราฟรายปีทั้งหมด |
 | GET | `/dashboard/charts/department-ranking` | `dashboard:view` | อันดับหน่วยงานที่แจ้งซ่อมมากที่สุด |
 | GET | `/dashboard/charts/technician-workload` | `dashboard:view` | ภาระงานช่างแต่ละคน (เฉพาะงานที่ยังไม่ปิด) |
-| GET | `/dashboard/analytics` | `dashboard:view` | เวลาซ่อมเฉลี่ย + Top 10 ครุภัณฑ์ที่ถูกแจ้งซ่อมบ่อยที่สุด |
+| GET | `/dashboard/analytics` | `dashboard:view` | เวลาซ่อมเฉลี่ย + Top ครุภัณฑ์ที่ถูกแจ้งซ่อมบ่อยที่สุด |
 
-## 5.10 Audit Log 🔜 Phase 10+
+## 5.12 Settings — `/api/v1/settings` ✅ (แจ้งเตือน) / 🔜 (ทั่วไป)
+
+| Method | Path | Permission | คำอธิบาย |
+|---|---|---|---|
+| GET | `/settings/notifications` | `settings:manage` หรือ `audit:view` | ค่าตั้งค่าการแจ้งเตือน (เปิด/ปิดช่องทาง, Telegram/LINE credential (ไม่คืนค่าจริง), เหตุการณ์แต่ละประเภท) |
+| PATCH | `/settings/notifications` | `settings:manage` | แก้ไขค่าตั้งค่าการแจ้งเตือน — เก็บแบบ key-value ใน `system_settings` (category="notification") |
+| GET/PATCH | `/settings/organization`, `/settings/theme` 🔜 | `settings:manage` | ตั้งค่าองค์กร/ธีมทั่วไป — ปัจจุบันกำหนดผ่าน `.env` เท่านั้น |
+
+## 5.13 Realtime — Socket.IO (ไม่ใช่ REST) ✅
+
+| Path | คำอธิบาย |
+|---|---|
+| `/socket.io/` (namespace เดียว) | Client เชื่อมต่อหลัง login ด้วย JWT access token ผ่าน `auth: { token }` ตอน connect (ดู `infrastructure/socket/socket.server.ts`) แต่ละ client จะถูกจับเข้าห้อง `user:<userId>` อัตโนมัติ |
+| Event `notification:new` (server → client) | ยิงเมื่อมีแจ้งเตือนในแอปใหม่สำหรับ user นั้น — payload: `{ id, title, message, relatedEntityType, relatedEntityId, createdAt }` |
+
+> **Path prefix gotcha:** เมื่อ deploy ใต้ path prefix (เช่น `/khd-it-sup/`) ต้องกำหนด `path` option ของ
+> socket.io-client ให้รวม prefix เข้าไปด้วยตรง ๆ (เช่น `/khd-it-sup/socket.io`) — การส่ง prefix ผ่าน connection URL
+> เฉย ๆ ไม่ทำให้ client ต่อ path ที่ถูกต้อง (ดู `frontend/src/app/core/services/socket.service.ts`)
+
+## 5.14 Audit Log 🔜 Phase 10+ (backend บันทึกอยู่แล้ว แต่ยังไม่มี endpoint ให้ query)
 
 | Method | Path | Permission |
 |---|---|---|
-| GET | `/audit-logs` | `audit:view` |
-
-## 5.11 Settings 🔜 Phase 10+ (backend infra สำหรับ SMTP มีตั้งแต่ Phase 4)
-
-| Method | Path | Permission |
-|---|---|---|
-| GET/PATCH | `/settings/smtp`, `/settings/telegram`, `/settings/line`, `/settings/organization` | `settings:manage` |
+| GET | `/audit-logs` 🔜 | `audit:view` |
 
 ---
 
-## 5.12 ตัวอย่าง OpenAPI 3.0 (Auth module) — รูปแบบที่ swagger-jsdoc จะ generate จริงจาก JSDoc comment เหนือแต่ละ route
+## 5.15 ตัวอย่าง OpenAPI 3.0 (Auth module) — รูปแบบที่ swagger-jsdoc generate จริงจาก JSDoc comment เหนือแต่ละ route
 
 ```yaml
 openapi: 3.0.3
@@ -135,7 +202,7 @@ info:
   version: 1.0.0
   description: IT Service Desk & Asset Maintenance Management System — สำนักงานสาธารณสุขจังหวัดนครราชสีมา
 servers:
-  - url: /api/v1
+  - url: /khd-it-sup/api/v1
 paths:
   /auth/login:
     post:
@@ -181,6 +248,8 @@ components:
         username: { type: string }
         fullName: { type: string }
         role: { type: string, example: SUPER_ADMIN }
+        avatarUrl: { type: string, nullable: true }
+        gender: { type: string, enum: [MALE, FEMALE], nullable: true }
         permissions:
           type: array
           items: { type: string }
@@ -188,5 +257,5 @@ security:
   - bearerAuth: []
 ```
 
-โครงนี้จะถูกประกอบอัตโนมัติจาก JSDoc annotation ในทุกไฟล์ `*.routes.ts` เมื่อ implement Backend จริง (Phase 1 เป็นต้นไป)
-โดยใช้ `swagger-jsdoc` + `swagger-ui-express` mount ที่ `/api-docs`
+โครงนี้ถูกประกอบอัตโนมัติจาก JSDoc `@openapi` annotation ในทุกไฟล์ `*/routes.ts` โดยใช้ `swagger-jsdoc` +
+`swagger-ui-express` mount ที่ `/api-docs` — เปิดดู endpoint ทั้งหมดพร้อมทดลองยิงได้จริงที่นั่น

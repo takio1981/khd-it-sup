@@ -18,29 +18,35 @@ khd-it-sup/
 │   │   │   ├── database/               # Prisma client singleton, transaction helper
 │   │   │   ├── logger/                 # Winston logger config
 │   │   │   ├── mailer/                 # Nodemailer + Gmail SMTP transport
-│   │   │   ├── socket/                 # Socket.IO server, event emitter service
-│   │   │   ├── messaging/telegram/     # Telegram Bot client (Phase 10+)
-│   │   │   ├── messaging/line/         # LINE Messaging API client (Phase 10+)
-│   │   │   ├── storage/                # Multer disk storage config, file helpers
+│   │   │   ├── socket/                 # Socket.IO server (JWT auth ตอน connect, ห้องแยกตาม userId), emitToUser()
+│   │   │   ├── scheduler/              # node-cron: งานแจ้งเตือนยืมเกินกำหนดคืนรายวัน (08:00 Asia/Bangkok)
+│   │   │   ├── telegram/               # Telegram Bot API client
+│   │   │   ├── line/                   # LINE Messaging API client
+│   │   │   ├── messaging/              # (ว่าง — โครงเดิมก่อนย้ายมาเป็น telegram/ line/ แยกกัน)
+│   │   │   ├── storage/                # Multer disk storage config (assets/tickets/avatars), file cleanup helper
 │   │   │   └── qrcode/                 # QR generate + AES payload encrypt/decrypt
 │   │   │
 │   │   ├── modules/                    # 1 โฟลเดอร์ต่อ 1 Domain Module (Modular Design)
-│   │   │   ├── auth/                   # login, refresh token, logout, change password
-│   │   │   │   ├── controllers/  services/  repositories/  dto/  validators/  routes.ts
-│   │   │   ├── users/                  # User CRUD, reset password, avatar
-│   │   │   ├── departments/            # Department/Position CRUD
-│   │   │   ├── assets/                 # Asset CRUD ทุกประเภทครุภัณฑ์
+│   │   │   ├── auth/                   # login, refresh, logout, change/forgot/reset password, avatar, gender, ช่องทางแจ้งเตือนส่วนตัว
+│   │   │   │   ├── controllers/  services/  repositories/  dto/  validators/(ว่าง)  routes.ts
+│   │   │   ├── users/                  # User CRUD, reset password, avatar (ฝั่งแอดมิน)
+│   │   │   ├── departments/            # Department CRUD
+│   │   │   ├── divisions/              # Division (แผนก) CRUD
+│   │   │   ├── positions/              # Position (ตำแหน่งงาน) CRUD
+│   │   │   ├── locations/              # Building/Floor/Room CRUD
+│   │   │   ├── assets/                 # Asset CRUD ทุกประเภทครุภัณฑ์ + Category
+│   │   │   ├── asset-loans/            # ยืม-คืนครุภัณฑ์ + สถิติ/กราฟ
 │   │   │   ├── qrcode/                 # Generate/Print/Bulk Print/Scan resolve
-│   │   │   ├── repair-tickets/         # Repair Ticket CRUD, submit, assign
+│   │   │   ├── repair-tickets/         # Repair Ticket CRUD, submit, assign, inspection, approval
 │   │   │   ├── workflow/               # Workflow Template/Step/Transition Engine
 │   │   │   ├── timeline/               # Immutable Timeline event recorder + query
-│   │   │   ├── notifications/          # Email/Telegram/LINE dispatch + log
+│   │   │   ├── notifications/          # Email/Telegram/LINE/Push dispatch + log + in-app inbox (bell)
 │   │   │   ├── dashboard/              # Dashboard aggregate queries
-│   │   │   ├── audit-log/              # Audit log recorder + query
-│   │   │   └── settings/               # SMTP/Telegram/LINE/Org/RunningNumber settings
+│   │   │   ├── audit-log/              # Audit log recorder (ยังไม่มี query endpoint สาธารณะ)
+│   │   │   └── settings/               # Notification settings (key-value ใน system_settings)
 │   │   │
 │   │   ├── app.ts                      # Express app assembly (middleware, routes, swagger)
-│   │   └── server.ts                   # HTTP server bootstrap + Socket.IO attach + graceful shutdown
+│   │   └── server.ts                   # HTTP server bootstrap + Socket.IO attach + cron scheduler + graceful shutdown
 │   │
 │   ├── prisma/
 │   │   ├── schema.prisma               # Prisma schema (ครบทุก entity ตาม ER Diagram)
@@ -62,17 +68,28 @@ khd-it-sup/
 ├── frontend/                           # Angular SPA
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── core/                   # Singleton: AuthService, TokenInterceptor, ErrorInterceptor, guards, models
-│   │   │   ├── shared/                 # Reusable components/pipes/directives (StatusBadge, DataTable, ConfirmDialog)
-│   │   │   ├── layout/                 # AppShell, Sidebar, Topbar, Breadcrumb
+│   │   │   ├── core/                   # Singleton: AuthService, SocketService, TokenInterceptor, ErrorInterceptor, guards, models
+│   │   │   ├── shared/                 # Reusable components (page-watermark, user-avatar, profile-dialog,
+│   │   │   │                           #   attachment-thumbnail/-lightbox, asset-photo-thumbnail, bar-chart,
+│   │   │   │                           #   stat-card, status-badge, timeline, icon, confirm-dialog,
+│   │   │   │                           #   qr-print-preview, ticket-print-preview)
+│   │   │   ├── layout/                 # AppShell (shell), Sidebar, Topbar + notification bell, Breadcrumb
 │   │   │   ├── features/
-│   │   │   │   ├── auth/               # Login page
+│   │   │   │   ├── landing/            # หน้าแรกสาธารณะ (ก่อน login) พื้นหลัง logo-khd-it-sup-2.png
+│   │   │   │   ├── auth/               # login, change-password, forgot-password, reset-password, notification-channels
 │   │   │   │   ├── dashboard/          # Executive Dashboard
 │   │   │   │   ├── assets/             # Asset list/detail/form
+│   │   │   │   ├── asset-loans/        # ยืม-คืนครุภัณฑ์ list/detail/form + สถิติ
 │   │   │   │   ├── repair-tickets/     # Ticket list/detail/timeline/kanban
 │   │   │   │   ├── qr/                 # Public QR scan landing page (no-auth route)
-│   │   │   │   ├── users/              # User management
-│   │   │   │   └── settings/           # System settings
+│   │   │   │   ├── users/              # User management (รวม avatar/gender ฝั่งแอดมิน)
+│   │   │   │   ├── departments/        # Department CRUD
+│   │   │   │   ├── divisions/          # Division (แผนก) CRUD
+│   │   │   │   ├── positions/          # Position (ตำแหน่งงาน) CRUD
+│   │   │   │   ├── locations/          # Building/Floor/Room CRUD
+│   │   │   │   ├── settings/           # notification-settings-form/-page, notification-log-list
+│   │   │   │   ├── help/               # หน้าคู่มือ/ช่วยเหลือในแอป
+│   │   │   │   └── misc/               # หน้า error/fallback ทั่วไป (404, 403 ฯลฯ)
 │   │   │   ├── app.routes.ts
 │   │   │   └── app.config.ts
 │   │   ├── assets/{images,icons}/

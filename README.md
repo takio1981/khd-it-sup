@@ -9,24 +9,34 @@ IT Service Desk & Asset Maintenance Management System
 
 ## ภาพรวมระบบ
 
-ระบบบริหารจัดการครุภัณฑ์คอมพิวเตอร์และการแจ้งซ่อมแบบครบวงจร สำหรับสำนักงานสาธารณสุขจังหวัดนครราชสีมา
-รองรับการแจ้งซ่อมผ่านการสแกน QR Code ติดครุภัณฑ์, ติดตามสถานะงานซ่อมแบบ Realtime ผ่าน Workflow Engine ที่กำหนดค่าได้,
-Timeline แบบ immutable ที่บันทึกทุกการกระทำถาวร, แจ้งเตือนอัตโนมัติผ่านอีเมล, และแดชบอร์ดสรุปผลเชิงบริหาร
+ระบบบริหารจัดการครุภัณฑ์คอมพิวเตอร์, การแจ้งซ่อม, และการยืม-คืนครุภัณฑ์แบบครบวงจร สำหรับสำนักงานสาธารณสุขจังหวัดนครราชสีมา
+รองรับการแจ้งซ่อมผ่านการสแกน QR Code ติดครุภัณฑ์, ติดตามสถานะงานซ่อมแบบ Realtime (Socket.IO) ผ่าน Workflow Engine ที่กำหนดค่าได้,
+Timeline แบบ immutable ที่บันทึกทุกการกระทำถาวร, แจ้งเตือนอัตโนมัติผ่านอีเมล/Telegram/LINE ทั้งช่องทางส่วนกลางและส่วนตัวรายคน,
+กระดิ่งแจ้งเตือนในแอปแบบ realtime, แจ้งเตือนยืมครุภัณฑ์เกินกำหนดคืนอัตโนมัติทุกวัน, ระบบลืมรหัสผ่านแบบ self-service,
+รูปโปรไฟล์ผู้ใช้, และแดชบอร์ดสรุปผลเชิงบริหาร
+
+รองรับการ deploy แบบ path-prefix (`/khd-it-sup/`) เพื่อแชร์ domain/เซิร์ฟเวอร์เดียวกับระบบอื่นได้ (ดู
+[docs/07-deployment-guide.md](docs/07-deployment-guide.md))
 
 ## สถานะการพัฒนา
 
-ระบบถูกส่งมอบเป็น Phase ตาม [docs/00-roadmap.md](docs/00-roadmap.md) — **Phase 1-8 (ระบบแกนหลัก) เสร็จสมบูรณ์และผ่านการทดสอบจริงแล้ว**
-ทั้ง Backend, Frontend, Database, และ Docker โดยทดสอบ end-to-end ผ่านเบราว์เซอร์จริงและ `docker compose` เต็มระบบ
-ส่วนความสามารถขั้นสูง (Flow Designer, Telegram/LINE, เอกสารราชการ 14 แบบ, Kanban, Inventory เต็มรูปแบบ) อยู่ใน Phase 10+
+ระบบถูกส่งมอบเป็น Phase ตาม [docs/00-roadmap.md](docs/00-roadmap.md) — **Phase 1-9 (ระบบแกนหลัก + Realtime + การแจ้งเตือนเต็มรูปแบบ)
+เสร็จสมบูรณ์และผ่านการทดสอบจริงแล้ว** ทั้ง Backend, Frontend, Database, และ Docker โดยทดสอบ end-to-end ผ่านเบราว์เซอร์จริงและ
+`docker compose` เต็มระบบ รวมถึง Telegram/LINE (ทั้งช่องทางกลางและส่วนตัว), Socket.IO realtime, กระดิ่งแจ้งเตือน,
+ลืมรหัสผ่าน, และแจ้งเตือนยืมเกินกำหนดคืนอัตโนมัติ ที่เดิมอยู่ใน Phase 10+ ได้ถูกทำเสร็จแล้วเช่นกัน
+
+ส่วนที่**ยังไม่เริ่ม**: งานซ่อมภายนอก (ส่งร้าน/บริษัท), คลังอะไหล่ (Spare Part Inventory), เอกสารราชการ 14 แบบพร้อมเลขที่วิ่งอัตโนมัติ,
+Audit Log UI, Kanban Board, Visual Flow Designer, รายงาน Export (Excel/PDF/CSV), หน้าตั้งค่าทั่วไป (ชื่อองค์กร/โลโก้/SMTP/ธีมผ่าน UI),
+ระบบสำรองข้อมูลอัตโนมัติผ่าน UI — ดูรายละเอียดที่ [docs/00-roadmap.md](docs/00-roadmap.md)
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Backend | Node.js 20 LTS, Express.js, TypeScript, Prisma ORM, JWT, Socket.IO, Nodemailer |
-| Frontend | Angular 21 (standalone, zoneless), Angular Material, TailwindCSS, RxJS, Signals |
+| Backend | Node.js 20 LTS, Express.js, TypeScript, Prisma ORM, JWT, Socket.IO, Nodemailer, node-cron |
+| Frontend | Angular 21 (standalone, zoneless), Angular Material, TailwindCSS, RxJS, Signals, socket.io-client |
 | Database | MariaDB 11 |
-| Container | Docker, Docker Compose, Nginx (reverse proxy) |
+| Container | Docker, Docker Compose, Nginx (reverse proxy, path-prefix routing) |
 | API Docs | Swagger / OpenAPI 3.0 (`/api-docs`) |
 | Testing | Jest, Supertest |
 
@@ -38,7 +48,8 @@ cp .env.example .env      # แก้ไขค่า secret/password ให้�
 docker compose up -d --build
 ```
 
-เปิด `http://localhost` — เข้าสู่ระบบด้วย `admin` / `Admin@12345` (บังคับเปลี่ยนรหัสผ่านทันทีหลัง deploy จริง)
+เปิด **`http://localhost/khd-it-sup/`** (ต้องมี path `/khd-it-sup/` เสมอ — เข้า `http://localhost` เฉย ๆ จะได้ 404 โดยตั้งใจ
+เพื่อรองรับการแชร์เซิร์ฟเวอร์กับระบบอื่น) แล้วเข้าสู่ระบบด้วย `admin` / `Admin@12345` (บังคับเปลี่ยนรหัสผ่านทันทีหลัง deploy จริง)
 
 รายละเอียดครบถ้วน: [docs/06-installation-guide.md](docs/06-installation-guide.md)
 

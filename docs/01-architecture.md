@@ -143,24 +143,32 @@ sequenceDiagram
 ## 1.4 Frontend Architecture (Angular)
 
 ```
-AppComponent (Shell)
- ├── CoreModule (Singleton: AuthService, TokenInterceptor, ErrorInterceptor, RbacGuard)
- ├── SharedModule (Reusable: Buttons, Tables, Dialogs, StatusBadge, Timeline UI)
- ├── LayoutModule (Sidebar, Topbar, Breadcrumb, ThemeToggle)
- └── Feature Modules (Lazy-loaded, 1 route per business module)
-      ├── AuthModule
-      ├── DashboardModule
-      ├── AssetsModule
-      ├── RepairTicketsModule
-      ├── QrModule (public scan page, no auth)
-      ├── UsersModule
-      └── SettingsModule
+AppComponent
+ ├── (public, ไม่ผ่าน shell) LandingComponent — หน้าแรกสาธารณะที่ path "/" (pathMatch: 'full')
+ ├── (public) auth/login, auth/forgot-password, auth/reset-password, qr/scan/:token
+ ├── core/            Singleton: AuthService, SocketService, NotificationService, Interceptors, Guards, models
+ ├── shared/          Reusable: IconComponent, StatusBadge, ConfirmDialog, Timeline UI, PageWatermark,
+ │                    UserAvatar (photo หรือ avatar เริ่มต้นตามเพศ), ProfileDialog, AttachmentThumbnail
+ ├── layout/          ShellComponent (Sidebar, Toolbar พร้อมกระดิ่งแจ้งเตือน realtime, ThemeToggle)
+ └── features/        (Lazy-loaded, 1 โฟลเดอร์ต่อ business module)
+      ├── auth/ (login, change-password, notification-channels, forgot-password, reset-password)
+      ├── dashboard/, assets/, asset-loans/, repair-tickets/, qr/
+      ├── users/, positions/, departments/, divisions/, locations/
+      ├── settings/ (notification-settings-page, notification-log-list)
+      ├── landing/, help/, misc/ (403/404)
 ```
 
-- ใช้ **Standalone Components + Lazy Loading** ของ Angular เพื่อลด initial bundle size
+- ใช้ **Standalone Components + Lazy Loading (`loadComponent`)** ของ Angular เพื่อลด initial bundle size —
+  **ไม่มี NgModule ในโปรเจกต์นี้เลย**
+- **Zoneless Change Detection** (`provideZonelessChangeDetection()`) — ไม่ใช้ Zone.js, ทุก component ต้องอัปเดต state
+  ผ่าน Signal เท่านั้นจึงจะ trigger re-render ถูกต้อง (`mutate` object ตรง ๆ โดยไม่ผ่าน `signal.set()`/`.update()` จะไม่เห็นผล)
 - **State Management**: RxJS + Angular Signals (service-based state, ไม่ใช้ NgRx เพื่อลดความซับซ้อนเกินจำเป็นสำหรับขนาดระบบนี้)
 - **HTTP Interceptor** แนบ JWT Access Token ทุก request, ดัก 401 เพื่อ refresh token อัตโนมัติ
-- **RBAC Guard** ระดับ route + structural directive (`*hasPermission="'asset:delete'"`) ระดับ UI element
+- **Socket.IO Client** (`SocketService`) เชื่อมต่อ realtime หลัง login ด้วย `effect()` ที่ตาม `authService.isAuthenticated()`
+  (connect/disconnect อัตโนมัติ) ป้อน event เข้า `NotificationService` เพื่ออัปเดตกระดิ่งแจ้งเตือนแบบ live
+- **RBAC Guard** ระดับ route (`permissionGuard`) + structural directive (`*khdHasPermission="'asset:delete'"`) ระดับ UI element
+- **Path-prefix aware**: production build ตั้ง `baseHref` ผ่าน `angular.json`, asset path ในโค้ดต้องเป็น relative
+  (ไม่ขึ้นต้นด้วย `/`) เพื่อ resolve ตาม `<base href>` ให้ถูกต้องใต้ prefix ใดก็ได้ (ดู [Developer Manual § 10.8](10-developer-manual.md))
 
 ---
 
@@ -213,16 +221,17 @@ Phase แรกของระบบ (MVP) จะ implement **Internal Repair Wo
 | Database | MariaDB 11 LTS |
 | Auth | JWT (jsonwebtoken) + bcrypt |
 | Validation | Zod |
-| Realtime | Socket.IO |
+| Realtime | Socket.IO (server) + socket.io-client (frontend) |
+| Scheduled Jobs | node-cron (ภายในโปรเซส backend เดียวกัน ไม่ต้องมี infra แยก) |
 | File Upload | Multer |
 | QR Code | `qrcode` npm package + AES encrypted payload |
 | Email | Nodemailer (Gmail SMTP) |
-| Chat Notification | Telegram Bot API, LINE Messaging API |
+| Chat Notification | Telegram Bot API, LINE Messaging API (ตั้งค่าได้ทั้งผ่าน UI และ `.env`) |
 | API Docs | Swagger (swagger-jsdoc + swagger-ui-express) — OpenAPI 3.0 |
 | Testing | Jest + Supertest |
-| Frontend Framework | Angular 18 (Standalone Components) |
+| Frontend Framework | Angular 21 (Standalone Components, Zoneless Change Detection) |
 | UI Library | Angular Material + TailwindCSS |
-| Icons | HeroIcons |
+| Icons | HeroIcons (inline SVG path data, ไม่ใช้ icon font) |
 | Reactive | RxJS + Angular Signals |
 | Container | Docker + Docker Compose |
 | Reverse Proxy | Nginx |
@@ -252,14 +261,19 @@ flowchart LR
         Vol3[(logs volume)]
     end
 
-    User -- HTTPS --> NginxC
-    NginxC -- "/" --> FEC
-    NginxC -- "/api" --> BEC
-    NginxC -- "/socket.io" --> BEC
+    User -- "HTTPS /khd-it-sup/*" --> NginxC
+    NginxC -- "/khd-it-sup/" --> FEC
+    NginxC -- "/khd-it-sup/api/" --> BEC
+    NginxC -- "/khd-it-sup/socket.io/" --> BEC
     BEC --> DBC
     BEC --> Vol1
     BEC --> Vol3
     DBC --> Vol2
 ```
+
+**Path-prefix routing:** ทุก route (frontend, API, WebSocket) อยู่ใต้ path prefix เดียวกัน (`/khd-it-sup/` ตาม default —
+ปรับได้) เพื่อให้แชร์ domain/เซิร์ฟเวอร์เดียวกับระบบอื่นได้ Nginx จะ `rewrite` ตัด prefix ออกก่อน proxy ต่อไปยัง
+container ภายใน (frontend/backend ไม่รู้จัก prefix นี้เลย) — รายละเอียดเต็มที่
+[docs/07-deployment-guide.md § Path Prefix](07-deployment-guide.md)
 
 ดูรายละเอียดเพิ่มเติม: [Folder Structure](02-folder-structure.md) · [Database Design](03-database-design.md) · [ER Diagram](04-er-diagram.md) · [API Design](05-api-design.md)
