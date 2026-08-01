@@ -89,6 +89,14 @@ export class AssetLoanRepository {
     return { total, borrowed: borrowed - overdue, overdue, returned };
   }
 
+  /** ใช้โดย job แจ้งเตือนยืมเกินกำหนดคืนรายวัน (ดู services/assetLoanReminder.job.ts) */
+  async findOverdueLoans() {
+    return prisma.assetLoan.findMany({
+      where: { actualReturnDate: null, expectedReturnDate: { lt: new Date() } },
+      include: loanInclude,
+    });
+  }
+
   async findAllForChart() {
     return prisma.assetLoan.findMany({
       select: { asset: { select: { assetNumber: true, brand: true, model: true } }, borrower: { select: { fullName: true } } },

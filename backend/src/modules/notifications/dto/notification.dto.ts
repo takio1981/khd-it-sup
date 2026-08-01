@@ -7,3 +7,11 @@ export const listNotificationLogsQuerySchema = z.object({
   status: z.enum(['PENDING', 'SENT', 'FAILED', 'READ']).optional(),
 });
 export type ListNotificationLogsQueryDto = z.infer<typeof listNotificationLogsQuerySchema>;
+
+export const listMyNotificationsQuerySchema = z.object({
+  page: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().positive().optional(),
+});
+export type ListMyNotificationsQueryDto = z.infer<typeof listMyNotificationsQuerySchema>;
+
+export const notificationIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });

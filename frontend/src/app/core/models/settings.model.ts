@@ -13,6 +13,7 @@ export interface INotificationSettings {
   notifyCancel: boolean;
   notifyAssetBorrowed: boolean;
   notifyAssetReturned: boolean;
+  notifyAssetOverdue: boolean;
 }
 
 export interface IUpdateNotificationSettingsPayload {
@@ -30,4 +31,5 @@ export interface IUpdateNotificationSettingsPayload {
   notifyCancel?: boolean;
   notifyAssetBorrowed?: boolean;
   notifyAssetReturned?: boolean;
+  notifyAssetOverdue?: boolean;
 }

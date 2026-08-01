@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,27 +10,23 @@ import { PageWatermarkComponent } from '../../../shared/components/page-watermar
 import { environment } from '../../../../environments/environment';
 
 @Component({
-  selector: 'khd-login',
+  selector: 'khd-forgot-password',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RouterLink, MatFormFieldModule, MatInputModule, MatButtonModule, MatProgressSpinnerModule, PageWatermarkComponent],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss',
+  templateUrl: './forgot-password.component.html',
 })
-export class LoginComponent {
+export class ForgotPasswordComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
   readonly orgName = environment.orgNameTh;
   readonly loading = signal(false);
+  readonly submitted = signal(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly hidePassword = signal(true);
 
   readonly form = this.fb.nonNullable.group({
-    username: ['', Validators.required],
-    password: ['', Validators.required],
+    usernameOrEmail: ['', Validators.required],
   });
 
   submit(): void {
@@ -39,14 +35,14 @@ export class LoginComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
 
-    this.authService.login(this.form.getRawValue()).subscribe({
+    this.authService.forgotPassword(this.form.getRawValue().usernameOrEmail).subscribe({
       next: () => {
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
-        void this.router.navigateByUrl(returnUrl);
+        this.loading.set(false);
+        this.submitted.set(true);
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err?.error?.error?.message ?? 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+        this.errorMessage.set(err?.error?.error?.message ?? 'ส่งคำขอไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
       },
     });
   }

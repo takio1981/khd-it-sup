@@ -13,6 +13,7 @@ import type { RoleCode } from '@common/constants/roles.const';
 import { logger } from '@infrastructure/logger/logger';
 import { deleteUploadedFileByUrl } from '@infrastructure/storage/multer.config';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
+import { notificationService } from '@modules/notifications/services/notification.service';
 
 export interface ILoginResult {
   accessToken: string;
@@ -51,6 +52,9 @@ function hashToken(token: string): string {
  * ถ้าอยู่ในช่วงนี้ ถือว่าเป็น race condition ไม่ใช่การขโมย token จึงออก token ใหม่ให้แทนการ revoke ทุก session
  */
 const REFRESH_REUSE_GRACE_MS = 30_000;
+
+/** อายุลิงก์รีเซ็ตรหัสผ่านแบบ self-service (นาที) */
+const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
 
 export class AuthService {
   private readonly repo = new AuthRepository();
@@ -225,6 +229,45 @@ export class AuthService {
   async updateMyGender(userId: string, gender: 'MALE' | 'FEMALE'): Promise<IAuthUser> {
     const updated = await this.repo.updateGender(userId, gender);
     return toAuthUser(updated);
+  }
+
+  /**
+   * ขอลิงก์ตั้งรหัสผ่านใหม่แบบ self-service — ตอบสำเร็จเสมอไม่ว่าจะพบบัญชีหรือไม่ (ป้องกันการเดาว่า
+   * username/email ไหนมีอยู่ในระบบจริง) ส่งอีเมลจริงเฉพาะกรณีพบบัญชีที่ active และมีอีเมลเท่านั้น
+   */
+  async forgotPassword(usernameOrEmail: string): Promise<void> {
+    const user = await this.repo.findUserByUsernameOrEmail(usernameOrEmail);
+    if (!user || !user.isActive) return;
+
+    await this.repo.invalidateUserPasswordResetTokens(user.id);
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MINUTES * 60 * 1000);
+    await this.repo.createPasswordResetToken({ id: randomUUID(), userId: user.id, tokenHash: hashToken(token), expiresAt });
+
+    try {
+      await notificationService.sendForgotPasswordEmail(
+        { fullName: user.fullName, username: user.username, email: user.email },
+        token,
+        PASSWORD_RESET_TOKEN_TTL_MINUTES,
+      );
+    } catch (err) {
+      logger.error(`[auth] ส่งอีเมลลืมรหัสผ่านไม่สำเร็จ (${user.username}): ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  /** ตั้งรหัสผ่านใหม่ด้วย token จากอีเมล — เพิกถอน refresh token ทุก session เดิมเสมอเพื่อความปลอดภัย */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const stored = await this.repo.findValidPasswordResetToken(hashToken(token));
+    if (!stored) {
+      throw new BadRequestError('ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่อีกครั้ง');
+    }
+
+    const newHash = await bcrypt.hash(newPassword, env.BCRYPT_SALT_ROUNDS);
+    await this.repo.updatePassword(stored.userId, newHash, false);
+    await this.repo.markPasswordResetTokenUsed(stored.id);
+    await this.repo.revokeAllUserRefreshTokens(stored.userId);
+    logger.info(`[auth] password reset via self-service link for user ${stored.userId}`);
   }
 
   toAuthUser = toAuthUser;

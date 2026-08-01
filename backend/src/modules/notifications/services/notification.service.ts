@@ -1,6 +1,7 @@
 import { NotificationRepository } from '@modules/notifications/repositories/notification.repository';
 import { buildTicketEmailHtml } from '@modules/notifications/templates/ticketEmail.template';
 import { buildPasswordResetEmailHtml } from '@modules/notifications/templates/passwordResetEmail.template';
+import { buildForgotPasswordEmailHtml } from '@modules/notifications/templates/forgotPasswordEmail.template';
 import { buildTicketMessageText } from '@modules/notifications/templates/ticketMessage.template';
 import { buildAssetLoanEmailHtml } from '@modules/notifications/templates/assetLoanEmail.template';
 import { buildAssetLoanMessageText } from '@modules/notifications/templates/assetLoanMessage.template';
@@ -44,16 +45,21 @@ interface ITicketForNotification {
   asset: { assetNumber: string; model: string | null; brand: string | null } | null;
 }
 
-export type AssetLoanNotificationEvent = 'BORROWED' | 'RETURNED';
+export type AssetLoanNotificationEvent = 'BORROWED' | 'RETURNED' | 'OVERDUE';
 
-const ASSET_LOAN_EVENT_SETTING_KEY: Record<AssetLoanNotificationEvent, 'notifyAssetBorrowed' | 'notifyAssetReturned'> = {
+const ASSET_LOAN_EVENT_SETTING_KEY: Record<
+  AssetLoanNotificationEvent,
+  'notifyAssetBorrowed' | 'notifyAssetReturned' | 'notifyAssetOverdue'
+> = {
   BORROWED: 'notifyAssetBorrowed',
   RETURNED: 'notifyAssetReturned',
+  OVERDUE: 'notifyAssetOverdue',
 };
 
 const ASSET_LOAN_EVENT_LABEL_TH: Record<AssetLoanNotificationEvent, string> = {
   BORROWED: 'มีการยืมครุภัณฑ์-อุปกรณ์',
   RETURNED: 'มีการคืนครุภัณฑ์-อุปกรณ์',
+  OVERDUE: 'ยืมครุภัณฑ์-อุปกรณ์เกินกำหนดคืน',
 };
 
 interface IAssetLoanForNotification {
@@ -145,10 +151,10 @@ export class NotificationService {
       }
     }
 
-    // Realtime push ผ่าน Socket.IO ให้ผู้ใช้ที่เกี่ยวข้อง (ถ้า client เชื่อมต่ออยู่) — ทำงานอิสระจากช่องทางภายนอก (email/telegram/line)
+    // แจ้งเตือนในแอป (bell) + realtime push ผ่าน Socket.IO ให้ผู้ใช้ที่เกี่ยวข้อง — ทำงานอิสระจากช่องทางภายนอก (email/telegram/line)
     for (const r of recipients) {
       try {
-        emitToUser(r.userId, 'ticket:notification', { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, event, statusNameTh });
+        await this.pushInApp(r.userId, actionLabel, `[${ticket.ticketNumber}] ${statusNameTh}`, 'RepairTicket', ticket.id);
       } catch {
         // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
       }
@@ -212,6 +218,13 @@ export class NotificationService {
           await this.sendLinePersonal(borrowerChannels.lineUserId, text, 'AssetLoan', loan.id);
         }
       }
+    }
+
+    // แจ้งเตือนในแอป (bell) + realtime push ผ่าน Socket.IO ให้ผู้ยืม — ทำงานอิสระจากช่องทางภายนอก (email/telegram/line)
+    try {
+      await this.pushInApp(loan.borrower.id, actionLabel, `${assetLabel} — ${actionLabel}`, 'AssetLoan', loan.id);
+    } catch {
+      // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
     }
   }
 
@@ -299,6 +312,18 @@ export class NotificationService {
     await this.sendEmail(user.email, subject, html);
   }
 
+  /** เรียกจาก AuthService.forgotPassword() — ส่งลิงก์ตั้งรหัสผ่านใหม่แบบ self-service (ต่างจาก sendPasswordResetEmail ที่ admin กดให้) */
+  async sendForgotPasswordEmail(
+    user: { fullName: string; username: string; email: string },
+    resetToken: string,
+    expiresInMinutes: number,
+  ): Promise<void> {
+    const resetUrl = `${env.FRONTEND_BASE_URL}/auth/reset-password?token=${encodeURIComponent(resetToken)}`;
+    const html = buildForgotPasswordEmailHtml({ fullName: user.fullName, username: user.username, resetUrl, expiresInMinutes });
+    const subject = 'คำขอตั้งรหัสผ่านใหม่ — IT Service Desk';
+    await this.sendEmail(user.email, subject, html);
+  }
+
   private async resolveRecipients(
     event: TicketNotificationEvent,
     ticket: ITicketForNotification,
@@ -343,6 +368,54 @@ export class NotificationService {
     const pagination = normalizePagination(query);
     const { items, total } = await this.repo.findMany({ channel: query.channel, status: query.status }, pagination.skip, pagination.take);
     return buildPaginatedResult(items, total, pagination);
+  }
+
+  /**
+   * บันทึกแจ้งเตือนในแอป (bell) ลง notification_logs ด้วย channel="PUSH" (recipient = userId แทนอีเมล/chat id)
+   * แล้วยิง realtime ผ่าน Socket.IO ทันทีถ้า client เชื่อมต่ออยู่ — ต่างจาก email/telegram/line ตรงที่ไม่มีทางส่ง "ไม่สำเร็จ"
+   * (แค่บันทึกลง DB) จึง mark เป็น SENT ทันที
+   */
+  private async pushInApp(
+    userId: string,
+    title: string,
+    message: string,
+    relatedEntityType?: string,
+    relatedEntityId?: string,
+  ): Promise<void> {
+    const log = await this.repo.create({ channel: 'PUSH', recipient: userId, subject: title, message, relatedEntityType, relatedEntityId });
+    await this.repo.markSent(log.id);
+
+    try {
+      emitToUser(userId, 'notification:new', {
+        id: log.id,
+        title,
+        message,
+        relatedEntityType: relatedEntityType ?? null,
+        relatedEntityId: relatedEntityId ?? null,
+        createdAt: log.createdAt,
+      });
+    } catch {
+      // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
+    }
+  }
+
+  /** รายการแจ้งเตือนในแอป (bell) ของผู้ใช้ปัจจุบัน — เฉพาะ channel="PUSH" ของตนเองเท่านั้น */
+  async listMyNotifications(userId: string, pagination: { page?: number; limit?: number }) {
+    const normalized = normalizePagination(pagination);
+    const { items, total } = await this.repo.findManyForUser(userId, normalized.skip, normalized.take);
+    return buildPaginatedResult(items, total, normalized);
+  }
+
+  async getMyUnreadCount(userId: string): Promise<number> {
+    return this.repo.countUnreadForUser(userId);
+  }
+
+  async markMyNotificationRead(userId: string, id: string): Promise<void> {
+    await this.repo.markReadForUser(userId, id);
+  }
+
+  async markAllMyNotificationsRead(userId: string): Promise<void> {
+    await this.repo.markAllReadForUser(userId);
   }
 }
 

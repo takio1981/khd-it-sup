@@ -46,9 +46,53 @@
         <khd-icon [name]="themeService.mode() === 'dark' ? 'sun' : 'moon'" [size]="20" />
       </button>
 
-      <button mat-icon-button matTooltip="การแจ้งเตือน">
-        <khd-icon name="bell" [size]="20" />
+      <button mat-icon-button [matMenuTriggerFor]="notifMenu" matTooltip="การแจ้งเตือน">
+        <span class="relative inline-flex">
+          <khd-icon name="bell" [size]="20" />
+          @if (notificationService.unreadCount() > 0) {
+            <span
+              class="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white"
+            >
+              {{ notificationService.unreadCount() > 99 ? '99+' : notificationService.unreadCount() }}
+            </span>
+          }
+        </span>
       </button>
+      <mat-menu #notifMenu="matMenu">
+        <div class="w-80 max-w-[90vw]">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-black/5 dark:border-white/10">
+            <p class="text-sm font-medium">การแจ้งเตือน</p>
+            @if (notificationService.unreadCount() > 0) {
+              <button type="button" class="text-xs text-brand-primary hover:underline" (click)="notificationService.markAllAsRead()">
+                อ่านทั้งหมด
+              </button>
+            }
+          </div>
+          <div class="max-h-96 overflow-y-auto">
+            @if (notificationService.items().length === 0) {
+              <p class="text-center text-sm text-neutral-400 py-8">ไม่มีการแจ้งเตือน</p>
+            }
+            @for (n of notificationService.items(); track n.id) {
+              <button
+                type="button"
+                mat-menu-item
+                class="!h-auto !py-2.5 !whitespace-normal !leading-tight"
+                [class.bg-brand-primary/5]="!n.readAt"
+                (click)="onNotificationClick(n)"
+              >
+                <div class="flex items-start gap-2">
+                  <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full" [class.bg-brand-primary]="!n.readAt"></span>
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium truncate">{{ n.subject }}</p>
+                    <p class="text-xs text-neutral-500 line-clamp-2">{{ n.message }}</p>
+                    <p class="text-[11px] text-neutral-400 mt-0.5">{{ n.createdAt | date: 'd MMM yyyy, HH:mm' }}</p>
+                  </div>
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+      </mat-menu>
 
       <button mat-button [matMenuTriggerFor]="userMenu" class="!ml-1 !normal-case">
         <khd-user-avatar

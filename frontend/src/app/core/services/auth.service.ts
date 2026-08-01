@@ -74,6 +74,18 @@ export class AuthService {
       .pipe(map(() => undefined));
   }
 
+  forgotPassword(usernameOrEmail: string): Observable<{ message: string }> {
+    return this.http
+      .post<IApiSuccessResponse<{ message: string }>>(`${environment.apiBaseUrl}/auth/forgot-password`, { usernameOrEmail })
+      .pipe(map((res) => res.data));
+  }
+
+  resetPassword(payload: { token: string; newPassword: string; confirmPassword: string }): Observable<{ message: string }> {
+    return this.http
+      .post<IApiSuccessResponse<{ message: string }>>(`${environment.apiBaseUrl}/auth/reset-password`, payload)
+      .pipe(map((res) => res.data));
+  }
+
   getNotificationChannels(): Observable<INotificationChannels> {
     return this.http
       .get<IApiSuccessResponse<INotificationChannels>>(`${environment.apiBaseUrl}/auth/notification-channels`)

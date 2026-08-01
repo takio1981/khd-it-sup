@@ -20,6 +20,24 @@ export class AuthRepository {
     }) as Promise<UserWithRole | null>;
   }
 
+  async createPasswordResetToken(data: { id: string; userId: string; tokenHash: string; expiresAt: Date }): Promise<void> {
+    await prisma.passwordResetToken.create({ data });
+  }
+
+  async findValidPasswordResetToken(tokenHash: string) {
+    return prisma.passwordResetToken.findFirst({
+      where: { tokenHash, usedAt: null, expiresAt: { gt: new Date() } },
+    });
+  }
+
+  async markPasswordResetTokenUsed(id: string): Promise<void> {
+    await prisma.passwordResetToken.update({ where: { id }, data: { usedAt: new Date() } });
+  }
+
+  async invalidateUserPasswordResetTokens(userId: string): Promise<void> {
+    await prisma.passwordResetToken.updateMany({ where: { userId, usedAt: null }, data: { usedAt: new Date() } });
+  }
+
   async findUserById(id: string): Promise<UserWithRole | null> {
     return prisma.user.findFirst({
       where: { id, deletedAt: null },

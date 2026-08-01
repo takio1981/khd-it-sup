@@ -1,6 +1,13 @@
 import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from '@modules/auth/services/auth.service';
-import type { ChangePasswordDto, LoginDto, UpdateNotificationChannelsDto, UpdateProfileDto } from '@modules/auth/dto/auth.dto';
+import type {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginDto,
+  ResetPasswordDto,
+  UpdateNotificationChannelsDto,
+  UpdateProfileDto,
+} from '@modules/auth/dto/auth.dto';
 import { asyncHandler } from '@common/utils/asyncHandler';
 import { sendSuccess } from '@common/utils/apiResponse';
 import { BadRequestError, UnauthorizedError } from '@common/errors';
@@ -105,4 +112,16 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
   const { gender } = req.body as UpdateProfileDto;
   const user = await authService.updateMyGender(req.user!.id, gender);
   sendSuccess(res, user);
+});
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { usernameOrEmail } = req.body as ForgotPasswordDto;
+  await authService.forgotPassword(usernameOrEmail);
+  sendSuccess(res, { message: 'หากมีบัญชีนี้อยู่ในระบบ เราได้ส่งลิงก์ตั้งรหัสผ่านใหม่ไปยังอีเมลที่ลงทะเบียนไว้แล้ว' });
+});
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body as ResetPasswordDto;
+  await authService.resetPassword(token, newPassword);
+  sendSuccess(res, { message: 'ตั้งรหัสผ่านใหม่สำเร็จ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่' });
 });

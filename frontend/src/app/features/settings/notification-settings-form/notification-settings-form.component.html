@@ -168,12 +168,20 @@
         <mat-slide-toggle [checked]="s.notifyAssetBorrowed" [disabled]="!canManage() || saving()" (change)="toggle('notifyAssetBorrowed')" />
       </div>
 
-      <div class="flex items-center justify-between py-2">
+      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
         <div>
           <p class="text-sm font-medium">มีการคืนครุภัณฑ์-อุปกรณ์</p>
           <p class="text-xs text-neutral-500">แจ้งผู้ยืมเมื่อบันทึกการคืนสำเร็จ</p>
         </div>
         <mat-slide-toggle [checked]="s.notifyAssetReturned" [disabled]="!canManage() || saving()" (change)="toggle('notifyAssetReturned')" />
+      </div>
+
+      <div class="flex items-center justify-between py-2">
+        <div>
+          <p class="text-sm font-medium">ยืมเกินกำหนดคืน</p>
+          <p class="text-xs text-neutral-500">แจ้งผู้ยืมทุกวันจนกว่าจะคืน (ตรวจสอบอัตโนมัติทุกวันเวลา 08:00)</p>
+        </div>
+        <mat-slide-toggle [checked]="s.notifyAssetOverdue" [disabled]="!canManage() || saving()" (change)="toggle('notifyAssetOverdue')" />
       </div>
     </div>
 

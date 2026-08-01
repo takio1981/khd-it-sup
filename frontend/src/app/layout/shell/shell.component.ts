@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
@@ -13,12 +14,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { PageWatermarkComponent } from '../../shared/components/page-watermark/page-watermark.component';
 import { UserAvatarComponent } from '../../shared/components/user-avatar/user-avatar.component';
 import { ProfileDialogComponent } from '../../shared/components/profile-dialog/profile-dialog.component';
 import { NAV_ITEMS } from '../nav-items';
 import { environment } from '../../../environments/environment';
+import type { IInAppNotification } from '../../core/models/notification.model';
 
 @Component({
   selector: 'khd-shell',
@@ -28,6 +31,7 @@ import { environment } from '../../../environments/environment';
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
+    DatePipe,
     MatSidenavModule,
     MatToolbarModule,
     MatListModule,
@@ -50,6 +54,7 @@ export class ShellComponent {
 
   readonly authService = inject(AuthService);
   readonly themeService = inject(ThemeService);
+  readonly notificationService = inject(NotificationService);
   readonly orgName = environment.orgNameTh;
   readonly appName = environment.appName;
 
@@ -88,6 +93,23 @@ export class ShellComponent {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  onNotificationClick(notification: IInAppNotification): void {
+    if (!notification.readAt) this.notificationService.markAsRead(notification.id);
+
+    const link = this.resolveNotificationLink(notification);
+    if (link) void this.router.navigateByUrl(link);
+  }
+
+  private resolveNotificationLink(notification: IInAppNotification): string | null {
+    if (notification.relatedEntityType === 'RepairTicket' && notification.relatedEntityId) {
+      return `/repair-tickets/${notification.relatedEntityId}`;
+    }
+    if (notification.relatedEntityType === 'AssetLoan') {
+      return '/asset-loans';
+    }
+    return null;
   }
 
   private deepestRouteWatermark(): string | undefined {

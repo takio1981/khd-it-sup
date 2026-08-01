@@ -33,3 +33,25 @@ export const updateProfileSchema = z.object({
   gender: z.enum(['MALE', 'FEMALE']),
 });
 export type UpdateProfileDto = z.infer<typeof updateProfileSchema>;
+
+export const forgotPasswordSchema = z.object({
+  usernameOrEmail: z.string().min(1, 'กรุณากรอกชื่อผู้ใช้หรืออีเมล'),
+});
+export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, 'ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้อง'),
+    newPassword: z
+      .string()
+      .min(8, 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร')
+      .regex(/[A-Z]/, 'รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว')
+      .regex(/[a-z]/, 'รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว')
+      .regex(/[0-9]/, 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน',
+    path: ['confirmPassword'],
+  });
+export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;

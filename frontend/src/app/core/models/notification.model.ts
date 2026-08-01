@@ -15,3 +15,14 @@ export interface INotificationLog {
   errorMessage: string | null;
   createdAt: string;
 }
+
+/** แจ้งเตือนในแอป (bell) ของผู้ใช้ปัจจุบัน — subset ของ notification_logs channel="PUSH" ของตนเอง */
+export interface IInAppNotification {
+  id: string;
+  subject: string | null;
+  message: string;
+  relatedEntityType: string | null;
+  relatedEntityId: string | null;
+  readAt: string | null;
+  createdAt: string;
+}

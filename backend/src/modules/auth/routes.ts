@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import * as authController from '@modules/auth/controllers/auth.controller';
-import { changePasswordSchema, loginSchema, updateNotificationChannelsSchema, updateProfileSchema } from '@modules/auth/dto/auth.dto';
+import {
+  changePasswordSchema,
+  forgotPasswordSchema,
+  loginSchema,
+  resetPasswordSchema,
+  updateNotificationChannelsSchema,
+  updateProfileSchema,
+} from '@modules/auth/dto/auth.dto';
 import { authenticate, loginRateLimiter, validateRequest } from '@common/middleware';
 import { avatarUploader } from '@infrastructure/storage/multer.config';
 
@@ -80,6 +87,29 @@ router.post(
   validateRequest({ body: changePasswordSchema }),
   authController.changePassword,
 );
+
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: ขอลิงก์ตั้งรหัสผ่านใหม่แบบ self-service (ส่งอีเมล) — ตอบสำเร็จเสมอไม่ว่าจะพบบัญชีหรือไม่
+ *     responses:
+ *       200: { description: สำเร็จ }
+ */
+router.post('/forgot-password', loginRateLimiter, validateRequest({ body: forgotPasswordSchema }), authController.forgotPassword);
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: ตั้งรหัสผ่านใหม่ด้วย token จากอีเมล
+ *     responses:
+ *       200: { description: สำเร็จ }
+ *       400: { description: token ไม่ถูกต้องหรือหมดอายุ }
+ */
+router.post('/reset-password', loginRateLimiter, validateRequest({ body: resetPasswordSchema }), authController.resetPassword);
 
 /**
  * @openapi

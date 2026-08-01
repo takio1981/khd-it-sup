@@ -4,6 +4,7 @@ import { env } from '@config/env';
 import { logger } from '@infrastructure/logger/logger';
 import { connectDatabase, disconnectDatabase } from '@infrastructure/database/prisma';
 import { initializeSocketServer } from '@infrastructure/socket/socket.server';
+import { startScheduledJobs } from '@infrastructure/scheduler/scheduler';
 
 async function bootstrap(): Promise<void> {
   await connectDatabase();
@@ -11,6 +12,7 @@ async function bootstrap(): Promise<void> {
   const app = createApp();
   const httpServer = http.createServer(app);
   initializeSocketServer(httpServer);
+  startScheduledJobs();
 
   httpServer.listen(env.PORT, () => {
     logger.info(`🚀 ${env.APP_NAME} backend listening on port ${env.PORT} [${env.NODE_ENV}]`);

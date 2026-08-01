@@ -34,6 +34,10 @@
         </button>
       </mat-form-field>
 
+      <p class="text-right text-sm -mt-2">
+        <a routerLink="/auth/forgot-password" class="text-brand-primary hover:underline">ลืมรหัสผ่าน?</a>
+      </p>
+
       <button mat-flat-button color="primary" type="submit" class="!w-full !h-11" [disabled]="form.invalid || loading()">
         @if (loading()) {
           <mat-spinner diameter="20" class="!inline-block !mr-2" />
