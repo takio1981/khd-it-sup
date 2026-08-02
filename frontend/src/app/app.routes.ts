@@ -99,6 +99,13 @@ export const routes: Routes = [
           import('./features/repair-tickets/ticket-list/ticket-list.component').then((m) => m.TicketListComponent),
       },
       {
+        path: 'repair-tickets/board',
+        canActivate: [permissionGuard],
+        data: { permissions: ['ticket:read', 'ticket:track'], watermark: 'logo1.png' },
+        loadComponent: () =>
+          import('./features/repair-tickets/ticket-board/ticket-board.component').then((m) => m.TicketBoardComponent),
+      },
+      {
         path: 'repair-tickets/:id',
         canActivate: [permissionGuard],
         data: { permissions: ['ticket:read', 'ticket:track'], watermark: 'logo1.png' },

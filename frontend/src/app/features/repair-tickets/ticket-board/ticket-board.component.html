@@ -1,0 +1,68 @@
+<div class="flex flex-col h-full">
+  <div class="flex items-center justify-between mb-3 shrink-0">
+    <div>
+      <h1 class="text-xl font-semibold">บอร์ดงานแจ้งซ่อม (Kanban)</h1>
+      <p class="text-sm text-neutral-500">ลากการ์ดข้ามคอลัมน์เพื่อเปลี่ยนสถานะงาน — งานที่ปิด/ยกเลิกแล้วดูได้จากมุมมองตาราง</p>
+    </div>
+    <a mat-stroked-button routerLink="/repair-tickets">
+      <khd-icon name="bars-3" [size]="16" class="!mr-1" />
+      มุมมองตาราง
+    </a>
+  </div>
+
+  @if (loading()) {
+    <div class="flex justify-center py-16">
+      <mat-spinner diameter="32" />
+    </div>
+  } @else {
+    <div class="flex-1 overflow-x-auto pb-2" cdkDropListGroup>
+      <div class="flex gap-3 h-full min-w-max">
+        @for (column of columns(); track column.stepCode) {
+          <div class="w-72 shrink-0 flex flex-col rounded-lg bg-neutral-100 dark:bg-neutral-800/60 max-h-full">
+            <div class="flex items-center gap-2 px-3 py-2 shrink-0">
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" [style.background-color]="column.colorCode"></span>
+              <h2 class="text-sm font-medium truncate flex-1">{{ column.stepNameTh }}</h2>
+              <span class="text-xs text-neutral-500 bg-white dark:bg-neutral-700 rounded-full px-2 py-0.5">{{ column.tickets.length }}</span>
+            </div>
+
+            <div
+              cdkDropList
+              [id]="column.stepCode"
+              [cdkDropListData]="column.tickets"
+              (cdkDropListDropped)="drop($event, column)"
+              class="flex-1 overflow-y-auto px-2 pb-2 space-y-2 min-h-[80px]"
+            >
+              @for (ticket of column.tickets; track ticket.id) {
+                <div
+                  cdkDrag
+                  (click)="viewTicket(ticket)"
+                  class="khd-card !p-3 cursor-pointer hover:shadow-md transition-shadow bg-white dark:bg-neutral-800"
+                >
+                  <div class="flex items-start justify-between gap-2 mb-1">
+                    <span class="text-xs font-semibold text-neutral-500">{{ ticket.ticketNumber }}</span>
+                    <span
+                      class="khd-status-badge shrink-0"
+                      [style.background-color]="urgencyColor[ticket.urgency] + '1A'"
+                      [style.color]="urgencyColor[ticket.urgency]"
+                    >
+                      {{ urgencyLabels[ticket.urgency] }}
+                    </span>
+                  </div>
+                  <p class="text-sm line-clamp-2 mb-2">{{ ticket.description }}</p>
+                  <div class="flex items-center justify-between text-xs text-neutral-500">
+                    <span class="truncate">{{ ticket.department?.nameTh ?? '-' }}</span>
+                    <span class="truncate">{{ ticket.assignedTechnician?.fullName ?? 'ยังไม่มอบหมาย' }}</span>
+                  </div>
+                </div>
+              }
+
+              @if (column.tickets.length === 0) {
+                <p class="text-xs text-neutral-400 text-center py-6">ไม่มีงาน</p>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
