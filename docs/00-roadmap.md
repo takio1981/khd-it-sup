@@ -17,7 +17,23 @@
 | **7** | Frontend Angular Foundation (Auth, Layout, Theme, Guard, Interceptor, Landing Page สาธารณะ, ลืมรหัสผ่าน self-service, รูปโปรไฟล์/Avatar) | ✅ เสร็จสมบูรณ์ (Angular 21, zoneless, Material+Tailwind) |
 | **8** | Frontend Feature Modules (Asset+Loan, Repair Ticket+Timeline, Dashboard, Users+Positions, Departments+Divisions, Locations, QR Public Scan Page, Settings แจ้งเตือน) | ✅ เสร็จสมบูรณ์ + ทดสอบผ่านเบราว์เซอร์จริง (Playwright) |
 | **9** | Swagger, Postman Collection, README, Installation/Deployment Guide, User/Admin/Developer/API Manual | ✅ เสร็จสมบูรณ์ (ปรับปรุงต่อเนื่องให้ตรงกับความสามารถจริงล่าสุด) |
-| **10+** | External Repair 14-step Approval Chain + Vendor Management, Visual Flow Designer, เอกสารราชการ 14 แบบ + เลขที่วิ่งอัตโนมัติ, Kanban Board, Inventory/Spare Part เต็มรูปแบบ, Audit Log UI (มีแค่ backend บันทึกอย่างเดียว ยังไม่มีหน้าจอดู), หน้า Settings ทั่วไป (ชื่อองค์กร/โลโก้/SMTP server/ธีมสี — ปัจจุบันตั้งได้ผ่าน `.env` เท่านั้น), ระบบสำรองข้อมูลอัตโนมัติผ่าน UI, Reports ขั้นสูง (Excel/PDF/CSV export), PWA/Installable App, Automated test coverage สำหรับฟีเจอร์ที่เพิ่มหลัง Phase 3 | ⬜ ยังไม่เริ่ม |
+| **10+** | External Repair + Vendor Management, Visual Flow Designer, เอกสารราชการ + เลขที่วิ่งอัตโนมัติ, Kanban Board, Inventory/Spare Part, Audit Log UI, Settings ทั่วไป, ระบบสำรองข้อมูลอัตโนมัติผ่าน UI, Reports ขั้นสูง (Excel/PDF/CSV export), PWA/Installable App, Automated test coverage สำหรับฟีเจอร์ที่เพิ่มหลัง Phase 3 | 🟡 เริ่มแล้ว — ดูรายละเอียดด้านล่าง |
+
+## Phase 10+ รายละเอียดความคืบหน้า
+
+ระบบแกนหลัก (Phase 0-9) สมบูรณ์และทดสอบจริงแล้วทั้งหมด ด้านล่างคือความคืบหน้ารายฟีเจอร์ของ Phase 10+
+(อัปเดตทีละฟีเจอร์เมื่อทำเสร็จ ไม่รวบทำท้ายสุดเพื่อไม่ให้เอกสารตกยุค):
+
+| ฟีเจอร์ | สถานะ | หมายเหตุ |
+|---|---|---|
+| Audit Log UI | ✅ เสร็จสมบูรณ์ | `GET /audit-logs` + หน้า "ประวัติการใช้งานระบบ" (`/settings/audit-log`) filter ตามโมดูล/การกระทำ/ช่วงวันที่ |
+| Settings ทั่วไป (ชื่อองค์กร/โลโก้/ธีม/SMTP ผ่าน UI) | ⬜ ยังไม่เริ่ม | ปัจจุบันตั้งได้ผ่าน `.env` เท่านั้น |
+| Kanban Board | ⬜ ยังไม่เริ่ม | ปัจจุบันมีแค่มุมมองตาราง/list |
+| รายงาน Export (Excel/PDF/CSV) | ⬜ ยังไม่เริ่ม | ปัจจุบันมีแค่กราฟบน dashboard |
+| คลังอะไหล่ (Spare Parts) | ⬜ ยังไม่เริ่ม | ตาราง `spare_parts`/`spare_part_transactions` พร้อมใช้ (schema+Prisma model มีแล้ว) |
+| ซ่อมภายนอก (Vendor Repair Workflow) | ⬜ ยังไม่เริ่ม | ตาราง `vendors`/`vendor_repair_orders` พร้อมใช้ (schema+Prisma model มีแล้ว) |
+| เอกสารราชการ + เลขที่วิ่งอัตโนมัติ | ⬜ ยังไม่เริ่ม | ทำเฉพาะ "ระบบ" (template registry + running number + audit trail) — ไม่รวมเนื้อหาฟอร์มราชการจริง 14 แบบ (รอต้นแบบจากผู้ใช้) |
+| Visual Flow Designer | ⏸ เลื่อนออกไป | แก้ workflow ผ่าน SQL ตรงยังใช้งานได้ ไม่ blocking — priority ต่ำกว่าข้ออื่น |
 
 ## หลักการสำคัญ
 
@@ -58,6 +74,5 @@
   ฟีเจอร์ใหญ่ที่เพิ่มทีหลัง (workflow เต็ม, ยืม-คืน, การแจ้งเตือนทุกช่องทาง, avatar, realtime) ยังไม่มี automated test
   คุ้มครองเลย ปัจจุบันพึ่งพาการทดสอบ end-to-end ผ่านเบราว์เซอร์จริงเป็นหลักแทน
 - **ไม่รองรับ PWA** — ติดตั้งเป็นแอปบนมือถือ (add to home screen) ไม่ได้
-- **Audit Log มีแค่ backend บันทึก ไม่มี UI ดูย้อนหลัง** — ต่างจาก `notification_logs` (มีหน้า "ประวัติการแจ้งเตือน" แล้ว)
 
 ดูต่อ: [Architecture](01-architecture.md) · [Database Design](03-database-design.md) · [API Design](05-api-design.md)

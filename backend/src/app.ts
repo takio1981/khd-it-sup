@@ -23,6 +23,7 @@ import workflowRoutes from '@modules/workflow/routes';
 import notificationRoutes from '@modules/notifications/routes';
 import settingsRoutes from '@modules/settings/routes';
 import dashboardRoutes from '@modules/dashboard/routes';
+import auditLogRoutes from '@modules/audit-log/routes';
 import { serveFile } from '@infrastructure/storage/serveFile.controller';
 
 export function createApp(): Express {
@@ -75,6 +76,7 @@ export function createApp(): Express {
   api.use('/notifications', notificationRoutes);
   api.use('/settings', settingsRoutes);
   api.use('/dashboard', dashboardRoutes);
+  api.use('/audit-logs', auditLogRoutes);
   api.get('/files/:subdir/:filename', authenticate, serveFile);
   app.use(env.API_PREFIX, api);
 

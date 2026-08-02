@@ -9,7 +9,13 @@ export class AuditLogRepository {
 
   async findMany(where: Prisma.AuditLogWhereInput, skip: number, take: number) {
     const [items, total] = await Promise.all([
-      prisma.auditLog.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
+      prisma.auditLog.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: { user: { select: { id: true, fullName: true, username: true } } },
+      }),
       prisma.auditLog.count({ where }),
     ]);
     return { items, total };

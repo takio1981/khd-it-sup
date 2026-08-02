@@ -1,6 +1,9 @@
+import type { Prisma } from '@prisma/client';
 import { AuditLogRepository } from '@modules/audit-log/repositories/auditLog.repository';
 import { logger } from '@infrastructure/logger/logger';
 import type { IRequestContext } from '@common/interfaces';
+import type { ListAuditLogsQueryDto } from '@modules/audit-log/dto/auditLog.dto';
+import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 
 export interface IRecordAuditInput {
   action: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'PRINT' | 'EXPORT' | 'APPROVE' | 'CONFIG_CHANGE';
@@ -37,6 +40,22 @@ export class AuditLogService {
     } catch (err) {
       logger.error(`[audit] failed to record audit log: ${err instanceof Error ? err.message : String(err)}`);
     }
+  }
+
+  /** อ่านย้อนหลัง — read-only, ใช้สำหรับหน้าจอ Audit Log UI (permission: audit:view) */
+  async list(query: ListAuditLogsQueryDto) {
+    const pagination = normalizePagination(query);
+    const where: Prisma.AuditLogWhereInput = {
+      module: query.module || undefined,
+      action: query.action || undefined,
+      userId: query.userId || undefined,
+      createdAt:
+        query.dateFrom || query.dateTo
+          ? { gte: query.dateFrom, lte: query.dateTo }
+          : undefined,
+    };
+    const { items, total } = await this.repo.findMany(where, pagination.skip, pagination.take);
+    return buildPaginatedResult(items, total, pagination);
   }
 }
 

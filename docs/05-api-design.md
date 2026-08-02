@@ -185,11 +185,15 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 > socket.io-client ให้รวม prefix เข้าไปด้วยตรง ๆ (เช่น `/khd-it-sup/socket.io`) — การส่ง prefix ผ่าน connection URL
 > เฉย ๆ ไม่ทำให้ client ต่อ path ที่ถูกต้อง (ดู `frontend/src/app/core/services/socket.service.ts`)
 
-## 5.14 Audit Log 🔜 Phase 10+ (backend บันทึกอยู่แล้ว แต่ยังไม่มี endpoint ให้ query)
+## 5.14 Audit Log — `/api/v1/audit-logs` ✅
 
 | Method | Path | Permission |
 |---|---|---|
-| GET | `/audit-logs` 🔜 | `audit:view` |
+| GET | `/audit-logs` | `audit:view` |
+
+รองรับ query filter: `module`, `action` (`LOGIN`/`LOGOUT`/`CREATE`/`UPDATE`/`DELETE`/`PRINT`/`EXPORT`/`APPROVE`/`CONFIG_CHANGE`),
+`userId`, `dateFrom`, `dateTo`, `page`, `limit` — ผลลัพธ์รวม `user` (id/fullName/username) ของผู้กระทำ เรียงล่าสุดก่อนเสมอ
+(ตาราง `audit_logs` เป็น insert-only ledger บังคับด้วย MariaDB trigger)
 
 ---
 
