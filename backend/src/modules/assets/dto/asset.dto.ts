@@ -46,6 +46,15 @@ export const listAssetsQuerySchema = z.object({
 });
 export type ListAssetsQueryDto = z.infer<typeof listAssetsQuerySchema>;
 
+export const exportAssetsQuerySchema = z.object({
+  categoryId: z.string().uuid().optional(),
+  departmentId: z.string().uuid().optional(),
+  status: assetStatusEnum.optional(),
+  keyword: z.string().optional(),
+  format: z.enum(['xlsx', 'csv']).default('xlsx'),
+});
+export type ExportAssetsQueryDto = z.infer<typeof exportAssetsQuerySchema>;
+
 export const assetIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });
 
 export const assetPhotoParamSchema = z.object({

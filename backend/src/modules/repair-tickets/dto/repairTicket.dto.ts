@@ -86,4 +86,14 @@ export const listTicketsQuerySchema = z.object({
 });
 export type ListTicketsQueryDto = z.infer<typeof listTicketsQuerySchema>;
 
+export const exportTicketsQuerySchema = z.object({
+  status: z.string().optional(),
+  urgency: urgencyEnum.optional(),
+  departmentId: z.string().uuid().optional(),
+  assignedTechnicianId: z.string().uuid().optional(),
+  keyword: z.string().optional(),
+  format: z.enum(['xlsx', 'csv']).default('xlsx'),
+});
+export type ExportTicketsQueryDto = z.infer<typeof exportTicketsQuerySchema>;
+
 export const ticketIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });

@@ -155,5 +155,24 @@ Endpoint ที่รับไฟล์ใช้ `multipart/form-data` ไม่
 | `POST /assets/:id/photos` | `photos` | 10 | JPEG, PNG, WEBP, GIF, PDF | `UPLOAD_MAX_FILE_SIZE_MB` |
 | `POST /repair-tickets/:id/attachments` | `attachments` | 5 | JPEG, PNG, WEBP, GIF, MP4, WEBM, MOV | 5 MB |
 | `POST /auth/avatar`, `POST /users/:id/avatar` | `avatar` | 1 | JPEG, PNG, WEBP, GIF เท่านั้น | 2 MB |
+| `POST /settings/org/logo` | `logo` | 1 | JPEG, PNG, WEBP, GIF เท่านั้น | 2 MB |
 
 ไฟล์ที่อัปโหลดแล้วต้องเข้าถึงผ่าน `GET /files/:subdir/:filename` เท่านั้น (ต้อง login) — ไม่มี static URL สาธารณะ
+
+## 11.11 ตัวอย่าง: Export รายงาน (curl)
+
+```bash
+BASE=http://localhost/khd-it-sup/api/v1
+TOKEN=... # จาก /auth/login
+
+# Excel/CSV — ใช้ query filter เดียวกับหน้ารายการนั้นๆ ได้ (status, urgency, keyword, categoryId ฯลฯ)
+curl -s "$BASE/repair-tickets/export?format=xlsx" -H "Authorization: Bearer $TOKEN" -o repair-tickets.xlsx
+curl -s "$BASE/repair-tickets/export?format=csv&status=SUBMITTED" -H "Authorization: Bearer $TOKEN" -o repair-tickets.csv
+curl -s "$BASE/assets/export?format=xlsx&categoryId=$CATEGORY_ID" -H "Authorization: Bearer $TOKEN" -o assets.xlsx
+
+# Dashboard — ไฟล์เดียวมีหลายชีต (สรุป / รายเดือน / อันดับหน่วยงาน)
+curl -s "$BASE/dashboard/export?year=2026" -H "Authorization: Bearer $TOKEN" -o dashboard-2026.xlsx
+```
+
+Export Excel/CSV จำกัดสูงสุด 5,000 แถวต่อไฟล์ (ป้องกันรายงานโตเกินควบคุม) — CSV ขึ้นต้นด้วย UTF-8 BOM เสมอเพื่อให้ Excel
+เปิดภาษาไทยถูก encoding ส่วน PDF export ทำที่ฝั่ง frontend เท่านั้น (jsPDF + html2canvas) ไม่มี endpoint สำหรับ PDF โดยตรง

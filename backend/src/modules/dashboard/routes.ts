@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as dashboardController from '@modules/dashboard/controllers/dashboard.controller';
-import { monthlyChartQuerySchema, rankingQuerySchema } from '@modules/dashboard/dto/dashboard.dto';
+import { dashboardExportQuerySchema, monthlyChartQuerySchema, rankingQuerySchema } from '@modules/dashboard/dto/dashboard.dto';
 import { authenticate, requirePermission, validateRequest } from '@common/middleware';
 import { PERMISSIONS } from '@common/constants/permissions.const';
 
@@ -70,5 +70,15 @@ router.get('/charts/technician-workload', dashboardController.getTechnicianWorkl
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/analytics', dashboardController.getAnalytics);
+
+/**
+ * @openapi
+ * /dashboard/export:
+ *   get:
+ *     tags: [Dashboard]
+ *     summary: Export รายงานสรุป (สรุป/รายเดือน/อันดับหน่วยงาน) เป็นไฟล์ Excel หลายชีต
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/export', validateRequest({ query: dashboardExportQuerySchema }), dashboardController.exportDashboard);
 
 export default router;

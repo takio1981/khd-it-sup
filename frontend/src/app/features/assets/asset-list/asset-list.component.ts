@@ -12,7 +12,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxjs';
 import { AssetService } from '../../../core/services/asset.service';
 import { QrCodeService } from '../../../core/services/qrcode.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -23,7 +23,12 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 import { QrPrintPreviewComponent } from '../../../shared/components/qr-print-preview/qr-print-preview.component';
 import type { IQrLabelData } from '../../../shared/components/qr-print-preview/qr-print-preview.model';
 import { AssetFormComponent } from '../asset-form/asset-form.component';
+import { getStatusLabel } from '../../../core/constants/status.const';
+import { downloadBlob } from '../../../core/utils/download.util';
+import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
 import type { IAsset, IAssetCategory } from '../../../core/models/asset.model';
+
+const EXPORT_PDF_MAX_ROWS = 500;
 
 @Component({
   selector: 'khd-asset-list',
@@ -64,6 +69,7 @@ export class AssetListComponent {
   readonly loading = signal(true);
   readonly selectedIds = signal<Set<string>>(new Set());
   readonly printing = signal(false);
+  readonly exporting = signal(false);
 
   keyword = '';
   categoryId = '';
@@ -277,5 +283,65 @@ export class AssetListComponent {
         this.assetService.remove(asset.id).subscribe(() => this.fetch());
       }
     });
+  }
+
+  private currentFilter() {
+    return { keyword: this.keyword || undefined, categoryId: this.categoryId || undefined };
+  }
+
+  exportExcel(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.assetService.exportFile(this.currentFilter(), 'xlsx').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `assets-${Date.now()}.xlsx`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  exportCsv(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.assetService.exportFile(this.currentFilter(), 'csv').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `assets-${Date.now()}.csv`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  async exportPdf(): Promise<void> {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    try {
+      const res = await firstValueFrom(this.assetService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
+      await exportTableToPdf({
+        title: 'รายงานครุภัณฑ์',
+        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        columns: ['เลขครุภัณฑ์', 'ประเภท', 'ยี่ห้อ/รุ่น', 'สถานะ', 'หน่วยงาน', 'สถานที่'],
+        rows: res.items.map((a) => [
+          a.assetNumber,
+          a.category.nameTh,
+          [a.brand, a.model].filter(Boolean).join(' / '),
+          getStatusLabel(a.status),
+          a.department?.nameTh ?? '',
+          [a.building?.name, a.floor?.name, a.room?.name].filter(Boolean).join(' / '),
+        ]),
+        filename: `assets-${Date.now()}.pdf`,
+      });
+    } catch {
+      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+    } finally {
+      this.exporting.set(false);
+    }
   }
 }

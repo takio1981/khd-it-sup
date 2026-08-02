@@ -84,6 +84,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | DELETE | `/assets/:id` | `asset:delete` | ลบครุภัณฑ์ (soft delete) |
 | POST | `/assets/:id/photos` | `asset:update` | อัปโหลดรูปครุภัณฑ์ (`multipart/form-data`, field `photos`, สูงสุด 10 ไฟล์) |
 | DELETE | `/assets/:id/photos/:photoId` | `asset:update` | ลบรูปครุภัณฑ์ |
+| GET | `/assets/export?format=xlsx\|csv` | `asset:read` | Export รายการครุภัณฑ์ (ใช้ filter เดียวกับ `/assets`, สูงสุด 5,000 แถว) |
 
 ## 5.6 Asset Loans (ยืม-คืนครุภัณฑ์) — `/api/v1/asset-loans` ✅
 
@@ -129,6 +130,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | POST | `/repair-tickets/:id/close` | `ticket:close` | ปิดงาน (จาก step USER_ACCEPTANCE เท่านั้น) |
 | POST | `/repair-tickets/:id/comment` | authenticated | เพิ่มความคิดเห็นลง Timeline โดยไม่เปลี่ยนสถานะ |
 | POST | `/repair-tickets/:id/attachments` | `ticket:upload_attachment` | อัปโหลดรูป/วิดีโอแนบ (`multipart/form-data`, field `attachments`, สูงสุด 5 ไฟล์ ไฟล์ละ ≤ 5 MB) |
+| GET | `/repair-tickets/export?format=xlsx\|csv` | `ticket:read`/`ticket:track` | Export รายการใบแจ้งซ่อม (ใช้ filter เดียวกับ `/repair-tickets`, สูงสุด 5,000 แถว) |
 
 ## 5.9 Workflow (read-only ใน MVP, config เต็มรูปแบบ 🔜 Phase 10+)
 
@@ -165,6 +167,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | GET | `/dashboard/charts/department-ranking` | `dashboard:view` | อันดับหน่วยงานที่แจ้งซ่อมมากที่สุด |
 | GET | `/dashboard/charts/technician-workload` | `dashboard:view` | ภาระงานช่างแต่ละคน (เฉพาะงานที่ยังไม่ปิด) |
 | GET | `/dashboard/analytics` | `dashboard:view` | เวลาซ่อมเฉลี่ย + Top ครุภัณฑ์ที่ถูกแจ้งซ่อมบ่อยที่สุด |
+| GET | `/dashboard/export?year=` | `dashboard:view` | Export Excel หลายชีต (สรุป/รายเดือน/อันดับหน่วยงาน) |
 
 ## 5.12 Settings — `/api/v1/settings` ✅
 

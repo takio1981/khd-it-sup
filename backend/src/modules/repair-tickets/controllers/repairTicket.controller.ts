@@ -5,6 +5,7 @@ import type {
   CancelTicketDto,
   CommentTicketDto,
   CreateTicketDto,
+  ExportTicketsQueryDto,
   InspectionDto,
   ListTicketsQueryDto,
   RepairSummaryDto,
@@ -14,14 +15,65 @@ import { asyncHandler } from '@common/utils/asyncHandler';
 import { sendCreated, sendSuccess } from '@common/utils/apiResponse';
 import { BadRequestError } from '@common/errors';
 import type { IRequestContext } from '@common/interfaces';
+import { buildCsv, buildExcelBuffer, type IExportColumn } from '@common/utils/export.util';
 
 function contextOf(req: Request): IRequestContext {
   return { user: req.user!, ipAddress: req.ip ?? 'unknown', userAgent: req.headers['user-agent'] ?? 'unknown' };
 }
 
+const URGENCY_LABEL_TH: Record<string, string> = { LOW: 'ต่ำ', MEDIUM: 'ปานกลาง', HIGH: 'สูง', CRITICAL: 'วิกฤต' };
+
+const EXPORT_COLUMNS: IExportColumn[] = [
+  { header: 'เลขที่ใบแจ้งซ่อม', key: 'ticketNumber', width: 18 },
+  { header: 'สถานะ', key: 'statusTh', width: 18 },
+  { header: 'ความเร่งด่วน', key: 'urgencyTh', width: 14 },
+  { header: 'รายละเอียด', key: 'description', width: 40 },
+  { header: 'ผู้แจ้ง', key: 'reportedBy', width: 20 },
+  { header: 'หน่วยงาน', key: 'department', width: 24 },
+  { header: 'ช่างผู้รับผิดชอบ', key: 'technician', width: 20 },
+  { header: 'ครุภัณฑ์', key: 'asset', width: 26 },
+  { header: 'วันที่แจ้ง', key: 'createdAt', width: 18 },
+  { header: 'วันที่ปิดงาน', key: 'closedAt', width: 18 },
+];
+
+function formatDateTh(date: Date | string | null): string {
+  if (!date) return '';
+  return new Date(date).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
 export const listTickets = asyncHandler(async (req: Request, res: Response) => {
   const result = await repairTicketService.list(req.query as unknown as ListTicketsQueryDto, contextOf(req));
   sendSuccess(res, result.items, 200, result.meta);
+});
+
+export const exportTickets = asyncHandler(async (req: Request, res: Response) => {
+  const query = req.query as unknown as ExportTicketsQueryDto;
+  const items = await repairTicketService.listForExport(query, contextOf(req));
+
+  const rows = items.map((t) => ({
+    ticketNumber: t.ticketNumber,
+    statusTh: t.workflowInstance?.currentStep?.stepNameTh ?? t.status,
+    urgencyTh: URGENCY_LABEL_TH[t.urgency] ?? t.urgency,
+    description: t.description,
+    reportedBy: t.reportedBy?.fullName ?? '',
+    department: t.department?.nameTh ?? '',
+    technician: t.assignedTechnician?.fullName ?? '',
+    asset: t.asset ? `${t.asset.assetNumber}${t.asset.model ? ' - ' + t.asset.model : ''}` : '',
+    createdAt: formatDateTh(t.createdAt),
+    closedAt: formatDateTh(t.closedAt),
+  }));
+
+  const filenameBase = `repair-tickets-${Date.now()}`;
+  if (query.format === 'csv') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}.csv"`);
+    res.send(buildCsv(EXPORT_COLUMNS, rows));
+  } else {
+    const buffer = await buildExcelBuffer('Repair Tickets', EXPORT_COLUMNS, rows);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}.xlsx"`);
+    res.send(buffer);
+  }
 });
 
 export const getTicket = asyncHandler(async (req: Request, res: Response) => {

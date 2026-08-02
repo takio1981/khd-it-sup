@@ -7,6 +7,7 @@ import type {
   AssignTicketDto,
   CommentTicketDto,
   CreateTicketDto,
+  ExportTicketsQueryDto,
   InspectionDto,
   ListTicketsQueryDto,
   RepairSummaryDto,
@@ -23,6 +24,8 @@ import { logger } from '@infrastructure/logger/logger';
 
 const WORKFLOW_TEMPLATE_CODE = 'REPAIR_INTERNAL';
 const PROTECTED_TERMINAL_STEPS = new Set(['CLOSED', 'CANCELLED']);
+/** จำกัดจำนวนแถวสูงสุดต่อไฟล์ export กันรายงานโตเกินควบคุมไม่ได้ (ใบแจ้งซ่อมของหน่วยงานเดียวไม่ควรเกินนี้ในทางปฏิบัติ) */
+const EXPORT_MAX_ROWS = 5000;
 
 export class RepairTicketService {
   private readonly repo = new RepairTicketRepository();
@@ -43,6 +46,23 @@ export class RepairTicketService {
       pagination,
     );
     return buildPaginatedResult(items, total, pagination);
+  }
+
+  /** ใช้เฉพาะสำหรับ export Excel/CSV — ดึงแบบไม่แบ่งหน้า (จำกัดที่ EXPORT_MAX_ROWS) ใช้ filter เดียวกับ list() ทุกจุด */
+  async listForExport(query: ExportTicketsQueryDto, ctx: IRequestContext) {
+    const canReadAll = ctx.user.permissions.includes(PERMISSIONS.TICKET_READ);
+    const { items } = await this.repo.findMany(
+      {
+        status: query.status,
+        urgency: query.urgency,
+        departmentId: query.departmentId,
+        assignedTechnicianId: query.assignedTechnicianId,
+        keyword: query.keyword,
+        reportedByUserId: canReadAll ? undefined : ctx.user.id,
+      },
+      { page: 1, limit: EXPORT_MAX_ROWS, skip: 0, take: EXPORT_MAX_ROWS },
+    );
+    return items;
   }
 
   async getById(id: string, ctx: IRequestContext) {

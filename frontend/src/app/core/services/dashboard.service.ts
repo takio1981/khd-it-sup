@@ -48,4 +48,9 @@ export class DashboardService {
   getAnalytics(): Observable<IDashboardAnalytics> {
     return this.http.get<IApiSuccessResponse<IDashboardAnalytics>>(`${this.base}/analytics`).pipe(map((res) => res.data));
   }
+
+  exportExcel(year: number): Observable<Blob> {
+    const params = new HttpParams().set('year', year);
+    return this.http.get(`${this.base}/export`, { params, responseType: 'blob' });
+  }
 }

@@ -9,6 +9,15 @@
         <khd-icon name="adjustments-horizontal" [size]="18" class="!mr-1" />
         มุมมองบอร์ด
       </a>
+      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
+        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+        Export
+      </button>
+      <mat-menu #exportMenu="matMenu">
+        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
+        <button mat-menu-item (click)="exportCsv()">CSV</button>
+        <button mat-menu-item (click)="exportPdf()">PDF</button>
+      </mat-menu>
       <button mat-flat-button color="primary" *khdHasPermission="'ticket:create'" (click)="openCreateForm()">
         <khd-icon name="plus" [size]="18" class="!mr-1" />
         แจ้งซ่อมใหม่

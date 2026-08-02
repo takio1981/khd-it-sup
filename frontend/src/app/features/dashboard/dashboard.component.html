@@ -1,12 +1,24 @@
 <div class="space-y-4 pb-6">
-  <div>
-    <h1 class="text-xl font-semibold">แดชบอร์ดภาพรวม</h1>
-    <p class="text-sm text-neutral-500">สรุปสถานะงานแจ้งซ่อมและครุภัณฑ์ทั้งหมด</p>
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold">แดชบอร์ดภาพรวม</h1>
+      <p class="text-sm text-neutral-500">สรุปสถานะงานแจ้งซ่อมและครุภัณฑ์ทั้งหมด</p>
+    </div>
+    <div class="flex gap-2">
+      <button mat-stroked-button [disabled]="exportingExcel()" (click)="exportExcel()">
+        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+        Export Excel (สรุป+รายเดือน+อันดับหน่วยงาน)
+      </button>
+      <button mat-stroked-button [disabled]="exportingPdf()" (click)="exportPdf()">
+        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+        Export PDF (แท็บงานแจ้งซ่อม)
+      </button>
+    </div>
   </div>
 
   <mat-tab-group animationDuration="150ms" class="khd-dashboard-tabs">
     <mat-tab label="งานแจ้งซ่อม">
-      <div class="pt-4 space-y-4">
+      <div id="khd-dashboard-print-area" class="pt-4 space-y-4 bg-white dark:bg-neutral-900">
         @if (summary(); as s) {
           <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
             <khd-stat-card variant="solid" color="amber" icon="clock" label="รอดำเนินการ" [value]="s.tickets.pending" />

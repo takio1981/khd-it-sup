@@ -6,6 +6,7 @@ import {
   categoryIdParamSchema,
   createAssetSchema,
   createCategorySchema,
+  exportAssetsQuerySchema,
   listAssetsQuerySchema,
   updateAssetSchema,
   updateCategorySchema,
@@ -81,6 +82,21 @@ router.delete(
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/', requirePermission(PERMISSIONS.ASSET_READ), validateRequest({ query: listAssetsQuerySchema }), assetController.listAssets);
+
+/**
+ * @openapi
+ * /assets/export:
+ *   get:
+ *     tags: [Assets]
+ *     summary: Export รายการครุภัณฑ์เป็น Excel/CSV (ใช้ filter เดียวกับรายการ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/export',
+  requirePermission(PERMISSIONS.ASSET_READ),
+  validateRequest({ query: exportAssetsQuerySchema }),
+  assetController.exportAssets,
+);
 
 /**
  * @openapi

@@ -8,15 +8,21 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxjs';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { URGENCY_LABEL_TH, URGENCY_COLOR } from '../../../core/constants/status.const';
 import { TicketFormComponent } from '../ticket-form/ticket-form.component';
+import { downloadBlob } from '../../../core/utils/download.util';
+import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
 import type { IRepairTicketListItem } from '../../../core/models/repair-ticket.model';
+
+const EXPORT_PDF_MAX_ROWS = 500;
 
 @Component({
   selector: 'khd-ticket-list',
@@ -32,6 +38,7 @@ import type { IRepairTicketListItem } from '../../../core/models/repair-ticket.m
     MatSelectModule,
     MatInputModule,
     MatButtonModule,
+    MatMenuModule,
     StatusBadgeComponent,
     IconComponent,
     HasPermissionDirective,
@@ -42,6 +49,9 @@ export class TicketListComponent {
   private readonly repairTicketService = inject(RepairTicketService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
+  private readonly snackBar = inject(MatSnackBar);
+
+  readonly exporting = signal(false);
 
   readonly urgencyLabels = URGENCY_LABEL_TH;
   readonly urgencyColor = URGENCY_COLOR;
@@ -110,5 +120,66 @@ export class TicketListComponent {
 
   viewTicket(ticket: IRepairTicketListItem): void {
     void this.router.navigate(['/repair-tickets', ticket.id]);
+  }
+
+  private currentFilter() {
+    return { keyword: this.keyword || undefined, status: this.status || undefined, urgency: this.urgency || undefined };
+  }
+
+  exportExcel(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.repairTicketService.exportFile(this.currentFilter(), 'xlsx').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `repair-tickets-${Date.now()}.xlsx`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  exportCsv(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.repairTicketService.exportFile(this.currentFilter(), 'csv').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `repair-tickets-${Date.now()}.csv`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  async exportPdf(): Promise<void> {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    try {
+      const res = await firstValueFrom(this.repairTicketService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
+      await exportTableToPdf({
+        title: 'รายงานงานแจ้งซ่อม',
+        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        columns: ['เลขที่', 'สถานะ', 'ความเร่งด่วน', 'รายละเอียด', 'ผู้แจ้ง', 'ช่างผู้รับผิดชอบ', 'วันที่แจ้ง'],
+        rows: res.items.map((t) => [
+          t.ticketNumber,
+          t.workflowInstance?.currentStep?.stepNameTh ?? t.status,
+          this.urgencyLabels[t.urgency] ?? t.urgency,
+          t.description,
+          t.reportedBy?.fullName ?? '',
+          t.assignedTechnician?.fullName ?? 'ยังไม่มอบหมาย',
+          new Date(t.createdAt).toLocaleDateString('th-TH'),
+        ]),
+        filename: `repair-tickets-${Date.now()}.pdf`,
+      });
+    } catch {
+      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+    } finally {
+      this.exporting.set(false);
+    }
   }
 }

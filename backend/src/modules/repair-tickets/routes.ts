@@ -5,6 +5,7 @@ import {
   cancelTicketSchema,
   commentTicketSchema,
   createTicketSchema,
+  exportTicketsQuerySchema,
   inspectionSchema,
   listTicketsQuerySchema,
   repairSummarySchema,
@@ -29,6 +30,21 @@ const VIEW_PERMS = [PERMISSIONS.TICKET_READ, PERMISSIONS.TICKET_TRACK] as const;
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/', requirePermission(...VIEW_PERMS), validateRequest({ query: listTicketsQuerySchema }), ticketController.listTickets);
+
+/**
+ * @openapi
+ * /repair-tickets/export:
+ *   get:
+ *     tags: [Repair Tickets]
+ *     summary: Export รายการใบแจ้งซ่อมเป็น Excel/CSV (ใช้ filter เดียวกับรายการ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/export',
+  requirePermission(...VIEW_PERMS),
+  validateRequest({ query: exportTicketsQuerySchema }),
+  ticketController.exportTickets,
+);
 
 /**
  * @openapi

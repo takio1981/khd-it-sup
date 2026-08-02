@@ -29,7 +29,7 @@
 | Audit Log UI | ✅ เสร็จสมบูรณ์ | `GET /audit-logs` + หน้า "ประวัติการใช้งานระบบ" (`/settings/audit-log`) filter ตามโมดูล/การกระทำ/ช่วงวันที่ |
 | Settings ทั่วไป (ชื่อองค์กร/โลโก้/ธีม/SMTP ผ่าน UI) | ✅ เสร็จสมบูรณ์ | หน้า "ตั้งค่าทั่วไป" (`/settings/general`) แก้ชื่อองค์กร/อัปโหลดโลโก้/สีธีม/SMTP ได้ทันทีไม่ต้อง restart — ทดสอบส่งอีเมลจริงผ่านค่าที่ตั้งใหม่แล้ว (ธีมสีบันทึกได้แต่ยังไม่ผูกเข้า Material theme runtime — เก็บไว้ใช้งานในอนาคต) |
 | Kanban Board | ✅ เสร็จสมบูรณ์ | หน้า "บอร์ดงานแจ้งซ่อม" (`/repair-tickets/board`) ลากการ์ดข้ามคอลัมน์ผ่าน Angular CDK drag-drop เรียก `POST /repair-tickets/:id/transition` เดิม ตรวจ transition ที่ถูกต้องจาก `GET /workflow-templates/REPAIR_INTERNAL` ก่อนอนุญาตให้วาง (ไม่มี endpoint ใหม่) |
-| รายงาน Export (Excel/PDF/CSV) | ⬜ ยังไม่เริ่ม | ปัจจุบันมีแค่กราฟบน dashboard |
+| รายงาน Export (Excel/PDF/CSV) | ✅ เสร็จสมบูรณ์ | `GET /repair-tickets/export`, `/assets/export` (xlsx/csv), `/dashboard/export` (xlsx หลายชีต) ฝั่ง backend ด้วย `exceljs` — ปุ่ม Export PDF ฝั่ง frontend ใช้ jsPDF+html2canvas (JPEG encoding ไม่ใช่ PNG เพื่อไฟล์เล็กลง ~40-70 เท่า) |
 | คลังอะไหล่ (Spare Parts) | ⬜ ยังไม่เริ่ม | ตาราง `spare_parts`/`spare_part_transactions` พร้อมใช้ (schema+Prisma model มีแล้ว) |
 | ซ่อมภายนอก (Vendor Repair Workflow) | ⬜ ยังไม่เริ่ม | ตาราง `vendors`/`vendor_repair_orders` พร้อมใช้ (schema+Prisma model มีแล้ว) |
 | เอกสารราชการ + เลขที่วิ่งอัตโนมัติ | ⬜ ยังไม่เริ่ม | ทำเฉพาะ "ระบบ" (template registry + running number + audit trail) — ไม่รวมเนื้อหาฟอร์มราชการจริง 14 แบบ (รอต้นแบบจากผู้ใช้) |

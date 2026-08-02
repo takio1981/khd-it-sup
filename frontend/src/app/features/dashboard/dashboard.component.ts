@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { UserService } from '../../core/services/user.service';
 import { DepartmentService } from '../../core/services/department.service';
@@ -25,6 +27,8 @@ import type { IDepartment, IDivision, IPosition, IUserStats } from '../../core/m
 import type { IRoom } from '../../core/models/location.model';
 import type { NotificationChannel } from '../../core/models/notification.model';
 import type { IAssetLoanChartData, IAssetLoanStats } from '../../core/models/asset-loan.model';
+import { downloadBlob } from '../../core/utils/download.util';
+import { exportElementToPdf } from '../../core/utils/pdf-element-export.util';
 
 const THAI_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const IN_PROGRESS_STATUSES = new Set(['IN_REPAIR', 'WAITING_PARTS', 'MAINTENANCE']);
@@ -41,11 +45,15 @@ const CHANNEL_LABEL_TH: Record<NotificationChannel, string> = {
   selector: 'khd-dashboard',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatTabsModule, StatCardComponent, BarChartComponent, IconComponent, HasPermissionDirective],
+  imports: [MatTabsModule, MatButtonModule, StatCardComponent, BarChartComponent, IconComponent, HasPermissionDirective],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent {
   private readonly dashboardService = inject(DashboardService);
+  private readonly snackBar = inject(MatSnackBar);
+
+  readonly exportingExcel = signal(false);
+  readonly exportingPdf = signal(false);
   private readonly userService = inject(UserService);
   private readonly departmentService = inject(DepartmentService);
   private readonly positionService = inject(PositionService);
@@ -172,8 +180,10 @@ export class DashboardComponent {
     () => this.loanChartData()?.topBorrowers.map((b) => ({ label: b.label, value: b.count })) ?? [],
   );
 
+  private readonly year = new Date().getFullYear();
+
   constructor() {
-    const year = new Date().getFullYear();
+    const year = this.year;
 
     this.dashboardService.getSummary().subscribe((data) => this.summary.set(data));
     this.dashboardService.getMonthlyChart(year).subscribe((data) => this.monthly.set(data));
@@ -213,6 +223,33 @@ export class DashboardComponent {
     if (this.authService.hasPermission('asset:loan')) {
       this.assetLoanService.getStats().subscribe((stats) => this.loanStats.set(stats));
       this.assetLoanService.getChartData().subscribe((data) => this.loanChartData.set(data));
+    }
+  }
+
+  exportExcel(): void {
+    if (this.exportingExcel()) return;
+    this.exportingExcel.set(true);
+    this.dashboardService.exportExcel(this.year).subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `dashboard-${this.year}-${Date.now()}.xlsx`);
+        this.exportingExcel.set(false);
+      },
+      error: () => {
+        this.exportingExcel.set(false);
+        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  async exportPdf(): Promise<void> {
+    if (this.exportingPdf()) return;
+    this.exportingPdf.set(true);
+    try {
+      await exportElementToPdf('khd-dashboard-print-area', `dashboard-${Date.now()}.pdf`, 'portrait');
+    } catch {
+      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+    } finally {
+      this.exportingPdf.set(false);
     }
   }
 }

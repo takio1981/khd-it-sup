@@ -1,12 +1,21 @@
 import { randomUUID } from 'node:crypto';
 import { AssetRepository } from '@modules/assets/repositories/asset.repository';
-import type { CreateAssetDto, CreateCategoryDto, ListAssetsQueryDto, UpdateAssetDto, UpdateCategoryDto } from '@modules/assets/dto/asset.dto';
+import type {
+  CreateAssetDto,
+  CreateCategoryDto,
+  ExportAssetsQueryDto,
+  ListAssetsQueryDto,
+  UpdateAssetDto,
+  UpdateCategoryDto,
+} from '@modules/assets/dto/asset.dto';
 import { runningNumberService } from '@modules/settings/services/runningNumber.service';
 import { env } from '@config/env';
 import { ConflictError, NotFoundError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import type { IRequestContext } from '@common/interfaces';
+
+const EXPORT_MAX_ROWS = 5000;
 
 export class AssetService {
   private readonly repo = new AssetRepository();
@@ -18,6 +27,15 @@ export class AssetService {
       pagination,
     );
     return buildPaginatedResult(items, total, pagination);
+  }
+
+  /** ใช้เฉพาะสำหรับ export Excel/CSV — ดึงแบบไม่แบ่งหน้า (จำกัดที่ EXPORT_MAX_ROWS) ใช้ filter เดียวกับ list() ทุกจุด */
+  async listForExport(query: ExportAssetsQueryDto) {
+    const { items } = await this.repo.findMany(
+      { categoryId: query.categoryId, departmentId: query.departmentId, status: query.status, keyword: query.keyword },
+      { page: 1, limit: EXPORT_MAX_ROWS, skip: 0, take: EXPORT_MAX_ROWS },
+    );
+    return items;
   }
 
   async listCategories() {
