@@ -25,9 +25,12 @@ Timeline แบบ immutable ที่บันทึกทุกการกร
 `docker compose` เต็มระบบ รวมถึง Telegram/LINE (ทั้งช่องทางกลางและส่วนตัว), Socket.IO realtime, กระดิ่งแจ้งเตือน,
 ลืมรหัสผ่าน, และแจ้งเตือนยืมเกินกำหนดคืนอัตโนมัติ ที่เดิมอยู่ใน Phase 10+ ได้ถูกทำเสร็จแล้วเช่นกัน
 
-ส่วนที่**ยังไม่เริ่ม**: งานซ่อมภายนอก (ส่งร้าน/บริษัท), คลังอะไหล่ (Spare Part Inventory), เอกสารราชการ 14 แบบพร้อมเลขที่วิ่งอัตโนมัติ,
-Audit Log UI, Kanban Board, Visual Flow Designer, รายงาน Export (Excel/PDF/CSV), หน้าตั้งค่าทั่วไป (ชื่อองค์กร/โลโก้/SMTP/ธีมผ่าน UI),
-ระบบสำรองข้อมูลอัตโนมัติผ่าน UI — ดูรายละเอียดที่ [docs/00-roadmap.md](docs/00-roadmap.md)
+**Phase 10+ คืบหน้าไปมากแล้ว**: Audit Log UI, Settings ทั่วไป (ชื่อองค์กร/โลโก้/SMTP/ธีมผ่าน UI), Kanban Board,
+รายงาน Export (Excel/PDF/CSV), คลังอะไหล่ (Spare Part Inventory), งานซ่อมภายนอก (ส่งร้าน/บริษัท พร้อมออกเลข PO
+อัตโนมัติ), และระบบเอกสารราชการ + เลขที่วิ่งอัตโนมัติ (เฉพาะ engine — ใช้งานจริงแล้ว 1 ใน 14 แบบฟอร์ม รอต้นแบบราชการ
+ที่เหลือ) **เสร็จสมบูรณ์และทดสอบจริงแล้วทั้งหมด** — ส่วนที่**ยังไม่เริ่ม**: Visual Flow Designer, ระบบสำรองข้อมูล
+อัตโนมัติผ่าน UI, PWA/Installable App, Automated test coverage เพิ่มเติม — ดูรายละเอียดที่
+[docs/00-roadmap.md](docs/00-roadmap.md)
 
 ## Tech Stack
 

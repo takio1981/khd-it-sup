@@ -32,7 +32,7 @@
 | รายงาน Export (Excel/PDF/CSV) | ✅ เสร็จสมบูรณ์ | `GET /repair-tickets/export`, `/assets/export` (xlsx/csv), `/dashboard/export` (xlsx หลายชีต) ฝั่ง backend ด้วย `exceljs` — ปุ่ม Export PDF ฝั่ง frontend ใช้ jsPDF+html2canvas (JPEG encoding ไม่ใช่ PNG เพื่อไฟล์เล็กลง ~40-70 เท่า) |
 | คลังอะไหล่ (Spare Parts) | ✅ เสร็จสมบูรณ์ | เมนู "คลังอะไหล่" (`/spare-parts`) + ปุ่ม "เบิกอะไหล่" ในหน้ารายละเอียดใบแจ้งซ่อม — ตัดสต็อก atomic ผ่าน `prisma.$transaction` กันสต็อกติดลบ (permission ใหม่ `spare_part:view`/`manage`/`issue`) |
 | ซ่อมภายนอก (Vendor Repair Workflow) | ✅ เสร็จสมบูรณ์ | Workflow เพิ่มขั้นตอน `VENDOR_REPAIR` (DIAGNOSIS→ส่งซ่อมภายนอก→รับคืน→TESTING) + เมนู "ผู้ขาย/ผู้รับซ่อมภายนอก" + ใบส่งซ่อมภายนอกในหน้ารายละเอียดใบแจ้งซ่อม (ออกเลข PO อัตโนมัติ, อัปโหลดใบเสนอราคา/ใบเสร็จ, รับเครื่องคืนย้าย workflow กลับอัตโนมัติ) |
-| เอกสารราชการ + เลขที่วิ่งอัตโนมัติ | ⬜ ยังไม่เริ่ม | ทำเฉพาะ "ระบบ" (template registry + running number + audit trail) — ไม่รวมเนื้อหาฟอร์มราชการจริง 14 แบบ (รอต้นแบบจากผู้ใช้) |
+| เอกสารราชการ + เลขที่วิ่งอัตโนมัติ | 🟡 ทำเฉพาะระบบ (engine) | `document_templates`/`generated_documents` ต่อสายใช้งานจริงแล้ว 1/14 แบบ (ใบแจ้งซ่อม `REPAIR_REQUEST`) ผ่านปุ่ม "ออกเลขที่เอกสารและบันทึก" ในหน้าพิมพ์ใบแจ้งซ่อม — เพิ่มแบบฟอร์มที่เหลือได้ทีหลังโดยไม่ต้องแก้ engine เมื่อได้ต้นแบบราชการจริงจากผู้ใช้ (แค่เพิ่มแถวใน `document_templates`/`running_number_sequences` + Angular component ต่อ 1 แบบฟอร์ม) |
 | Visual Flow Designer | ⏸ เลื่อนออกไป | แก้ workflow ผ่าน SQL ตรงยังใช้งานได้ ไม่ blocking — priority ต่ำกว่าข้ออื่น |
 
 ## หลักการสำคัญ

@@ -27,6 +27,7 @@ import auditLogRoutes from '@modules/audit-log/routes';
 import sparePartRoutes from '@modules/spare-parts/routes';
 import vendorRoutes from '@modules/vendors/routes';
 import vendorRepairOrderRoutes from '@modules/vendor-repair-orders/routes';
+import documentRoutes from '@modules/documents/routes';
 import { serveFile } from '@infrastructure/storage/serveFile.controller';
 
 export function createApp(): Express {
@@ -83,6 +84,7 @@ export function createApp(): Express {
   api.use('/spare-parts', sparePartRoutes);
   api.use('/vendors', vendorRoutes);
   api.use('/vendor-repair-orders', vendorRepairOrderRoutes);
+  api.use('/', documentRoutes);
   api.get('/files/:subdir/:filename', authenticate, serveFile);
   app.use(env.API_PREFIX, api);
 

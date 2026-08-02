@@ -224,11 +224,21 @@
   </div>
 </mat-dialog-content>
 
+@if (issuedRunningNumber(); as rn) {
+  <div class="khd-no-print px-1">
+    <p class="text-xs text-emerald-600 dark:text-emerald-400 text-right">ออกเลขที่เอกสารทางการแล้ว: {{ rn }}</p>
+  </div>
+}
+
 <mat-dialog-actions align="end" class="khd-no-print">
   <button mat-button (click)="close()">ปิด</button>
   <button mat-stroked-button [disabled]="exporting()" (click)="exportPdf()">
     <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-    {{ exporting() ? 'กำลังสร้าง PDF...' : 'ส่งออก PDF' }}
+    {{ exporting() ? 'กำลังสร้าง PDF...' : 'ส่งออก PDF (พรีวิว)' }}
+  </button>
+  <button mat-stroked-button color="accent" [disabled]="issuing()" (click)="issueAndSave()">
+    <khd-icon name="document-text" [size]="18" class="!mr-1" />
+    {{ issuing() ? 'กำลังออกเลขที่...' : 'ออกเลขที่เอกสารและบันทึก' }}
   </button>
   <button mat-flat-button color="primary" (click)="print()">
     <khd-icon name="printer" [size]="18" class="!mr-1" />

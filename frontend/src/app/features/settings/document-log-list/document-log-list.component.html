@@ -1,0 +1,54 @@
+<div class="space-y-4">
+  <div>
+    <h1 class="text-xl font-semibold">ประวัติเอกสารราชการที่ออกแล้ว</h1>
+    <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} ฉบับ — เลขที่เอกสารออกจากระบบอัตโนมัติ ไม่ซ้ำ ไม่ข้าม</p>
+  </div>
+
+  <div class="khd-card !p-0 overflow-x-auto">
+    <table mat-table [dataSource]="docs()" class="w-full">
+      <ng-container matColumnDef="runningNumber">
+        <th mat-header-cell *matHeaderCellDef>เลขที่เอกสาร</th>
+        <td mat-cell *matCellDef="let d">{{ d.runningNumber }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="templateCode">
+        <th mat-header-cell *matHeaderCellDef>แบบฟอร์ม</th>
+        <td mat-cell *matCellDef="let d">{{ d.templateCode }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="ticket">
+        <th mat-header-cell *matHeaderCellDef>ใบแจ้งซ่อมที่เกี่ยวข้อง</th>
+        <td mat-cell *matCellDef="let d">
+          @if (d.ticket) {
+            <button mat-button class="!text-xs !min-w-0 !px-2" (click)="viewTicket(d)">{{ d.ticket.ticketNumber }}</button>
+          } @else {
+            <span class="text-neutral-400">-</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="generatedAt">
+        <th mat-header-cell *matHeaderCellDef>วันที่ออกเอกสาร</th>
+        <td mat-cell *matCellDef="let d">{{ d.generatedAt | date: 'd MMM yyyy, HH:mm' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let d">
+          <button mat-button class="!text-xs" (click)="viewFile(d)">
+            <khd-icon name="document-text" [size]="14" class="!mr-1" />ดูไฟล์
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+    </table>
+
+    @if (!loading() && docs().length === 0) {
+      <p class="text-center text-sm text-neutral-400 py-10">ยังไม่มีเอกสารที่ออกเลขที่แล้ว</p>
+    }
+
+    <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="pageIndex()" [pageSizeOptions]="[10, 20, 50]" (page)="onPage($event)" />
+  </div>
+</div>

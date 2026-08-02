@@ -257,7 +257,26 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 
 ---
 
-## 5.18 ตัวอย่าง OpenAPI 3.0 (Auth module) — รูปแบบที่ swagger-jsdoc generate จริงจาก JSDoc comment เหนือแต่ละ route
+## 5.18 Documents (เอกสารราชการ + เลขที่วิ่งอัตโนมัติ) — 🟡 เฉพาะระบบ (engine)
+
+| Method | Path | Permission | คำอธิบาย |
+|---|---|---|---|
+| GET | `/document-templates` | `document:print`/`generate` | รายการแบบฟอร์มที่เปิดใช้งาน (registry — ปัจจุบัน seed ไว้ `REPAIR_REQUEST` แบบเดียว) |
+| GET | `/documents` | `document:print`/`generate`/`audit:view` | ประวัติเอกสารที่ออกเลขที่แล้วทั้งหมด (filter: ticketId, templateCode) |
+| POST | `/documents/generate` | `document:generate` | ออกเลขที่เอกสารจริงจาก `running_number_sequences` (multipart: field `file` = PDF ที่ frontend render แล้ว, `templateCode`, `ticketId?`) |
+
+**สถาปัตยกรรม**: `document_templates`/`generated_documents` เป็นเพียง "engine" — เนื้อหา/เลย์เอาต์ของแบบฟอร์มแต่ละแบบ
+render ที่ฝั่ง frontend เอง (เหมือน `ticket-print-preview.component.ts`) ไม่ใช่ backend เก็บ template ไว้ frontend
+render เป็น PDF ผ่าน jsPDF + html2canvas แล้วอัปโหลด blob มาที่ endpoint นี้เพื่อขอเลขที่จริง + เก็บเป็นหลักฐานถาวร
+(`generated_documents` เป็น insert-only ledger เชิงตรรกะเช่นเดียวกับ audit log — ไม่มี endpoint แก้ไข/ลบ)
+
+ปัจจุบันต่อสายใช้งานจริงแล้ว **1 ใน 14 แบบ**: `REPAIR_REQUEST` (ใบแจ้งซ่อม) ผ่านปุ่ม "ออกเลขที่เอกสารและบันทึก" ใน
+`ticket-print-preview` — แบบฟอร์มราชการที่เหลือรอต้นแบบจริงจากผู้ใช้ เพิ่มได้โดยไม่ต้องแก้ engine (เพิ่มแถวใน
+`document_templates` + `running_number_sequences` แล้วสร้าง Angular component render ฟอร์มนั้นเรียก endpoint เดียวกันนี้)
+
+---
+
+## 5.19 ตัวอย่าง OpenAPI 3.0 (Auth module) — รูปแบบที่ swagger-jsdoc generate จริงจาก JSDoc comment เหนือแต่ละ route
 
 ```yaml
 openapi: 3.0.3

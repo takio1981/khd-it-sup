@@ -20,5 +20,6 @@ export const NAV_ITEMS: INavItem[] = [
   { label: 'ตั้งค่าแจ้งเตือน', route: '/settings/notifications', icon: 'bell', permissions: ['settings:manage', 'audit:view'] },
   { label: 'ตั้งค่าทั่วไป', route: '/settings/general', icon: 'adjustments-horizontal', permissions: ['settings:manage', 'audit:view'] },
   { label: 'ประวัติการใช้งานระบบ', route: '/settings/audit-log', icon: 'clipboard-document-list', permissions: ['audit:view'] },
+  { label: 'ประวัติเอกสารราชการ', route: '/settings/documents', icon: 'document-text', permissions: ['document:print', 'document:generate', 'audit:view'] },
   { label: 'คู่มือการใช้งาน', route: '/help', icon: 'document-text' },
 ];

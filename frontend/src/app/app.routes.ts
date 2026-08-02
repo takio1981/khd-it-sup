@@ -176,6 +176,13 @@ export const routes: Routes = [
           import('./features/settings/audit-log-list/audit-log-list.component').then((m) => m.AuditLogListComponent),
       },
       {
+        path: 'settings/documents',
+        canActivate: [permissionGuard],
+        data: { permissions: ['document:print', 'document:generate', 'audit:view'], watermark: 'logo3.png' },
+        loadComponent: () =>
+          import('./features/settings/document-log-list/document-log-list.component').then((m) => m.DocumentLogListComponent),
+      },
+      {
         path: 'help',
         data: { watermark: 'logo3.png' },
         loadComponent: () => import('./features/help/help.component').then((m) => m.HelpComponent),

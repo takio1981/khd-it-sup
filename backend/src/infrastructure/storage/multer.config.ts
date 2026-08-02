@@ -81,6 +81,8 @@ export const logoUploader = createUploader('logos', {
 });
 /** ใบเสนอราคา/ใบแจ้งหนี้จากผู้รับซ่อมภายนอก — รูปภาพหรือ PDF (ใช้ default ALLOWED_MIME_TYPES) */
 export const vendorDocUploader = createUploader('vendor-docs');
+/** เอกสารราชการที่ออกเลขที่วิ่งแล้ว (PDF ที่ frontend render มาแล้ว) */
+export const documentUploader = createUploader('documents');
 
 /** ลบไฟล์ที่เคยอัปโหลดไว้ตาม fileUrl เดิม (best-effort — ไม่ throw ถ้าไฟล์ไม่มีอยู่แล้ว) ใช้ตอนแทนที่รูปเดิมด้วยรูปใหม่ */
 export function deleteUploadedFileByUrl(fileUrl: string, subDir: string): void {
