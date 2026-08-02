@@ -204,7 +204,25 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 
 ---
 
-## 5.15 ตัวอย่าง OpenAPI 3.0 (Auth module) — รูปแบบที่ swagger-jsdoc generate จริงจาก JSDoc comment เหนือแต่ละ route
+## 5.15 Spare Parts (คลังอะไหล่) — `/api/v1/spare-parts` ✅
+
+| Method | Path | Permission | คำอธิบาย |
+|---|---|---|---|
+| GET | `/spare-parts` | `spare_part:view`/`manage`/`issue` | รายการอะไหล่ (filter: keyword, lowStockOnly) |
+| POST | `/spare-parts` | `spare_part:manage` | เพิ่มอะไหล่ใหม่ (master data) |
+| GET | `/spare-parts/:id` | `spare_part:view`/`manage`/`issue` | รายละเอียดอะไหล่ |
+| PATCH | `/spare-parts/:id` | `spare_part:manage` | แก้ไขข้อมูลอะไหล่ (ไม่ใช่การปรับสต็อก) |
+| GET | `/spare-parts/transactions` | `spare_part:view`/`manage`/`issue` | ประวัติธุรกรรมทั้งหมด (filter `ticketId` — ใช้แสดงในหน้ารายละเอียดใบแจ้งซ่อม) |
+| GET | `/spare-parts/:id/transactions` | `spare_part:view`/`manage`/`issue` | ประวัติธุรกรรมของอะไหล่ชิ้นนี้ |
+| POST | `/spare-parts/:id/transactions` | `spare_part:issue`/`manage` | บันทึกธุรกรรม (`RESERVE`/`ISSUE`/`RETURN`/`ADJUST`/`PURCHASE`/`RECEIVE`) |
+
+`quantityOnHand` ปรับแบบ atomic ผ่าน `prisma.$transaction` (อ่าน-เขียน-สร้างแถว transaction ในธุรกรรมเดียว) — ถ้าเบิก
+(`ISSUE`/`RESERVE`) เกินยอดคงเหลือจะถูกปฏิเสธด้วย `409 CONFLICT` ทันที ไม่มีการเขียนข้อมูลใดๆ เกิดขึ้น `ADJUST` เป็นประเภท
+เดียวที่ `quantity` ติดลบได้ (ปรับยอดลง) ประเภทอื่นต้องเป็นค่าบวกเสมอ
+
+---
+
+## 5.16 ตัวอย่าง OpenAPI 3.0 (Auth module) — รูปแบบที่ swagger-jsdoc generate จริงจาก JSDoc comment เหนือแต่ละ route
 
 ```yaml
 openapi: 3.0.3

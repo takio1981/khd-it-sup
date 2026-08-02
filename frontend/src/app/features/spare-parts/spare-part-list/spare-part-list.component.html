@@ -1,0 +1,130 @@
+<div class="space-y-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold">คลังอะไหล่</h1>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} รายการ</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      *khdHasPermission="'spare_part:manage'"
+      (click)="showForm() ? cancelForm() : openCreateForm()"
+    >
+      <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
+      {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มอะไหล่' }}
+    </button>
+  </div>
+
+  @if (showForm()) {
+    <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <h2 class="sm:col-span-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+        {{ editingId() ? 'แก้ไขอะไหล่' : 'เพิ่มอะไหล่ใหม่' }}
+      </h2>
+      <mat-form-field appearance="outline">
+        <mat-label>รหัสอะไหล่</mat-label>
+        <input matInput formControlName="code" />
+        @if (editingId()) {
+          <mat-hint>ไม่สามารถแก้ไขรหัสอะไหล่ได้</mat-hint>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ชื่ออะไหล่</mat-label>
+        <input matInput formControlName="name" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>หน่วยนับ</mat-label>
+        <input matInput formControlName="unit" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>จุดสั่งซื้อ (แจ้งเตือนเมื่อคงเหลือ ≤ ค่านี้)</mat-label>
+        <input matInput type="number" formControlName="reorderLevel" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ราคาต่อหน่วย (บาท, ถ้ามี)</mat-label>
+        <input matInput type="number" formControlName="unitCost" />
+      </mat-form-field>
+      <div class="sm:col-span-2 flex justify-end gap-2">
+        <button mat-button type="button" (click)="cancelForm()">ยกเลิก</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+          {{ editingId() ? 'บันทึกการแก้ไข' : 'บันทึก' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <div class="khd-card !p-3 flex flex-col sm:flex-row gap-3 sm:items-center">
+    <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
+      <mat-label>ค้นหา (รหัส / ชื่ออะไหล่)</mat-label>
+      <input matInput [(ngModel)]="keyword" (ngModelChange)="onKeywordChange()" />
+      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="!mr-2 text-neutral-400" />
+    </mat-form-field>
+    <mat-slide-toggle [(ngModel)]="lowStockOnly" (ngModelChange)="onFilterChange()">เฉพาะที่ต่ำกว่าจุดสั่งซื้อ</mat-slide-toggle>
+  </div>
+
+  <div class="khd-card !p-0 overflow-x-auto">
+    <table mat-table [dataSource]="parts()" class="w-full">
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef>รหัส</th>
+        <td mat-cell *matCellDef="let p">{{ p.code }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>ชื่ออะไหล่</th>
+        <td mat-cell *matCellDef="let p">{{ p.name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="quantityOnHand">
+        <th mat-header-cell *matHeaderCellDef>คงเหลือ</th>
+        <td mat-cell *matCellDef="let p">
+          <span [class.text-rose-600]="isLowStock(p)" [class.font-semibold]="isLowStock(p)">{{ p.quantityOnHand }}</span>
+          @if (isLowStock(p)) {
+            <khd-icon name="exclamation-triangle" [size]="14" class="text-amber-500 !ml-1 !inline-block" />
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="reorderLevel">
+        <th mat-header-cell *matHeaderCellDef>จุดสั่งซื้อ</th>
+        <td mat-cell *matCellDef="let p">{{ p.reorderLevel }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="unit">
+        <th mat-header-cell *matHeaderCellDef>หน่วย</th>
+        <td mat-cell *matCellDef="let p">{{ p.unit }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let p">
+          <div class="flex items-center gap-2">
+            <button
+              *khdHasPermission="'spare_part:manage'"
+              (click)="openStockDialog(p)"
+              class="appearance-none inline-flex items-center gap-1 rounded-full border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300 dark:hover:bg-teal-950/60 text-xs font-medium px-3 py-1 transition-colors"
+            >
+              <khd-icon name="arrow-path" [size]="14" />
+              ปรับสต็อก
+            </button>
+            <button
+              *khdHasPermission="'spare_part:manage'"
+              (click)="openEditForm(p)"
+              class="appearance-none inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 text-xs font-medium px-3 py-1 transition-colors"
+            >
+              <khd-icon name="pencil-square" [size]="14" />
+              แก้ไข
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+    </table>
+
+    @if (!loading() && parts().length === 0) {
+      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบอะไหล่ที่ตรงกับเงื่อนไข</p>
+    }
+
+    <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="pageIndex()" [pageSizeOptions]="[10, 20, 50]" (page)="onPage($event)" />
+  </div>
+</div>

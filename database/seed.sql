@@ -57,7 +57,10 @@ INSERT INTO `permissions` (`id`, `code`, `module`, `description`) VALUES
 (UUID(), 'audit:view',            'audit',     'ดู Audit Log'),
 (UUID(), 'workflow:configure',    'workflow',  'ตั้งค่า Workflow Engine'),
 (UUID(), 'document:print',        'document',  'พิมพ์เอกสารราชการ'),
-(UUID(), 'document:generate',     'document',  'สร้างเอกสารราชการ');
+(UUID(), 'document:generate',     'document',  'สร้างเอกสารราชการ'),
+(UUID(), 'spare_part:view',       'spare_part','ดูรายการ/สต็อกอะไหล่'),
+(UUID(), 'spare_part:manage',     'spare_part','จัดการข้อมูลอะไหล่ (เพิ่ม/แก้ไข/ปรับสต็อก)'),
+(UUID(), 'spare_part:issue',      'spare_part','เบิก/คืนอะไหล่ผูกกับใบแจ้งซ่อม');
 
 -- =====================================================================================
 -- 3. ROLE_PERMISSIONS (Permission Matrix)
@@ -78,7 +81,8 @@ WHERE `code` IN (
   'ticket:upload_attachment','ticket:cancel','ticket:close','ticket:approve',
   'user:create','user:read','user:update','user:delete','user:reset_password',
   'department:manage','report:view','report:export',
-  'document:print','document:generate'
+  'document:print','document:generate',
+  'spare_part:view','spare_part:manage','spare_part:issue'
 );
 
 -- IT Officer: receive jobs, assign jobs, update status, print documents
@@ -87,14 +91,16 @@ SELECT @role_it_officer, `id` FROM `permissions`
 WHERE `code` IN (
   'dashboard:view','asset:read','asset:loan','qrcode:generate',
   'ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment','ticket:approve',
-  'document:print','document:generate'
+  'document:print','document:generate',
+  'spare_part:view','spare_part:issue'
 );
 
 -- Technician: update repair status, upload images, record repair
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_technician, `id` FROM `permissions`
 WHERE `code` IN (
-  'asset:read','asset:loan','ticket:read','ticket:update_status','ticket:upload_attachment'
+  'asset:read','asset:loan','ticket:read','ticket:update_status','ticket:upload_attachment',
+  'spare_part:view','spare_part:issue'
 );
 
 -- User: create ticket, track ticket, print QR, view history

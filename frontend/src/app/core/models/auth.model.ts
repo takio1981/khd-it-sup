@@ -35,7 +35,10 @@ export type Permission =
   | 'audit:view'
   | 'workflow:configure'
   | 'document:print'
-  | 'document:generate';
+  | 'document:generate'
+  | 'spare_part:view'
+  | 'spare_part:manage'
+  | 'spare_part:issue';
 
 export interface IAuthUser {
   id: string;

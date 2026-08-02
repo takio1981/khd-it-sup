@@ -43,6 +43,10 @@ export const PERMISSIONS = {
 
   DOCUMENT_PRINT: 'document:print',
   DOCUMENT_GENERATE: 'document:generate',
+
+  SPARE_PART_VIEW: 'spare_part:view',
+  SPARE_PART_MANAGE: 'spare_part:manage',
+  SPARE_PART_ISSUE: 'spare_part:issue',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

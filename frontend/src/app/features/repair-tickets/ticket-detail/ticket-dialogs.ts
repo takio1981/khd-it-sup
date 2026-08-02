@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { UserService, type ITechnician } from '../../../core/services/user.service';
 import { INSPECTION_OUTCOME_LABEL_TH } from '../../../core/constants/status.const';
 import type { IInspectionPayload, InspectionOutcome } from '../../../core/models/repair-ticket.model';
+import type { ISparePart } from '../../../core/models/spare-part.model';
 
 /** Dialog เล็ก ๆ สำหรับใส่เหตุผลยกเลิกใบแจ้งซ่อม (บังคับกรอกตาม business rule) */
 @Component({
@@ -221,4 +222,64 @@ export class InspectionDialogComponent {
       sendExternalReason: raw.sendExternalReason || undefined,
     };
   }
+}
+
+export interface IIssuePartDialogData {
+  parts: ISparePart[];
+}
+
+export interface IIssuePartDialogResult {
+  sparePartId: string;
+  quantity: number;
+  note: string;
+}
+
+/** Dialog เบิกอะไหล่ผูกกับใบแจ้งซ่อมนี้ (บันทึกเป็น transaction type=ISSUE ตัด quantityOnHand ทันที) */
+@Component({
+  selector: 'khd-issue-part-dialog',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule],
+  template: `
+    <h2 mat-dialog-title>เบิกอะไหล่</h2>
+    <form [formGroup]="form">
+      <mat-dialog-content class="!flex !flex-col !gap-1">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>อะไหล่</mat-label>
+          <mat-select formControlName="sparePartId">
+            @for (p of data.parts; track p.id) {
+              <mat-option [value]="p.id" [disabled]="p.quantityOnHand <= 0">
+                {{ p.code }} - {{ p.name }} (คงเหลือ {{ p.quantityOnHand }} {{ p.unit }})
+              </mat-option>
+            }
+          </mat-select>
+          @if (data.parts.length === 0) {
+            <mat-hint>ยังไม่มีอะไหล่ในระบบ — เพิ่มได้ที่เมนู "คลังอะไหล่"</mat-hint>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>จำนวน</mat-label>
+          <input matInput type="number" formControlName="quantity" min="1" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>หมายเหตุ (ถ้ามี)</mat-label>
+          <input matInput formControlName="note" />
+        </mat-form-field>
+      </mat-dialog-content>
+      <mat-dialog-actions align="end">
+        <button mat-button mat-dialog-close>ยกเลิก</button>
+        <button mat-flat-button color="primary" [disabled]="form.invalid" [mat-dialog-close]="form.getRawValue()">เบิกอะไหล่</button>
+      </mat-dialog-actions>
+    </form>
+  `,
+})
+export class IssuePartDialogComponent {
+  private readonly fb = inject(FormBuilder);
+  readonly data = inject<IIssuePartDialogData>(MAT_DIALOG_DATA);
+
+  readonly form = this.fb.nonNullable.group({
+    sparePartId: ['', Validators.required],
+    quantity: [1, [Validators.required, Validators.min(1)]],
+    note: [''],
+  });
 }

@@ -18,7 +18,7 @@
         <div class="flex items-center gap-2">
           <khd-status-badge [status]="t.status" />
 
-          <button mat-icon-button [matMenuTriggerFor]="actionMenu" [disabled]="acting()">
+          <button mat-icon-button [matMenuTriggerFor]="actionMenu" [disabled]="acting()" aria-label="เมนูดำเนินการ">
             <khd-icon name="chevron-down" [size]="20" />
           </button>
           <mat-menu #actionMenu="matMenu">
@@ -32,6 +32,9 @@
             }
             <button mat-menu-item *khdHasPermission="'ticket:assign'" (click)="openAssignDialog()">
               <khd-icon name="users" [size]="16" class="!mr-2" />มอบหมายช่าง
+            </button>
+            <button mat-menu-item *khdHasPermission="'spare_part:issue'" (click)="openIssuePartDialog()">
+              <khd-icon name="archive-box" [size]="16" class="!mr-2" />เบิกอะไหล่
             </button>
             @for (tr of availableTransitions(); track tr.toStep.id) {
               <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="transition(tr.toStep.stepCode, tr.conditionKey)">
@@ -152,6 +155,20 @@
             </div>
           }
         </div>
+
+        @if (partsUsed().length > 0) {
+          <div class="pt-2 border-t border-black/5 dark:border-white/10">
+            <h3 class="text-xs font-medium text-neutral-500 mb-2">อะไหล่ที่เบิกใช้ ({{ partsUsed().length }})</h3>
+            <div class="space-y-1">
+              @for (txn of partsUsed(); track txn.id) {
+                <div class="flex items-center justify-between text-xs">
+                  <span>{{ txn.sparePart.code }} - {{ txn.sparePart.name }}</span>
+                  <span class="text-neutral-500">{{ txn.quantity }} {{ txn.sparePart.unit }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
 
         <div class="pt-2 border-t border-black/5 dark:border-white/10">
           <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">

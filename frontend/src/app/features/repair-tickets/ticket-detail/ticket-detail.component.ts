@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
+import { SparePartService } from '../../../core/services/spare-part.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { TimelineComponent } from '../../../shared/components/timeline/timeline.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -23,9 +24,12 @@ import {
   AssignTechnicianDialogComponent,
   RepairSummaryDialogComponent,
   InspectionDialogComponent,
+  IssuePartDialogComponent,
+  type IIssuePartDialogResult,
 } from './ticket-dialogs';
 import type { IRepairSummaryPayload } from '../../../core/services/repair-ticket.service';
 import type { IInspectionPayload, IRepairTicketDetail, ITimelineEvent } from '../../../core/models/repair-ticket.model';
+import type { ISparePartTransaction } from '../../../core/models/spare-part.model';
 
 @Component({
   selector: 'khd-ticket-detail',
@@ -51,8 +55,11 @@ import type { IInspectionPayload, IRepairTicketDetail, ITimelineEvent } from '..
 })
 export class TicketDetailComponent {
   private readonly repairTicketService = inject(RepairTicketService);
+  private readonly sparePartService = inject(SparePartService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+
+  readonly partsUsed = signal<ISparePartTransaction[]>([]);
 
   private static readonly MAX_ATTACHMENT_SIZE_BYTES = 5 * 1024 * 1024;
   private static readonly MAX_ATTACHMENT_COUNT = 5;
@@ -110,6 +117,7 @@ export class TicketDetailComponent {
       this.loading.set(false);
     });
     this.repairTicketService.getTimeline(id).subscribe((events) => this.timeline.set(events));
+    this.sparePartService.listTransactions({ ticketId: id, limit: 50 }).subscribe((res) => this.partsUsed.set(res.items));
   }
 
   private refresh(): void {
@@ -202,6 +210,27 @@ export class TicketDetailComponent {
       if (!technicianId) return;
       this.acting.set(true);
       this.repairTicketService.assign(this.id(), technicianId).subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
+    });
+  }
+
+  openIssuePartDialog(): void {
+    this.sparePartService.list({ limit: 200 }).subscribe((res) => {
+      const ref = this.dialog.open(IssuePartDialogComponent, { width: '420px', data: { parts: res.items } });
+      ref.afterClosed().subscribe((result: IIssuePartDialogResult | undefined) => {
+        if (!result) return;
+        this.sparePartService
+          .recordTransaction(result.sparePartId, { type: 'ISSUE', quantity: result.quantity, ticketId: this.id(), note: result.note || undefined })
+          .subscribe({
+            next: () => {
+              this.snackBar.open('เบิกอะไหล่แล้ว', 'ปิด', { duration: 2000 });
+              this.load();
+            },
+            error: (err) => {
+              const message = err?.error?.error?.message ?? 'เบิกอะไหล่ไม่สำเร็จ';
+              this.snackBar.open(message, 'ปิด', { duration: 3000 });
+            },
+          });
+      });
     });
   }
 
