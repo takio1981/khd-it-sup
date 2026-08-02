@@ -1,0 +1,109 @@
+@if (loading()) {
+  <div class="flex justify-center py-16">
+    <p class="text-sm text-neutral-400">กำลังโหลด...</p>
+  </div>
+} @else {
+  <div class="space-y-4 max-w-2xl">
+    <div class="khd-card">
+      <div class="flex items-center gap-2 mb-1">
+        <khd-icon name="building-office-2" [size]="18" class="text-emerald-600" />
+        <h2 class="text-sm font-medium">ข้อมูลองค์กร</h2>
+      </div>
+      <p class="text-xs text-neutral-500 mb-4">ชื่อองค์กรและโลโก้ที่แสดงในแถบเมนูของทุกหน้า</p>
+
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-16 h-16 rounded-lg border border-black/10 dark:border-white/10 flex items-center justify-center overflow-hidden bg-neutral-50 dark:bg-neutral-800 shrink-0">
+          @if (logoObjectUrl(); as url) {
+            <img [src]="url" class="w-full h-full object-contain" alt="โลโก้องค์กร" />
+          } @else {
+            <khd-icon name="building-office-2" [size]="28" class="text-neutral-400" />
+          }
+        </div>
+        @if (canManage()) {
+          <div class="flex gap-2">
+            <button mat-stroked-button type="button" [disabled]="uploadingLogo()" (click)="triggerLogoInput()">
+              @if (uploadingLogo()) {
+                <mat-spinner diameter="16" class="!inline-block !mr-1" />
+              }
+              เปลี่ยนโลโก้
+            </button>
+            @if (settings()?.orgLogoUrl) {
+              <button mat-button type="button" color="warn" [disabled]="uploadingLogo()" (click)="removeLogo()">ลบโลโก้</button>
+            }
+          </div>
+          <input #logoInput type="file" accept="image/*" class="hidden" (change)="onLogoSelected($event)" />
+        }
+      </div>
+
+      <form [formGroup]="orgForm" (ngSubmit)="saveOrg()" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <mat-form-field appearance="outline">
+          <mat-label>ชื่อองค์กร (ภาษาไทย)</mat-label>
+          <input matInput formControlName="orgNameTh" [readonly]="!canManage()" placeholder="เช่น สำนักงานสาธารณสุขจังหวัดนครราชสีมา" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>สีธีมหลัก (hex)</mat-label>
+          <input matInput formControlName="themeColor" [readonly]="!canManage()" placeholder="#006C45" />
+        </mat-form-field>
+        @if (canManage()) {
+          <div class="sm:col-span-2 flex justify-end">
+            <button mat-flat-button color="primary" type="submit" [disabled]="savingOrg()">บันทึกข้อมูลองค์กร</button>
+          </div>
+        }
+      </form>
+    </div>
+
+    @if (canManage()) {
+      <div class="khd-card">
+        <div class="flex items-center gap-2 mb-1">
+          <khd-icon name="paper-airplane" [size]="18" class="text-blue-500" />
+          <h2 class="text-sm font-medium">SMTP Server (ส่งอีเมล)</h2>
+        </div>
+        <p class="text-xs text-neutral-500 mb-4">
+          มีผลทันทีไม่ต้อง restart backend — ถ้ายังไม่ได้ตั้งค่าที่นี่ ระบบจะใช้ค่าจาก <code>.env</code> เป็นค่าเริ่มต้น
+        </p>
+        <form [formGroup]="smtpForm" (ngSubmit)="saveSmtp()" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <mat-form-field appearance="outline">
+            <mat-label>SMTP Host</mat-label>
+            <input matInput formControlName="smtpHost" placeholder="smtp.gmail.com" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Port</mat-label>
+            <input matInput type="number" formControlName="smtpPort" placeholder="587" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>SMTP User (อีเมลผู้ส่ง)</mat-label>
+            <input matInput formControlName="smtpUser" placeholder="noreply@example.go.th" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>SMTP Password</mat-label>
+            <input
+              matInput
+              type="password"
+              formControlName="smtpPass"
+              [placeholder]="settings()?.smtpPassConfigured ? 'ตั้งค่าไว้แล้ว (กรอกใหม่เพื่อเปลี่ยน)' : 'ยังไม่ได้ตั้งค่า'"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>อีเมลผู้ส่ง (From Email)</mat-label>
+            <input matInput formControlName="smtpFromEmail" placeholder="noreply@example.go.th" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>ชื่อผู้ส่ง (From Name)</mat-label>
+            <input matInput formControlName="smtpFromName" placeholder="KHD IT Service Desk" />
+          </mat-form-field>
+
+          <div class="sm:col-span-2 flex items-center justify-between py-1">
+            <span class="text-sm">ใช้ SSL/TLS (secure)</span>
+            <mat-slide-toggle formControlName="smtpSecure" />
+          </div>
+
+          <div class="sm:col-span-2 flex justify-end">
+            <button mat-flat-button color="primary" type="submit" [disabled]="savingSmtp()">บันทึกการตั้งค่า SMTP</button>
+          </div>
+        </form>
+      </div>
+    } @else {
+      <p class="text-xs text-neutral-400">คุณมีสิทธิ์ดูการตั้งค่าเท่านั้น ไม่สามารถแก้ไขได้</p>
+    }
+  </div>
+}

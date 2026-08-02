@@ -5,6 +5,8 @@ import { logger } from '@infrastructure/logger/logger';
 import { connectDatabase, disconnectDatabase } from '@infrastructure/database/prisma';
 import { initializeSocketServer } from '@infrastructure/socket/socket.server';
 import { startScheduledJobs } from '@infrastructure/scheduler/scheduler';
+import { setSmtpConfigProvider } from '@infrastructure/mailer/mailer';
+import { systemSettingService } from '@modules/settings/services/systemSetting.service';
 
 async function bootstrap(): Promise<void> {
   await connectDatabase();
@@ -13,6 +15,7 @@ async function bootstrap(): Promise<void> {
   const httpServer = http.createServer(app);
   initializeSocketServer(httpServer);
   startScheduledJobs();
+  setSmtpConfigProvider(() => systemSettingService.getSmtpConfig());
 
   httpServer.listen(env.PORT, () => {
     logger.info(`🚀 ${env.APP_NAME} backend listening on port ${env.PORT} [${env.NODE_ENV}]`);

@@ -16,6 +16,7 @@ export const NAV_ITEMS: INavItem[] = [
   { label: 'ผู้ใช้งาน', route: '/users', icon: 'users', permissions: ['user:read'] },
   { label: 'จัดการสถานที่/หน่วยงาน', route: '/departments', icon: 'building-office-2', permissions: ['department:manage'] },
   { label: 'ตั้งค่าแจ้งเตือน', route: '/settings/notifications', icon: 'bell', permissions: ['settings:manage', 'audit:view'] },
+  { label: 'ตั้งค่าทั่วไป', route: '/settings/general', icon: 'adjustments-horizontal', permissions: ['settings:manage', 'audit:view'] },
   { label: 'ประวัติการใช้งานระบบ', route: '/settings/audit-log', icon: 'clipboard-document-list', permissions: ['audit:view'] },
   { label: 'คู่มือการใช้งาน', route: '/help', icon: 'document-text' },
 ];

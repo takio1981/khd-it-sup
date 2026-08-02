@@ -166,13 +166,17 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | GET | `/dashboard/charts/technician-workload` | `dashboard:view` | ภาระงานช่างแต่ละคน (เฉพาะงานที่ยังไม่ปิด) |
 | GET | `/dashboard/analytics` | `dashboard:view` | เวลาซ่อมเฉลี่ย + Top ครุภัณฑ์ที่ถูกแจ้งซ่อมบ่อยที่สุด |
 
-## 5.12 Settings — `/api/v1/settings` ✅ (แจ้งเตือน) / 🔜 (ทั่วไป)
+## 5.12 Settings — `/api/v1/settings` ✅
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
 | GET | `/settings/notifications` | `settings:manage` หรือ `audit:view` | ค่าตั้งค่าการแจ้งเตือน (เปิด/ปิดช่องทาง, Telegram/LINE credential (ไม่คืนค่าจริง), เหตุการณ์แต่ละประเภท) |
 | PATCH | `/settings/notifications` | `settings:manage` | แก้ไขค่าตั้งค่าการแจ้งเตือน — เก็บแบบ key-value ใน `system_settings` (category="notification") |
-| GET/PATCH | `/settings/organization`, `/settings/theme` 🔜 | `settings:manage` | ตั้งค่าองค์กร/ธีมทั่วไป — ปัจจุบันกำหนดผ่าน `.env` เท่านั้น |
+| GET | `/settings/branding` | ผู้ใช้ที่ login แล้วทุกคน | ชื่อองค์กร/โลโก้เท่านั้น (ไม่มี SMTP) — ใช้แสดงใน topbar/sidebar ทุกหน้า |
+| GET | `/settings/org` | `settings:manage` หรือ `audit:view` | ค่าตั้งค่าทั่วไปแบบเต็ม (ชื่อองค์กร/โลโก้/ธีมสี/SMTP — `smtpPass` คืนแค่ `smtpPassConfigured: boolean`) |
+| PATCH | `/settings/org` | `settings:manage` | แก้ไขค่าตั้งค่าทั่วไป — เก็บใน `system_settings` category `ORGANIZATION`/`THEME`/`SMTP` ที่ seed ไว้ตั้งแต่ Phase 0 มีผลทันทีไม่ต้อง restart (SMTP transporter สร้างใหม่ทุกครั้งที่ส่ง ไม่ cache) |
+| POST | `/settings/org/logo` | `settings:manage` | อัปโหลดโลโก้องค์กร (multipart, field `logo`) |
+| DELETE | `/settings/org/logo` | `settings:manage` | ลบโลโก้องค์กร (กลับไปใช้ค่า default) |
 
 ## 5.13 Realtime — Socket.IO (ไม่ใช่ REST) ✅
 

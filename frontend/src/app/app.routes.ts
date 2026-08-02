@@ -140,6 +140,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'settings/general',
+        canActivate: [permissionGuard],
+        data: { permissions: ['settings:manage', 'audit:view'], watermark: 'logo3.png' },
+        loadComponent: () =>
+          import('./features/settings/general-settings-form/general-settings-form.component').then(
+            (m) => m.GeneralSettingsFormComponent,
+          ),
+      },
+      {
         path: 'settings/audit-log',
         canActivate: [permissionGuard],
         data: { permissions: ['audit:view'], watermark: 'logo3.png' },

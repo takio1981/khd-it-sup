@@ -74,6 +74,11 @@ export const avatarUploader = createUploader('avatars', {
   allowedMimeTypes: AVATAR_MIME_TYPES,
   maxFileSizeMB: 2,
 });
+/** โลโก้องค์กร (ตั้งค่าทั่วไป) — เฉพาะรูปภาพ ขนาดไม่เกิน 2 MB */
+export const logoUploader = createUploader('logos', {
+  allowedMimeTypes: AVATAR_MIME_TYPES,
+  maxFileSizeMB: 2,
+});
 
 /** ลบไฟล์ที่เคยอัปโหลดไว้ตาม fileUrl เดิม (best-effort — ไม่ throw ถ้าไฟล์ไม่มีอยู่แล้ว) ใช้ตอนแทนที่รูปเดิมด้วยรูปใหม่ */
 export function deleteUploadedFileByUrl(fileUrl: string, subDir: string): void {

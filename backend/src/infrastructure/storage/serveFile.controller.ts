@@ -5,7 +5,7 @@ import { env } from '@config/env';
 import { NotFoundError, BadRequestError } from '@common/errors';
 import { asyncHandler } from '@common/utils/asyncHandler';
 
-const ALLOWED_SUBDIRS = new Set(['assets', 'tickets', 'avatars']);
+const ALLOWED_SUBDIRS = new Set(['assets', 'tickets', 'avatars', 'logos']);
 
 /**
  * Endpoint ที่ตรวจสิทธิ์ (authenticate) ก่อน stream ไฟล์จาก UPLOAD_DIR เสมอ — ไม่ใช้ express.static

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -15,6 +15,7 @@ import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { PageWatermarkComponent } from '../../shared/components/page-watermark/page-watermark.component';
 import { UserAvatarComponent } from '../../shared/components/user-avatar/user-avatar.component';
@@ -51,12 +52,32 @@ export class ShellComponent {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
+  private readonly settingsService = inject(SettingsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly authService = inject(AuthService);
   readonly themeService = inject(ThemeService);
   readonly notificationService = inject(NotificationService);
-  readonly orgName = environment.orgNameTh;
   readonly appName = environment.appName;
+
+  /** ชื่อองค์กร/โลโก้ — โหลดจาก "ตั้งค่าทั่วไป" (ถ้าแอดมินยังไม่ได้ตั้งค่า ใช้ค่า default จาก environment/logo1.png แทน) */
+  private readonly orgNameFromSettings = signal<string | null>(null);
+  readonly orgName = computed(() => this.orgNameFromSettings() || environment.orgNameTh);
+  readonly logoObjectUrl = signal<string | null>(null);
+
+  constructor() {
+    this.settingsService.getBranding().subscribe((b) => {
+      this.orgNameFromSettings.set(b.orgNameTh || null);
+      if (b.orgLogoUrl) {
+        this.settingsService.getLogoBlob(b.orgLogoUrl).subscribe((blob) => this.logoObjectUrl.set(URL.createObjectURL(blob)));
+      }
+    });
+
+    this.destroyRef.onDestroy(() => {
+      const url = this.logoObjectUrl();
+      if (url) URL.revokeObjectURL(url);
+    });
+  }
 
   readonly isMobile = toSignal(
     this.breakpointObserver.observe('(max-width: 768px)').pipe(map((r) => r.matches)),

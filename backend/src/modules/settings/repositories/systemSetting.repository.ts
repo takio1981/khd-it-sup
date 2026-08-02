@@ -6,6 +6,10 @@ export class SystemSettingRepository {
     return prisma.systemSetting.findMany({ where: { category } });
   }
 
+  async findByCategories(categories: string[]) {
+    return prisma.systemSetting.findMany({ where: { category: { in: categories } } });
+  }
+
   async upsert(settingKey: string, settingValue: string, category: string, updatedBy?: string, isSecret = false) {
     return prisma.systemSetting.upsert({
       where: { settingKey },
