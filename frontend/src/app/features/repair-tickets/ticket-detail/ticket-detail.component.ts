@@ -8,10 +8,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
 import { SparePartService } from '../../../core/services/spare-part.service';
+import { VendorService } from '../../../core/services/vendor.service';
+import { VendorRepairOrderService } from '../../../core/services/vendor-repair-order.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { TimelineComponent } from '../../../shared/components/timeline/timeline.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -30,6 +33,33 @@ import {
 import type { IRepairSummaryPayload } from '../../../core/services/repair-ticket.service';
 import type { IInspectionPayload, IRepairTicketDetail, ITimelineEvent } from '../../../core/models/repair-ticket.model';
 import type { ISparePartTransaction } from '../../../core/models/spare-part.model';
+import type { IVendor, IVendorRepairOrder, VendorRepairStatus } from '../../../core/models/vendor.model';
+
+const VENDOR_ORDER_STATUSES: VendorRepairStatus[] = [
+  'QUOTATION_REQUESTED',
+  'QUOTATION_RECEIVED',
+  'APPROVED',
+  'PO_GENERATED',
+  'SENT',
+  'IN_REPAIR',
+  'RETURNED',
+  'INSPECTED',
+  'COMPLETED',
+  'CANCELLED',
+];
+
+const VENDOR_ORDER_STATUS_LABEL_TH: Record<string, string> = {
+  QUOTATION_REQUESTED: 'ขอใบเสนอราคา',
+  QUOTATION_RECEIVED: 'ได้รับใบเสนอราคาแล้ว',
+  APPROVED: 'อนุมัติแล้ว',
+  PO_GENERATED: 'ออกเลขที่ใบสั่งซ่อมแล้ว',
+  SENT: 'ส่งเครื่องแล้ว',
+  IN_REPAIR: 'กำลังซ่อมที่ร้าน',
+  RETURNED: 'รับเครื่องคืนแล้ว',
+  INSPECTED: 'ตรวจสอบหลังซ่อมแล้ว',
+  COMPLETED: 'เสร็จสิ้น',
+  CANCELLED: 'ยกเลิก',
+};
 
 @Component({
   selector: 'khd-ticket-detail',
@@ -45,6 +75,7 @@ import type { ISparePartTransaction } from '../../../core/models/spare-part.mode
     MatMenuModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     StatusBadgeComponent,
     TimelineComponent,
     IconComponent,
@@ -56,10 +87,22 @@ import type { ISparePartTransaction } from '../../../core/models/spare-part.mode
 export class TicketDetailComponent {
   private readonly repairTicketService = inject(RepairTicketService);
   private readonly sparePartService = inject(SparePartService);
+  private readonly vendorService = inject(VendorService);
+  private readonly vendorRepairOrderService = inject(VendorRepairOrderService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
 
   readonly partsUsed = signal<ISparePartTransaction[]>([]);
+
+  readonly vendorOrder = signal<IVendorRepairOrder | null>(null);
+  readonly vendors = signal<IVendor[]>([]);
+  readonly showCreateVendorOrder = signal(false);
+  readonly savingVendorOrder = signal(false);
+  readonly vendorOrderStatuses = VENDOR_ORDER_STATUSES;
+  readonly vendorOrderStatusLabels = VENDOR_ORDER_STATUS_LABEL_TH;
+  selectedVendorOrderStatus: VendorRepairStatus | '' = '';
+  newVendorId = '';
+  newQuotationAmount: number | null = null;
 
   private static readonly MAX_ATTACHMENT_SIZE_BYTES = 5 * 1024 * 1024;
   private static readonly MAX_ATTACHMENT_COUNT = 5;
@@ -118,6 +161,11 @@ export class TicketDetailComponent {
     });
     this.repairTicketService.getTimeline(id).subscribe((events) => this.timeline.set(events));
     this.sparePartService.listTransactions({ ticketId: id, limit: 50 }).subscribe((res) => this.partsUsed.set(res.items));
+    this.vendorRepairOrderService.list({ ticketId: id, limit: 1 }).subscribe((res) => {
+      const order = res.items[0] ?? null;
+      this.vendorOrder.set(order);
+      this.selectedVendorOrderStatus = order?.status ?? '';
+    });
   }
 
   private refresh(): void {
@@ -231,6 +279,83 @@ export class TicketDetailComponent {
             },
           });
       });
+    });
+  }
+
+  openCreateVendorOrderForm(): void {
+    this.vendorService.list({ limit: 100, activeOnly: true }).subscribe((res) => this.vendors.set(res.items));
+    this.newVendorId = '';
+    this.newQuotationAmount = null;
+    this.showCreateVendorOrder.set(true);
+  }
+
+  cancelCreateVendorOrder(): void {
+    this.showCreateVendorOrder.set(false);
+  }
+
+  createVendorOrder(): void {
+    if (!this.newVendorId || this.savingVendorOrder()) return;
+    this.savingVendorOrder.set(true);
+    this.vendorRepairOrderService
+      .create({ ticketId: this.id(), vendorId: this.newVendorId, quotationAmount: this.newQuotationAmount ?? undefined })
+      .subscribe({
+        next: (order) => {
+          this.vendorOrder.set(order);
+          this.selectedVendorOrderStatus = order.status;
+          this.showCreateVendorOrder.set(false);
+          this.savingVendorOrder.set(false);
+          this.snackBar.open('สร้างใบส่งซ่อมภายนอกแล้ว', 'ปิด', { duration: 2000 });
+        },
+        error: () => {
+          this.savingVendorOrder.set(false);
+          this.snackBar.open('สร้างใบส่งซ่อมภายนอกไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        },
+      });
+  }
+
+  updateVendorOrderStatus(): void {
+    const order = this.vendorOrder();
+    if (!order || !this.selectedVendorOrderStatus || this.savingVendorOrder()) return;
+    this.savingVendorOrder.set(true);
+    this.vendorRepairOrderService.update(order.id, { status: this.selectedVendorOrderStatus }).subscribe({
+      next: (updated) => {
+        this.vendorOrder.set(updated);
+        this.savingVendorOrder.set(false);
+        this.snackBar.open('อัปเดตสถานะใบส่งซ่อมภายนอกแล้ว', 'ปิด', { duration: 2000 });
+        if (updated.status === 'RETURNED') this.load();
+      },
+      error: () => {
+        this.savingVendorOrder.set(false);
+        this.snackBar.open('อัปเดตสถานะไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  onQuotationFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const order = this.vendorOrder();
+    if (!file || !order) return;
+    this.vendorRepairOrderService.uploadQuotationFile(order.id, file).subscribe((updated) => {
+      this.vendorOrder.set(updated);
+      input.value = '';
+    });
+  }
+
+  onInvoiceFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const order = this.vendorOrder();
+    if (!file || !order) return;
+    this.vendorRepairOrderService.uploadInvoiceFile(order.id, file).subscribe((updated) => {
+      this.vendorOrder.set(updated);
+      input.value = '';
+    });
+  }
+
+  viewVendorFile(fileUrl: string): void {
+    this.repairTicketService.getAttachmentBlob(fileUrl).subscribe((blob) => {
+      window.open(URL.createObjectURL(blob), '_blank');
     });
   }
 

@@ -333,7 +333,9 @@ export class RepairTicketService {
     return ticket;
   }
 
-  /** ส่วนที่ 2 ของแบบฟอร์มกระดาษ — ผลตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที ก่อนเริ่มซ่อมจริง (แยกจากสรุปผลการซ่อมตอนปิดงาน) */
+  /** ส่วนที่ 2 ของแบบฟอร์มกระดาษ — ผลตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที ก่อนเริ่มซ่อมจริง (แยกจากสรุปผลการซ่อมตอนปิดงาน)
+   *  ผลตรวจ SEND_EXTERNAL จะเปลี่ยนสถานะ workflow ไปยัง VENDOR_REPAIR ทันที (ไม่ใช่แค่บันทึก column เฉยๆ เหมือน
+   *  IN_HOUSE/REPLACE_NEW) — เลือกผู้รับซ่อมและออกใบสั่งซ่อมจริงทำต่อที่ vendor-repair-orders module */
   async recordInspection(id: string, dto: InspectionDto, ctx: IRequestContext) {
     const existing = await this.repo.findById(id);
     if (!existing) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
@@ -341,7 +343,7 @@ export class RepairTicketService {
     const isInHouse = dto.inspectionOutcome === 'IN_HOUSE';
     const isSendExternal = dto.inspectionOutcome === 'SEND_EXTERNAL';
 
-    const ticket = await this.repo.update(id, {
+    const inspectionFields = {
       inspectedByUserId: ctx.user.id,
       inspectedAt: new Date(),
       inspectionOutcome: dto.inspectionOutcome,
@@ -353,7 +355,13 @@ export class RepairTicketService {
       requestedPart3Name: isInHouse ? dto.requestedPart3Name : null,
       requestedPart3Qty: isInHouse ? dto.requestedPart3Qty : null,
       sendExternalReason: isSendExternal ? dto.sendExternalReason : null,
-    });
+    };
+
+    if (isSendExternal) {
+      return this.applyTransition(id, 'VENDOR_REPAIR', 'SEND_EXTERNAL', 'INSPECTION', ctx, inspectionFields, dto.sendExternalReason);
+    }
+
+    const ticket = await this.repo.update(id, inspectionFields);
 
     await auditLogService.record(
       { action: 'UPDATE', module: 'ticket', entityType: 'RepairTicket', entityId: id, description: `บันทึกผลตรวจสอบเบื้องต้น ${existing.ticketNumber}` },
@@ -361,6 +369,13 @@ export class RepairTicketService {
     );
 
     return ticket;
+  }
+
+  /** เรียกจาก vendor-repair-orders module เมื่อรับเครื่องคืนจากร้านซ่อมภายนอก — ย้าย workflow กลับเข้า TESTING
+   *  ให้ IT/ช่างตรวจสอบก่อนปิดงานตามปกติ (ถ้าตั๋วไม่ได้อยู่ที่ VENDOR_REPAIR แล้ว เช่น ถูกยกเลิกไปก่อน จะโยน error
+   *  ออกมาให้ผู้เรียกตัดสินใจว่าจะจัดการอย่างไรต่อ — ไม่ silent fail) */
+  async receiveFromVendor(id: string, ctx: IRequestContext) {
+    return this.applyTransition(id, 'TESTING', undefined, 'VENDOR_RETURNED', ctx, {}, 'รับเครื่องคืนจากร้านซ่อมภายนอก');
   }
 
   /** ส่วนที่ 2 ของแบบฟอร์มกระดาษ — หัวหน้ากลุ่มงานสุขภาพดิจิทัลลงนามรับรองผลตรวจสอบ (endorsement เท่านั้น ไม่ block workflow) */

@@ -14,6 +14,7 @@ export const NAV_ITEMS: INavItem[] = [
   { label: 'ครุภัณฑ์', route: '/assets', icon: 'computer-desktop', permissions: ['asset:read'] },
   { label: 'ยืมครุภัณฑ์-อุปกรณ์', route: '/asset-loans', icon: 'arrow-path', permissions: ['asset:loan'] },
   { label: 'คลังอะไหล่', route: '/spare-parts', icon: 'archive-box', permissions: ['spare_part:view', 'spare_part:manage', 'spare_part:issue'] },
+  { label: 'ผู้ขาย/ผู้รับซ่อมภายนอก', route: '/vendors', icon: 'building-office-2', permissions: ['vendor:view', 'vendor:manage'] },
   { label: 'ผู้ใช้งาน', route: '/users', icon: 'users', permissions: ['user:read'] },
   { label: 'จัดการสถานที่/หน่วยงาน', route: '/departments', icon: 'building-office-2', permissions: ['department:manage'] },
   { label: 'ตั้งค่าแจ้งเตือน', route: '/settings/notifications', icon: 'bell', permissions: ['settings:manage', 'audit:view'] },

@@ -47,6 +47,9 @@ export const PERMISSIONS = {
   SPARE_PART_VIEW: 'spare_part:view',
   SPARE_PART_MANAGE: 'spare_part:manage',
   SPARE_PART_ISSUE: 'spare_part:issue',
+
+  VENDOR_VIEW: 'vendor:view',
+  VENDOR_MANAGE: 'vendor:manage',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

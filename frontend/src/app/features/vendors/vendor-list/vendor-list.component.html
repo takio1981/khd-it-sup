@@ -1,0 +1,139 @@
+<div class="space-y-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold">ผู้ขาย/ผู้รับซ่อมภายนอก</h1>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} ราย</p>
+    </div>
+    <button
+      mat-flat-button
+      color="primary"
+      *khdHasPermission="'vendor:manage'"
+      (click)="showForm() ? cancelForm() : openCreateForm()"
+    >
+      <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
+      {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มผู้ขาย/ผู้รับซ่อม' }}
+    </button>
+  </div>
+
+  @if (showForm()) {
+    <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <h2 class="sm:col-span-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+        {{ editingId() ? 'แก้ไขข้อมูล' : 'เพิ่มผู้ขาย/ผู้รับซ่อมใหม่' }}
+      </h2>
+      <mat-form-field appearance="outline">
+        <mat-label>รหัส</mat-label>
+        <input matInput formControlName="code" />
+        @if (editingId()) {
+          <mat-hint>ไม่สามารถแก้ไขรหัสได้</mat-hint>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ชื่อบริษัท/ร้าน</mat-label>
+        <input matInput formControlName="name" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ผู้ติดต่อ</mat-label>
+        <input matInput formControlName="contactPerson" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>เบอร์โทร</mat-label>
+        <input matInput formControlName="phone" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>อีเมล</mat-label>
+        <input matInput formControlName="email" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>เลขผู้เสียภาษี (ถ้ามี)</mat-label>
+        <input matInput formControlName="taxId" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="sm:col-span-2">
+        <mat-label>ที่อยู่</mat-label>
+        <textarea matInput formControlName="address" rows="2"></textarea>
+      </mat-form-field>
+      <div class="sm:col-span-2 flex justify-end gap-2">
+        <button mat-button type="button" (click)="cancelForm()">ยกเลิก</button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+          {{ editingId() ? 'บันทึกการแก้ไข' : 'บันทึก' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <div class="khd-card !p-3">
+    <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+      <mat-label>ค้นหา (รหัส / ชื่อ)</mat-label>
+      <input matInput [(ngModel)]="keyword" (ngModelChange)="onKeywordChange()" />
+      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="!mr-2 text-neutral-400" />
+    </mat-form-field>
+  </div>
+
+  <div class="khd-card !p-0 overflow-x-auto">
+    <table mat-table [dataSource]="vendors()" class="w-full">
+      <ng-container matColumnDef="code">
+        <th mat-header-cell *matHeaderCellDef>รหัส</th>
+        <td mat-cell *matCellDef="let v">{{ v.code }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>ชื่อบริษัท/ร้าน</th>
+        <td mat-cell *matCellDef="let v">{{ v.name }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="contactPerson">
+        <th mat-header-cell *matHeaderCellDef>ผู้ติดต่อ</th>
+        <td mat-cell *matCellDef="let v">{{ v.contactPerson ?? '-' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="phone">
+        <th mat-header-cell *matHeaderCellDef>เบอร์โทร</th>
+        <td mat-cell *matCellDef="let v">{{ v.phone ?? '-' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>สถานะ</th>
+        <td mat-cell *matCellDef="let v">
+          <span
+            class="khd-status-badge"
+            [style.background-color]="(v.isActive ? '#22C55E' : '#9CA3AF') + '1A'"
+            [style.color]="v.isActive ? '#22C55E' : '#9CA3AF'"
+          >
+            {{ v.isActive ? 'ใช้งานอยู่' : 'ปิดใช้งาน' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let v">
+          <div class="flex items-center gap-2">
+            <button
+              *khdHasPermission="'vendor:manage'"
+              (click)="openEditForm(v)"
+              class="appearance-none inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 text-xs font-medium px-3 py-1 transition-colors"
+            >
+              <khd-icon name="pencil-square" [size]="14" />
+              แก้ไข
+            </button>
+            <button
+              *khdHasPermission="'vendor:manage'"
+              (click)="toggleActive(v)"
+              class="appearance-none inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 text-xs font-medium px-3 py-1 transition-colors"
+            >
+              {{ v.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน' }}
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+    </table>
+
+    @if (!loading() && vendors().length === 0) {
+      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบผู้ขาย/ผู้รับซ่อมที่ตรงกับเงื่อนไข</p>
+    }
+
+    <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="pageIndex()" [pageSizeOptions]="[10, 20, 50]" (page)="onPage($event)" />
+  </div>
+</div>

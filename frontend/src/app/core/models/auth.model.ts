@@ -38,7 +38,9 @@ export type Permission =
   | 'document:generate'
   | 'spare_part:view'
   | 'spare_part:manage'
-  | 'spare_part:issue';
+  | 'spare_part:issue'
+  | 'vendor:view'
+  | 'vendor:manage';
 
 export interface IAuthUser {
   id: string;

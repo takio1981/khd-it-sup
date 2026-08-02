@@ -23,8 +23,9 @@
 | 11. Settings | `system_settings`, `running_number_sequences` | ค่าคอนฟิกระบบ (SMTP/Telegram/LINE/Org/Theme), เลขที่เอกสารรันอัตโนมัติ |
 | 12. Audit/Backup | `audit_logs` (immutable), `backup_logs` | บันทึกทุกการกระทำ + ประวัติสำรองข้อมูล |
 
-> **สถานะการพัฒนา ณ ปัจจุบัน**: ตารางทั้งหมดข้างต้นถูกสร้างจริงใน `database/schema.sql` แล้ว แต่บาง section
-> (7. Inventory, 8. Vendor Repair, 9. Document, และ `approvals` ใน section 6) ยังไม่มีโค้ด backend/frontend ใช้งาน
+> **สถานะการพัฒนา ณ ปัจจุบัน**: ตารางทั้งหมดข้างต้นถูกสร้างจริงใน `database/schema.sql` แล้ว — section 7 (Inventory)
+> และ 8 (Vendor Repair) ถูกใช้งานจริงแล้ว (Phase 10+ ข้อ 5-6: `modules/spare-parts`, `modules/vendors`,
+> `modules/vendor-repair-orders`) ส่วน 9. Document และ `approvals` ใน section 6 ยังไม่มีโค้ด backend/frontend ใช้งาน
 > (ยังไม่มี module ผูกอยู่) — เตรียมโครงไว้รองรับ Phase ถัดไปตาม [docs/00-roadmap.md](00-roadmap.md) ส่วน
 > `backup_logs` ก็มีไว้รองรับระบบสำรองข้อมูลผ่าน UI ในอนาคต (ปัจจุบัน backup ทำผ่าน cron + `mariadb-dump` ตาม
 > [docs/07-deployment-guide.md](07-deployment-guide.md) §7.4 โดยตรง ไม่ได้บันทึกลงตารางนี้)

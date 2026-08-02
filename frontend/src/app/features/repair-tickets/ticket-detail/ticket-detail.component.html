@@ -36,6 +36,11 @@
             <button mat-menu-item *khdHasPermission="'spare_part:issue'" (click)="openIssuePartDialog()">
               <khd-icon name="archive-box" [size]="16" class="!mr-2" />เบิกอะไหล่
             </button>
+            @if (t.status === 'VENDOR_REPAIR' && !vendorOrder()) {
+              <button mat-menu-item *khdHasPermission="'vendor:manage'" (click)="openCreateVendorOrderForm()">
+                <khd-icon name="building-office-2" [size]="16" class="!mr-2" />สร้างใบส่งซ่อมภายนอก
+              </button>
+            }
             @for (tr of availableTransitions(); track tr.toStep.id) {
               <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="transition(tr.toStep.stepCode, tr.conditionKey)">
                 <khd-icon name="arrow-path" [size]="16" class="!mr-2" />{{ tr.label ?? ('ไปยัง ' + tr.toStep.stepNameTh) }}
@@ -216,6 +221,97 @@
                 <br />ลงนามรับรองโดย {{ t.digitalHealthHeadApprovedBy?.fullName }} · {{ t.digitalHealthHeadApprovedAt | date: 'd MMM yyyy, HH:mm' }}
               }
             </p>
+          </div>
+        }
+
+        @if (showCreateVendorOrder()) {
+          <div class="khd-card">
+            <div class="flex items-center gap-2 mb-3">
+              <khd-icon name="building-office-2" [size]="18" class="text-orange-500" />
+              <h2 class="text-sm font-medium">สร้างใบส่งซ่อมภายนอก</h2>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <mat-form-field appearance="outline">
+                <mat-label>ผู้รับซ่อม</mat-label>
+                <mat-select [(ngModel)]="newVendorId">
+                  @for (v of vendors(); track v.id) {
+                    <mat-option [value]="v.id">{{ v.code }} - {{ v.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>ราคาประเมิน (ถ้ามี)</mat-label>
+                <input matInput type="number" [(ngModel)]="newQuotationAmount" />
+              </mat-form-field>
+            </div>
+            <div class="flex justify-end gap-2 mt-2">
+              <button mat-button type="button" (click)="cancelCreateVendorOrder()">ยกเลิก</button>
+              <button mat-flat-button color="primary" [disabled]="!newVendorId || savingVendorOrder()" (click)="createVendorOrder()">
+                สร้างใบส่งซ่อม
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (vendorOrder(); as vo) {
+          <div class="khd-card">
+            <div class="flex items-center gap-2 mb-3">
+              <khd-icon name="building-office-2" [size]="18" class="text-orange-500" />
+              <h2 class="text-sm font-medium">ใบส่งซ่อมภายนอก</h2>
+            </div>
+            <dl class="space-y-3 text-sm mb-3">
+              <div class="flex justify-between">
+                <dt class="text-xs text-neutral-400">ผู้รับซ่อม</dt>
+                <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.vendor.name }} @if (vo.vendor.phone) { ({{ vo.vendor.phone }}) }</dd>
+              </div>
+              @if (vo.quotationAmount) {
+                <div class="flex justify-between">
+                  <dt class="text-xs text-neutral-400">ราคาประเมิน</dt>
+                  <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.quotationAmount }} บาท</dd>
+                </div>
+              }
+              @if (vo.poNumber) {
+                <div class="flex justify-between">
+                  <dt class="text-xs text-neutral-400">เลขที่ใบสั่งซ่อม</dt>
+                  <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.poNumber }}</dd>
+                </div>
+              }
+              @if (vo.warrantyUntil) {
+                <div class="flex justify-between">
+                  <dt class="text-xs text-neutral-400">รับประกันถึง</dt>
+                  <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.warrantyUntil | date: 'd MMM yyyy' }}</dd>
+                </div>
+              }
+            </dl>
+
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <button mat-stroked-button type="button" class="!text-xs" *khdHasPermission="'vendor:manage'" (click)="qFile.click()">
+                <khd-icon name="paper-clip" [size]="14" class="!mr-1" />แนบใบเสนอราคา
+              </button>
+              <input #qFile type="file" class="hidden" (change)="onQuotationFileSelected($event)" />
+              @if (vo.quotationFileUrl) {
+                <button mat-button type="button" class="!text-xs" (click)="viewVendorFile(vo.quotationFileUrl)">ดูใบเสนอราคา</button>
+              }
+              <button mat-stroked-button type="button" class="!text-xs" *khdHasPermission="'vendor:manage'" (click)="iFile.click()">
+                <khd-icon name="paper-clip" [size]="14" class="!mr-1" />แนบใบแจ้งหนี้/ใบเสร็จ
+              </button>
+              <input #iFile type="file" class="hidden" (change)="onInvoiceFileSelected($event)" />
+              @if (vo.invoiceFileUrl) {
+                <button mat-button type="button" class="!text-xs" (click)="viewVendorFile(vo.invoiceFileUrl)">ดูใบแจ้งหนี้/ใบเสร็จ</button>
+              }
+            </div>
+
+            <div class="flex items-end gap-2" *khdHasPermission="'vendor:manage'">
+              <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
+                <mat-label>สถานะงานส่งซ่อม</mat-label>
+                <mat-select [(ngModel)]="selectedVendorOrderStatus">
+                  @for (s of vendorOrderStatuses; track s) {
+                    <mat-option [value]="s">{{ vendorOrderStatusLabels[s] }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <button mat-flat-button color="primary" [disabled]="savingVendorOrder()" (click)="updateVendorOrderStatus()">อัปเดต</button>
+            </div>
           </div>
         }
 

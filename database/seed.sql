@@ -60,7 +60,9 @@ INSERT INTO `permissions` (`id`, `code`, `module`, `description`) VALUES
 (UUID(), 'document:generate',     'document',  'สร้างเอกสารราชการ'),
 (UUID(), 'spare_part:view',       'spare_part','ดูรายการ/สต็อกอะไหล่'),
 (UUID(), 'spare_part:manage',     'spare_part','จัดการข้อมูลอะไหล่ (เพิ่ม/แก้ไข/ปรับสต็อก)'),
-(UUID(), 'spare_part:issue',      'spare_part','เบิก/คืนอะไหล่ผูกกับใบแจ้งซ่อม');
+(UUID(), 'spare_part:issue',      'spare_part','เบิก/คืนอะไหล่ผูกกับใบแจ้งซ่อม'),
+(UUID(), 'vendor:view',           'vendor',    'ดูรายชื่อผู้ขาย/ผู้รับซ่อมภายนอกและสถานะงานส่งซ่อม'),
+(UUID(), 'vendor:manage',         'vendor',    'จัดการผู้ขาย/ผู้รับซ่อมภายนอก และดำเนินการงานส่งซ่อมภายนอก');
 
 -- =====================================================================================
 -- 3. ROLE_PERMISSIONS (Permission Matrix)
@@ -82,7 +84,8 @@ WHERE `code` IN (
   'user:create','user:read','user:update','user:delete','user:reset_password',
   'department:manage','report:view','report:export',
   'document:print','document:generate',
-  'spare_part:view','spare_part:manage','spare_part:issue'
+  'spare_part:view','spare_part:manage','spare_part:issue',
+  'vendor:view','vendor:manage'
 );
 
 -- IT Officer: receive jobs, assign jobs, update status, print documents
@@ -92,7 +95,8 @@ WHERE `code` IN (
   'dashboard:view','asset:read','asset:loan','qrcode:generate',
   'ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment','ticket:approve',
   'document:print','document:generate',
-  'spare_part:view','spare_part:issue'
+  'spare_part:view','spare_part:issue',
+  'vendor:view','vendor:manage'
 );
 
 -- Technician: update repair status, upload images, record repair
@@ -100,7 +104,8 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_technician, `id` FROM `permissions`
 WHERE `code` IN (
   'asset:read','asset:loan','ticket:read','ticket:update_status','ticket:upload_attachment',
-  'spare_part:view','spare_part:issue'
+  'spare_part:view','spare_part:issue',
+  'vendor:view'
 );
 
 -- User: create ticket, track ticket, print QR, view history
@@ -197,6 +202,7 @@ SET @st_submitted = UUID();
 SET @st_received  = UUID();
 SET @st_review    = UUID();
 SET @st_diagnosis = UUID();
+SET @st_vendor    = UUID();
 SET @st_waitparts = UUID();
 SET @st_repairing = UUID();
 SET @st_testing   = UUID();
@@ -213,13 +219,14 @@ INSERT INTO `workflow_steps`
 (@st_received,  @wf_internal, 'RECEIVED',     'รับเรื่องแล้ว',         'Received',           2, @role_it_officer, 4,    0, '#6366F1', 0),
 (@st_review,    @wf_internal, 'IT_REVIEW',    'ตรวจสอบเบื้องต้น',      'IT Review',          3, @role_it_officer, 8,    0, '#6366F1', 0),
 (@st_diagnosis, @wf_internal, 'DIAGNOSIS',    'วิเคราะห์ปัญหา',        'Diagnosis',          4, @role_technician, 24,   0, '#8B5CF6', 0),
-(@st_waitparts, @wf_internal, 'WAITING_PARTS','รออะไหล่',              'Waiting Spare Parts',5, @role_technician, NULL, 0, '#F59E0B', 0),
-(@st_repairing, @wf_internal, 'REPAIRING',    'กำลังซ่อม',             'Repair In Progress', 6, @role_technician, 48,   0, '#06B6D4', 0),
-(@st_testing,   @wf_internal, 'TESTING',      'ทดสอบระบบ',             'Testing',            7, @role_technician, 8,    0, '#06B6D4', 0),
-(@st_completed, @wf_internal, 'COMPLETED',    'ซ่อมเสร็จสิ้น',         'Completed',          8, @role_technician, 4,    0, '#22C55E', 0),
-(@st_returned,  @wf_internal, 'RETURNED',     'คืนอุปกรณ์แล้ว',        'Returned to User',   9, @role_it_officer, 24,   0, '#14B8A6', 0),
-(@st_accepted,  @wf_internal, 'USER_ACCEPTANCE','ผู้แจ้งรับมอบ',       'User Acceptance',    10, @role_user,      48,   1, '#14B8A6', 0),
-(@st_closed,    @wf_internal, 'CLOSED',       'ปิดงาน',                'Closed',             11, @role_it_officer, NULL, 0, '#166534', 1),
+(@st_vendor,    @wf_internal, 'VENDOR_REPAIR','ส่งซ่อมภายนอก',         'Vendor Repair',      5, @role_it_officer, 240,  0, '#F97316', 0),
+(@st_waitparts, @wf_internal, 'WAITING_PARTS','รออะไหล่',              'Waiting Spare Parts',6, @role_technician, NULL, 0, '#F59E0B', 0),
+(@st_repairing, @wf_internal, 'REPAIRING',    'กำลังซ่อม',             'Repair In Progress', 7, @role_technician, 48,   0, '#06B6D4', 0),
+(@st_testing,   @wf_internal, 'TESTING',      'ทดสอบระบบ',             'Testing',            8, @role_technician, 8,    0, '#06B6D4', 0),
+(@st_completed, @wf_internal, 'COMPLETED',    'ซ่อมเสร็จสิ้น',         'Completed',          9, @role_technician, 4,    0, '#22C55E', 0),
+(@st_returned,  @wf_internal, 'RETURNED',     'คืนอุปกรณ์แล้ว',        'Returned to User',   10, @role_it_officer, 24,   0, '#14B8A6', 0),
+(@st_accepted,  @wf_internal, 'USER_ACCEPTANCE','ผู้แจ้งรับมอบ',       'User Acceptance',    11, @role_user,      48,   1, '#14B8A6', 0),
+(@st_closed,    @wf_internal, 'CLOSED',       'ปิดงาน',                'Closed',             12, @role_it_officer, NULL, 0, '#166534', 1),
 (@st_cancelled, @wf_internal, 'CANCELLED',    'ยกเลิก',                'Cancelled',          99, NULL,             NULL, 0, '#EF4444', 1);
 
 INSERT INTO `workflow_transitions` (`id`, `template_id`, `from_step_id`, `to_step_id`, `condition_key`, `label`) VALUES
@@ -229,6 +236,9 @@ INSERT INTO `workflow_transitions` (`id`, `template_id`, `from_step_id`, `to_ste
 (UUID(), @wf_internal, @st_review,     @st_diagnosis, NULL, 'มอบหมายช่างวิเคราะห์'),
 (UUID(), @wf_internal, @st_diagnosis,  @st_waitparts, 'NEED_PARTS', 'ต้องรออะไหล่'),
 (UUID(), @wf_internal, @st_diagnosis,  @st_repairing, 'READY_REPAIR', 'ซ่อมได้ทันที'),
+(UUID(), @wf_internal, @st_diagnosis,  @st_vendor,    'SEND_EXTERNAL', 'ส่งซ่อมภายนอก'),
+(UUID(), @wf_internal, @st_vendor,     @st_testing,   NULL, 'รับเครื่องคืนจากร้าน ทดสอบ'),
+(UUID(), @wf_internal, @st_vendor,     @st_cancelled, 'CANCEL', 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล'),
 (UUID(), @wf_internal, @st_waitparts,  @st_repairing, NULL, 'อะไหล่พร้อม เริ่มซ่อม'),
 (UUID(), @wf_internal, @st_repairing,  @st_testing,   NULL, 'ซ่อมเสร็จ รอทดสอบ'),
 (UUID(), @wf_internal, @st_testing,    @st_completed, NULL, 'ทดสอบผ่าน'),

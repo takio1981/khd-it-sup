@@ -31,7 +31,7 @@
 | Kanban Board | ✅ เสร็จสมบูรณ์ | หน้า "บอร์ดงานแจ้งซ่อม" (`/repair-tickets/board`) ลากการ์ดข้ามคอลัมน์ผ่าน Angular CDK drag-drop เรียก `POST /repair-tickets/:id/transition` เดิม ตรวจ transition ที่ถูกต้องจาก `GET /workflow-templates/REPAIR_INTERNAL` ก่อนอนุญาตให้วาง (ไม่มี endpoint ใหม่) |
 | รายงาน Export (Excel/PDF/CSV) | ✅ เสร็จสมบูรณ์ | `GET /repair-tickets/export`, `/assets/export` (xlsx/csv), `/dashboard/export` (xlsx หลายชีต) ฝั่ง backend ด้วย `exceljs` — ปุ่ม Export PDF ฝั่ง frontend ใช้ jsPDF+html2canvas (JPEG encoding ไม่ใช่ PNG เพื่อไฟล์เล็กลง ~40-70 เท่า) |
 | คลังอะไหล่ (Spare Parts) | ✅ เสร็จสมบูรณ์ | เมนู "คลังอะไหล่" (`/spare-parts`) + ปุ่ม "เบิกอะไหล่" ในหน้ารายละเอียดใบแจ้งซ่อม — ตัดสต็อก atomic ผ่าน `prisma.$transaction` กันสต็อกติดลบ (permission ใหม่ `spare_part:view`/`manage`/`issue`) |
-| ซ่อมภายนอก (Vendor Repair Workflow) | ⬜ ยังไม่เริ่ม | ตาราง `vendors`/`vendor_repair_orders` พร้อมใช้ (schema+Prisma model มีแล้ว) |
+| ซ่อมภายนอก (Vendor Repair Workflow) | ✅ เสร็จสมบูรณ์ | Workflow เพิ่มขั้นตอน `VENDOR_REPAIR` (DIAGNOSIS→ส่งซ่อมภายนอก→รับคืน→TESTING) + เมนู "ผู้ขาย/ผู้รับซ่อมภายนอก" + ใบส่งซ่อมภายนอกในหน้ารายละเอียดใบแจ้งซ่อม (ออกเลข PO อัตโนมัติ, อัปโหลดใบเสนอราคา/ใบเสร็จ, รับเครื่องคืนย้าย workflow กลับอัตโนมัติ) |
 | เอกสารราชการ + เลขที่วิ่งอัตโนมัติ | ⬜ ยังไม่เริ่ม | ทำเฉพาะ "ระบบ" (template registry + running number + audit trail) — ไม่รวมเนื้อหาฟอร์มราชการจริง 14 แบบ (รอต้นแบบจากผู้ใช้) |
 | Visual Flow Designer | ⏸ เลื่อนออกไป | แก้ workflow ผ่าน SQL ตรงยังใช้งานได้ ไม่ blocking — priority ต่ำกว่าข้ออื่น |
 
@@ -39,9 +39,10 @@
 
 1. **Database Schema ออกแบบให้ครบตั้งแต่ Phase 0** (ครอบคลุมทุก entity ในสเปกเต็ม) เพื่อไม่ต้อง migrate ทำลายข้อมูลภายหลัง
    แต่ **Backend/Frontend code จะสร้างเฉพาะ module ที่ถึง Phase นั้น ๆ** — ตารางที่ยังไม่ใช้งานจะยังไม่มี Service/Controller
-   ตัวอย่างที่ยังไม่ถูกใช้งานตอนนี้: `vendors`, `vendor_repair_orders`, `spare_parts`, `spare_part_transactions`,
-   `document_templates`, `generated_documents`, `backup_logs`, `approvals` — schema พร้อมรองรับแล้วแต่ยังไม่มีโค้ด
-   ฝั่ง backend อ้างอิงตารางเหล่านี้เลยแม้แต่บรรทัดเดียว
+   ตัวอย่างที่ยังไม่ถูกใช้งานตอนนี้: `spare_part_transactions` ประเภท `RESERVE` (ยังไม่มี UI เรียกใช้ มีแต่ `ISSUE`/
+   `RETURN`/`ADJUST`/`PURCHASE`/`RECEIVE`), `document_templates`, `generated_documents`, `backup_logs`, `approvals` —
+   schema พร้อมรองรับแล้วแต่ยังไม่มีโค้ดฝั่ง backend อ้างอิง (`vendors`/`vendor_repair_orders`/`spare_parts` ถูกใช้งาน
+   จริงแล้วตั้งแต่ Phase 10+ ข้อ 5-6 — ดูตารางด้านบน)
 2. ทุก Phase ส่งมอบเป็นโค้ดที่ build ผ่านและรันได้จริง ไม่ใช่ pseudo-code
 3. Timeline/Audit Log/Workflow Engine ถูกวางเป็น core infrastructure ตั้งแต่ Phase 3 เพราะเป็นหัวใจของระบบ
    (ข้อ 37 ในสเปก) — ไม่ใช่ feature เสริมที่เพิ่มทีหลัง

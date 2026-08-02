@@ -140,8 +140,10 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | PATCH | `/workflow-templates/:id/steps` 🔜 | `workflow:configure` | แก้ไข step/SLA/role ผู้รับผิดชอบ |
 | POST | `/workflow-templates/:id/flow-designer` 🔜 | `workflow:configure` | บันทึกผังจาก Visual Flow Designer (drag & drop) |
 
-> ปัจจุบัน seed ไว้เฉพาะ `REPAIR_INTERNAL` (12 ขั้นตอน) — ยังไม่มี workflow template สำหรับซ่อมภายนอก
-> (`REPAIR_EXTERNAL`) แม้ enum `applies_to` ใน schema จะรองรับอยู่แล้วก็ตาม
+> ปัจจุบัน seed ไว้เฉพาะ `REPAIR_INTERNAL` (14 ขั้นตอน รวม `VENDOR_REPAIR`) — การซ่อมภายนอกเป็น**สาขาแยก (branch)**
+> ภายใน template เดียวกัน (DIAGNOSIS → เงื่อนไข `SEND_EXTERNAL` → VENDOR_REPAIR → กลับเข้า TESTING) ไม่ใช่ template
+> แยกต่างหาก — enum `applies_to` มีค่า `REPAIR_EXTERNAL` เตรียมไว้ตั้งแต่ Phase 0 แต่ไม่ได้ใช้จริง เพราะสร้าง
+> workflow instance แยกต่างหากต่อ template จะซับซ้อนกว่าการแตกสาขาในผังเดียวโดยไม่จำเป็น
 
 ## 5.10 Notifications — `/api/v1/notifications` ✅
 
@@ -222,7 +224,40 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 
 ---
 
-## 5.16 ตัวอย่าง OpenAPI 3.0 (Auth module) — รูปแบบที่ swagger-jsdoc generate จริงจาก JSDoc comment เหนือแต่ละ route
+## 5.16 Vendors (ผู้ขาย/ผู้รับซ่อมภายนอก) — `/api/v1/vendors` ✅
+
+| Method | Path | Permission | คำอธิบาย |
+|---|---|---|---|
+| GET | `/vendors` | `vendor:view`/`manage` | รายชื่อผู้ขาย/ผู้รับซ่อมภายนอก (filter: keyword, activeOnly) |
+| POST | `/vendors` | `vendor:manage` | เพิ่มผู้ขาย/ผู้รับซ่อมใหม่ |
+| GET | `/vendors/:id` | `vendor:view`/`manage` | รายละเอียด |
+| PATCH | `/vendors/:id` | `vendor:manage` | แก้ไขข้อมูล/เปิด-ปิดใช้งาน |
+
+## 5.17 Vendor Repair Orders (ใบส่งซ่อมภายนอก) — `/api/v1/vendor-repair-orders` ✅
+
+| Method | Path | Permission | คำอธิบาย |
+|---|---|---|---|
+| GET | `/vendor-repair-orders` | `vendor:view`/`manage` | รายการใบส่งซ่อม (filter: ticketId, vendorId, status) |
+| POST | `/vendor-repair-orders` | `vendor:manage` | เปิดใบส่งซ่อมใหม่ (ticketId+vendorId) — ใช้เมื่อตั๋วอยู่ที่สถานะ `VENDOR_REPAIR` แล้วเท่านั้น |
+| GET | `/vendor-repair-orders/:id` | `vendor:view`/`manage` | รายละเอียด |
+| PATCH | `/vendor-repair-orders/:id` | `vendor:manage` | แก้ไขสถานะ/ข้อมูล (`QUOTATION_REQUESTED→...→COMPLETED`/`CANCELLED`) |
+| POST | `/vendor-repair-orders/:id/quotation-file` | `vendor:manage` | อัปโหลดไฟล์ใบเสนอราคา (multipart, field `file`) |
+| POST | `/vendor-repair-orders/:id/invoice-file` | `vendor:manage` | อัปโหลดไฟล์ใบแจ้งหนี้/ใบเสร็จ (multipart, field `file`) |
+
+พฤติกรรมพิเศษของ `PATCH /vendor-repair-orders/:id`:
+- ตั้ง `status: 'PO_GENERATED'` โดยยังไม่มี `poNumber` → ออกเลขที่ให้อัตโนมัติผ่าน `running_number_sequences`
+  (`docType='EXTERNAL_APPROVAL'`, prefix `EA-`) ไม่ต้องกรอกเอง
+- ตั้ง `status: 'RETURNED'` ครั้งแรก (ยังไม่เคย RETURNED/INSPECTED/COMPLETED/CANCELLED มาก่อน) → เรียก
+  `POST /repair-tickets/:id/transition` ให้อัตโนมัติ ย้ายตั๋วจาก `VENDOR_REPAIR` กลับเข้า `TESTING` (ถ้าย้ายไม่สำเร็จ
+  เช่นตั๋วถูกยกเลิกไปแล้ว จะบันทึก warning log แต่ไม่ทำให้ request ทั้งหมด fail)
+
+การเข้าสู่ branch นี้ทำผ่าน `POST /repair-tickets/:id/inspection` โดยส่ง `inspectionOutcome: 'SEND_EXTERNAL'` — endpoint
+เดิมที่มีอยู่แล้ว แต่ตอนนี้เรียก workflow transition จริง (`DIAGNOSIS → VENDOR_REPAIR`, conditionKey `SEND_EXTERNAL`)
+แทนที่การบันทึกแค่ column เฉยๆ แบบเดิม
+
+---
+
+## 5.18 ตัวอย่าง OpenAPI 3.0 (Auth module) — รูปแบบที่ swagger-jsdoc generate จริงจาก JSDoc comment เหนือแต่ละ route
 
 ```yaml
 openapi: 3.0.3

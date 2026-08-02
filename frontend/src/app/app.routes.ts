@@ -93,6 +93,12 @@ export const routes: Routes = [
           import('./features/spare-parts/spare-part-list/spare-part-list.component').then((m) => m.SparePartListComponent),
       },
       {
+        path: 'vendors',
+        canActivate: [permissionGuard],
+        data: { permissions: ['vendor:view', 'vendor:manage'], watermark: 'logo2.png' },
+        loadComponent: () => import('./features/vendors/vendor-list/vendor-list.component').then((m) => m.VendorListComponent),
+      },
+      {
         path: 'assets/:id',
         canActivate: [permissionGuard],
         data: { permissions: ['asset:read'], watermark: 'logo3.png' },
