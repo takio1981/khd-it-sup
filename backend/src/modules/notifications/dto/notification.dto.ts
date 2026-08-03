@@ -8,6 +8,13 @@ export const listNotificationLogsQuerySchema = z.object({
 });
 export type ListNotificationLogsQueryDto = z.infer<typeof listNotificationLogsQuerySchema>;
 
+export const exportNotificationLogsQuerySchema = z.object({
+  channel: z.enum(['EMAIL', 'TELEGRAM', 'LINE', 'PUSH', 'SMS']).optional(),
+  status: z.enum(['PENDING', 'SENT', 'FAILED', 'READ']).optional(),
+  format: z.enum(['xlsx', 'csv']).default('xlsx'),
+});
+export type ExportNotificationLogsQueryDto = z.infer<typeof exportNotificationLogsQuerySchema>;
+
 export const listMyNotificationsQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().optional(),

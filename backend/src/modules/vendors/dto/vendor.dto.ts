@@ -24,4 +24,11 @@ export const listVendorsQuerySchema = z.object({
 });
 export type ListVendorsQueryDto = z.infer<typeof listVendorsQuerySchema>;
 
+export const exportVendorsQuerySchema = z.object({
+  keyword: z.string().optional(),
+  activeOnly: z.coerce.boolean().optional(),
+  format: z.enum(['xlsx', 'csv']).default('xlsx'),
+});
+export type ExportVendorsQueryDto = z.infer<typeof exportVendorsQuerySchema>;
+
 export const vendorIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });

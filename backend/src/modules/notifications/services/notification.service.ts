@@ -15,6 +15,9 @@ import { prisma } from '@infrastructure/database/prisma';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { systemSettingService } from '@modules/settings/services/systemSetting.service';
 import type { ListNotificationLogsQueryDto } from '@modules/notifications/dto/notification.dto';
+import type { NotificationChannel, NotificationStatus } from '@prisma/client';
+
+const EXPORT_MAX_ROWS = 5000;
 
 export type TicketNotificationEvent = 'NEW_TICKET' | 'ASSIGN' | 'STATUS_CHANGE' | 'COMPLETE' | 'CANCEL';
 
@@ -368,6 +371,11 @@ export class NotificationService {
     const pagination = normalizePagination(query);
     const { items, total } = await this.repo.findMany({ channel: query.channel, status: query.status }, pagination.skip, pagination.take);
     return buildPaginatedResult(items, total, pagination);
+  }
+
+  async listLogsForExport(filter: { channel?: NotificationChannel; status?: NotificationStatus }) {
+    const { items } = await this.repo.findMany({ channel: filter.channel, status: filter.status }, 0, EXPORT_MAX_ROWS);
+    return items;
   }
 
   /**

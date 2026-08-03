@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { IApiSuccessResponse } from '../models/api-response.model';
@@ -31,5 +31,10 @@ export class DepartmentService {
 
   remove(id: string): Observable<void> {
     return this.http.delete<IApiSuccessResponse<unknown>>(`${this.base}/${id}`).pipe(map(() => undefined));
+  }
+
+  exportFile(format: 'xlsx' | 'csv'): Observable<Blob> {
+    const params = new HttpParams().set('format', format);
+    return this.http.get(`${this.base}/export`, { params, responseType: 'blob' });
   }
 }

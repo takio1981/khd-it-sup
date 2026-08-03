@@ -5,12 +5,18 @@ import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator'
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxjs';
 import { VendorService } from '../../../core/services/vendor.service';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { downloadBlob } from '../../../core/utils/download.util';
+import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
 import type { IVendor } from '../../../core/models/vendor.model';
+
+const EXPORT_PDF_MAX_ROWS = 500;
 
 @Component({
   selector: 'khd-vendor-list',
@@ -24,6 +30,7 @@ import type { IVendor } from '../../../core/models/vendor.model';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    MatMenuModule,
     MatSlideToggleModule,
     IconComponent,
     HasPermissionDirective,
@@ -33,6 +40,7 @@ import type { IVendor } from '../../../core/models/vendor.model';
 export class VendorListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly vendorService = inject(VendorService);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly displayedColumns = ['code', 'name', 'contactPerson', 'phone', 'status', 'actions'];
   readonly vendors = signal<IVendor[]>([]);
@@ -43,6 +51,7 @@ export class VendorListComponent {
   readonly showForm = signal(false);
   readonly saving = signal(false);
   readonly editingId = signal<string | null>(null);
+  readonly exporting = signal(false);
 
   keyword = '';
   private readonly keyword$ = new Subject<string>();
@@ -130,6 +139,59 @@ export class VendorListComponent {
       },
       error: () => this.saving.set(false),
     });
+  }
+
+  private currentFilter() {
+    return { keyword: this.keyword || undefined };
+  }
+
+  exportExcel(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.vendorService.exportFile(this.currentFilter(), 'xlsx').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `vendors-${Date.now()}.xlsx`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  exportCsv(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.vendorService.exportFile(this.currentFilter(), 'csv').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `vendors-${Date.now()}.csv`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  async exportPdf(): Promise<void> {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    try {
+      const res = await firstValueFrom(this.vendorService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
+      await exportTableToPdf({
+        title: 'รายงานผู้ขาย/ผู้รับซ่อมภายนอก',
+        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        columns: ['รหัส', 'ชื่อบริษัท/ร้าน', 'ผู้ติดต่อ', 'เบอร์โทร', 'สถานะ'],
+        rows: res.items.map((v) => [v.code, v.name, v.contactPerson ?? '-', v.phone ?? '-', v.isActive ? 'ใช้งานอยู่' : 'ปิดใช้งาน']),
+        filename: `vendors-${Date.now()}.pdf`,
+      });
+    } catch {
+      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   toggleActive(vendor: IVendor): void {

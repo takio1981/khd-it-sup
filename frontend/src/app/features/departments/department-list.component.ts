@@ -6,11 +6,15 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { DepartmentService } from '../../core/services/department.service';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { downloadBlob } from '../../core/utils/download.util';
+import { exportTableToPdf } from '../../core/utils/pdf-table-export.util';
 import type { IDepartment } from '../../core/models/user.model';
 
 @Component({
@@ -25,6 +29,7 @@ import type { IDepartment } from '../../core/models/user.model';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
+    MatMenuModule,
     IconComponent,
     HasPermissionDirective,
   ],
@@ -34,12 +39,14 @@ export class DepartmentListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly departmentService = inject(DepartmentService);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly displayedColumns = ['code', 'nameTh', 'parent', 'actions'];
   readonly departments = signal<IDepartment[]>([]);
   readonly showForm = signal(false);
   readonly saving = signal(false);
   readonly editingId = signal<string | null>(null);
+  readonly exporting = signal(false);
 
   /** ตัวเลือก "หน่วยงานแม่" ตอนแก้ไข ต้องไม่รวมตัวเอง (กันเลือกตัวเองเป็น parent) */
   readonly parentOptions = computed(() => {
@@ -111,6 +118,55 @@ export class DepartmentListComponent {
       },
       error: () => this.saving.set(false),
     });
+  }
+
+  exportExcel(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.departmentService.exportFile('xlsx').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `departments-${Date.now()}.xlsx`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  exportCsv(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.departmentService.exportFile('csv').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `departments-${Date.now()}.csv`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  async exportPdf(): Promise<void> {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    try {
+      const items = this.departments();
+      await exportTableToPdf({
+        title: 'รายงานหน่วยงาน',
+        subtitle: `ทั้งหมด ${items.length} หน่วยงาน`,
+        columns: ['รหัส', 'ชื่อหน่วยงาน', 'หน่วยงานแม่'],
+        rows: items.map((d) => [d.code, d.nameTh, this.parentName(d.parentId)]),
+        filename: `departments-${Date.now()}.pdf`,
+      });
+    } catch {
+      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   deleteDepartment(dept: IDepartment): void {

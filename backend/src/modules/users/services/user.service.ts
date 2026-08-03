@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { UserRepository } from '@modules/users/repositories/user.repository';
+import { UserRepository, type IUserListFilter } from '@modules/users/repositories/user.repository';
 import type { CreateUserDto, ListUsersQueryDto, UpdateUserDto } from '@modules/users/dto/user.dto';
 import { ConflictError, ForbiddenError, NotFoundError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
@@ -10,6 +10,8 @@ import { deleteUploadedFileByUrl } from '@infrastructure/storage/multer.config';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import { notificationService } from '@modules/notifications/services/notification.service';
 import type { IRequestContext } from '@common/interfaces';
+
+const EXPORT_MAX_ROWS = 5000;
 
 function generateTemporaryPassword(): string {
   // 12 ตัวอักษร base64url อ่านง่ายพอสมควร ปลอดภัยพอสำหรับรหัสผ่านชั่วคราวที่บังคับเปลี่ยนทันที
@@ -39,6 +41,11 @@ export class UserService {
     );
     const sanitized = items.map(({ passwordHash: _ph, ...rest }) => rest);
     return buildPaginatedResult(sanitized, total, pagination);
+  }
+
+  async listForExport(filter: IUserListFilter) {
+    const { items } = await this.repo.findMany(filter, { page: 1, limit: EXPORT_MAX_ROWS, skip: 0, take: EXPORT_MAX_ROWS });
+    return items.map(({ passwordHash: _ph, ...rest }) => rest);
   }
 
   async getById(id: string) {

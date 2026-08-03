@@ -1,7 +1,20 @@
 <div class="space-y-4">
-  <div>
-    <h1 class="text-xl font-semibold">ประวัติเอกสารราชการที่ออกแล้ว</h1>
-    <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} ฉบับ — เลขที่เอกสารออกจากระบบอัตโนมัติ ไม่ซ้ำ ไม่ข้าม</p>
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-semibold">ประวัติเอกสารราชการที่ออกแล้ว</h1>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} ฉบับ — เลขที่เอกสารออกจากระบบอัตโนมัติ ไม่ซ้ำ ไม่ข้าม</p>
+    </div>
+    <div class="flex gap-2">
+      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
+        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+        Export
+      </button>
+      <mat-menu #exportMenu="matMenu">
+        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
+        <button mat-menu-item (click)="exportCsv()">CSV</button>
+        <button mat-menu-item (click)="exportPdf()">PDF</button>
+      </mat-menu>
+    </div>
   </div>
 
   <div class="khd-card !p-0 overflow-x-auto">

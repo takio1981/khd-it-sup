@@ -13,6 +13,15 @@
         <khd-icon name="building-office-2" [size]="18" class="!mr-1" />
         จัดการอาคาร/ชั้น/ห้อง
       </button>
+      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
+        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+        Export
+      </button>
+      <mat-menu #exportMenu="matMenu">
+        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
+        <button mat-menu-item (click)="exportCsv()">CSV</button>
+        <button mat-menu-item (click)="exportPdf()">PDF</button>
+      </mat-menu>
       <button mat-flat-button color="primary" *khdHasPermission="'department:manage'" (click)="showForm() ? cancelForm() : openCreateForm()">
         <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
         {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มหน่วยงาน' }}

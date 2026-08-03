@@ -17,3 +17,6 @@ export const updateDepartmentSchema = z.object({
 export type UpdateDepartmentDto = z.infer<typeof updateDepartmentSchema>;
 
 export const departmentIdParamSchema = z.object({ id: z.string().uuid() });
+
+export const exportDepartmentsQuerySchema = z.object({ format: z.enum(['xlsx', 'csv']).default('xlsx') });
+export type ExportDepartmentsQueryDto = z.infer<typeof exportDepartmentsQuerySchema>;

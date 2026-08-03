@@ -4,10 +4,21 @@
       <h1 class="text-xl font-semibold">ยืมครุภัณฑ์-อุปกรณ์</h1>
       <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} รายการ</p>
     </div>
-    <button mat-flat-button color="primary" *khdHasPermission="'asset:loan'" (click)="openCreateForm()">
-      <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
-      ยืมอุปกรณ์
-    </button>
+    <div class="flex gap-2">
+      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
+        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+        Export
+      </button>
+      <mat-menu #exportMenu="matMenu">
+        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
+        <button mat-menu-item (click)="exportCsv()">CSV</button>
+        <button mat-menu-item (click)="exportPdf()">PDF</button>
+      </mat-menu>
+      <button mat-flat-button color="primary" *khdHasPermission="'asset:loan'" (click)="openCreateForm()">
+        <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
+        ยืมอุปกรณ์
+      </button>
+    </div>
   </div>
 
   <div class="khd-card !p-3 flex flex-col sm:flex-row gap-3">

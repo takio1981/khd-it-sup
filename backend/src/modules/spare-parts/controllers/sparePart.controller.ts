@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { sparePartService } from '@modules/spare-parts/services/sparePart.service';
 import type {
   CreateSparePartDto,
+  ExportSparePartsQueryDto,
   ListSparePartsQueryDto,
   ListTransactionsQueryDto,
   RecordTransactionDto,
@@ -9,15 +10,53 @@ import type {
 } from '@modules/spare-parts/dto/sparePart.dto';
 import { asyncHandler } from '@common/utils/asyncHandler';
 import { sendCreated, sendSuccess } from '@common/utils/apiResponse';
+import { buildCsv, buildExcelBuffer, type IExportColumn } from '@common/utils/export.util';
 import type { IRequestContext } from '@common/interfaces';
 
 function contextOf(req: Request): IRequestContext {
   return { user: req.user!, ipAddress: req.ip ?? 'unknown', userAgent: req.headers['user-agent'] ?? 'unknown' };
 }
 
+const EXPORT_COLUMNS: IExportColumn[] = [
+  { header: 'รหัสอะไหล่', key: 'code', width: 16 },
+  { header: 'ชื่ออะไหล่', key: 'name', width: 30 },
+  { header: 'หน่วยนับ', key: 'unit', width: 12 },
+  { header: 'คงเหลือ', key: 'quantityOnHand', width: 12 },
+  { header: 'จุดสั่งซื้อ', key: 'reorderLevel', width: 12 },
+  { header: 'ราคาต่อหน่วย', key: 'unitCost', width: 14 },
+  { header: 'สถานะสต็อก', key: 'stockStatus', width: 16 },
+];
+
 export const listSpareParts = asyncHandler(async (req: Request, res: Response) => {
   const result = await sparePartService.list(req.query as unknown as ListSparePartsQueryDto);
   sendSuccess(res, result.items, 200, result.meta);
+});
+
+export const exportSpareParts = asyncHandler(async (req: Request, res: Response) => {
+  const query = req.query as unknown as ExportSparePartsQueryDto;
+  const items = await sparePartService.listForExport({ keyword: query.keyword, lowStockOnly: query.lowStockOnly });
+
+  const rows = items.map((p) => ({
+    code: p.code,
+    name: p.name,
+    unit: p.unit,
+    quantityOnHand: p.quantityOnHand,
+    reorderLevel: p.reorderLevel,
+    unitCost: p.unitCost ?? '',
+    stockStatus: p.quantityOnHand <= p.reorderLevel ? 'ต่ำกว่าจุดสั่งซื้อ' : 'ปกติ',
+  }));
+
+  const filenameBase = `spare-parts-${Date.now()}`;
+  if (query.format === 'csv') {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}.csv"`);
+    res.send(buildCsv(EXPORT_COLUMNS, rows));
+  } else {
+    const buffer = await buildExcelBuffer('Spare Parts', EXPORT_COLUMNS, rows);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filenameBase}.xlsx"`);
+    res.send(buffer);
+  }
 });
 
 export const getSparePart = asyncHandler(async (req: Request, res: Response) => {

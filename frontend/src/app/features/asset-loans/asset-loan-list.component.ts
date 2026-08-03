@@ -11,14 +11,20 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { firstValueFrom } from 'rxjs';
 import { AssetLoanService } from '../../core/services/asset-loan.service';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { downloadBlob } from '../../core/utils/download.util';
+import { exportTableToPdf } from '../../core/utils/pdf-table-export.util';
 
 import { AssetLoanFormComponent } from './asset-loan-form/asset-loan-form.component';
 import { AssetLoanReturnFormComponent } from './asset-loan-return-form/asset-loan-return-form.component';
 import type { IAssetLoan, AssetLoanStatus } from '../../core/models/asset-loan.model';
+
+const EXPORT_PDF_MAX_ROWS = 500;
 
 const STATUS_LABEL_TH: Record<string, string> = {
   BORROWED: 'กำลังยืม',
@@ -54,6 +60,7 @@ const STATUS_COLOR: Record<string, string> = {
 export class AssetLoanListComponent {
   private readonly assetLoanService = inject(AssetLoanService);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly statusLabel = STATUS_LABEL_TH;
   readonly statusColor = STATUS_COLOR;
@@ -64,6 +71,7 @@ export class AssetLoanListComponent {
   readonly pageSize = signal(20);
   readonly pageIndex = signal(0);
   readonly loading = signal(true);
+  readonly exporting = signal(false);
 
   status = '';
   keyword = '';
@@ -123,6 +131,65 @@ export class AssetLoanListComponent {
   returnLoan(loan: IAssetLoan): void {
     const ref = this.dialog.open(AssetLoanReturnFormComponent, { width: '420px', data: { loan } });
     ref.afterClosed().subscribe((result) => result && this.fetch());
+  }
+
+  private currentFilter() {
+    return { status: (this.status || undefined) as AssetLoanStatus | undefined, keyword: this.keyword || undefined };
+  }
+
+  exportExcel(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.assetLoanService.exportFile(this.currentFilter(), 'xlsx').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `asset-loans-${Date.now()}.xlsx`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  exportCsv(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.assetLoanService.exportFile(this.currentFilter(), 'csv').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `asset-loans-${Date.now()}.csv`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  async exportPdf(): Promise<void> {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    try {
+      const res = await firstValueFrom(this.assetLoanService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
+      await exportTableToPdf({
+        title: 'รายงานยืมครุภัณฑ์-อุปกรณ์',
+        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        columns: ['ครุภัณฑ์', 'ผู้ยืม', 'วันที่ยืม', 'กำหนดคืน', 'สถานะ'],
+        rows: res.items.map((l) => [
+          `${l.asset.assetNumber}${l.asset.brand ? ' - ' + l.asset.brand : ''}`,
+          l.borrower.fullName,
+          new Date(l.borrowDate).toLocaleDateString('th-TH'),
+          l.expectedReturnDate ? new Date(l.expectedReturnDate).toLocaleDateString('th-TH') : '-',
+          this.statusLabel[l.status] ?? l.status,
+        ]),
+        filename: `asset-loans-${Date.now()}.pdf`,
+      });
+    } catch {
+      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   deleteLoan(loan: IAssetLoan): void {

@@ -93,4 +93,12 @@ export class NotificationService {
       .get<IApiSuccessResponse<INotificationLog[]>>(`${this.base}/logs`, { params })
       .pipe(map((res) => ({ items: res.data, meta: res.meta as IPaginationMeta })));
   }
+
+  exportLogsFile(filter: Omit<INotificationLogFilter, 'page' | 'limit'>, format: 'xlsx' | 'csv'): Observable<Blob> {
+    let params = new HttpParams().set('format', format);
+    for (const [key, value] of Object.entries(filter) as [string, unknown][]) {
+      if (value !== undefined && value !== null && value !== '') params = params.set(key, String(value));
+    }
+    return this.http.get(`${this.base}/logs/export`, { params, responseType: 'blob' });
+  }
 }

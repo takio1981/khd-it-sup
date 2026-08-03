@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as documentController from '@modules/documents/controllers/document.controller';
-import { generateDocumentSchema, listDocumentsQuerySchema } from '@modules/documents/dto/document.dto';
+import { exportDocumentsQuerySchema, generateDocumentSchema, listDocumentsQuerySchema } from '@modules/documents/dto/document.dto';
 import { authenticate, requirePermission, validateRequest } from '@common/middleware';
 import { PERMISSIONS } from '@common/constants/permissions.const';
 import { documentUploader } from '@infrastructure/storage/multer.config';
@@ -31,6 +31,21 @@ router.get(
   requirePermission(PERMISSIONS.DOCUMENT_PRINT, PERMISSIONS.DOCUMENT_GENERATE, PERMISSIONS.AUDIT_VIEW),
   validateRequest({ query: listDocumentsQuerySchema }),
   documentController.listDocuments,
+);
+
+/**
+ * @openapi
+ * /documents/export:
+ *   get:
+ *     tags: [Documents]
+ *     summary: Export ประวัติเอกสารที่ออกเลขที่แล้วเป็น Excel/CSV (ใช้ filter เดียวกับรายการ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/documents/export',
+  requirePermission(PERMISSIONS.DOCUMENT_PRINT, PERMISSIONS.DOCUMENT_GENERATE, PERMISSIONS.AUDIT_VIEW),
+  validateRequest({ query: exportDocumentsQuerySchema }),
+  documentController.exportDocuments,
 );
 
 /**

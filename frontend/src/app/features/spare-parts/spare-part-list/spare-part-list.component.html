@@ -4,15 +4,26 @@
       <h1 class="text-xl font-semibold">คลังอะไหล่</h1>
       <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} รายการ</p>
     </div>
-    <button
-      mat-flat-button
-      color="primary"
-      *khdHasPermission="'spare_part:manage'"
-      (click)="showForm() ? cancelForm() : openCreateForm()"
-    >
-      <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
-      {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มอะไหล่' }}
-    </button>
+    <div class="flex gap-2">
+      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
+        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+        Export
+      </button>
+      <mat-menu #exportMenu="matMenu">
+        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
+        <button mat-menu-item (click)="exportCsv()">CSV</button>
+        <button mat-menu-item (click)="exportPdf()">PDF</button>
+      </mat-menu>
+      <button
+        mat-flat-button
+        color="primary"
+        *khdHasPermission="'spare_part:manage'"
+        (click)="showForm() ? cancelForm() : openCreateForm()"
+      >
+        <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
+        {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มอะไหล่' }}
+      </button>
+    </div>
   </div>
 
   @if (showForm()) {

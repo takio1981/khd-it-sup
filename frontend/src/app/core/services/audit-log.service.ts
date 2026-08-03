@@ -31,4 +31,12 @@ export class AuditLogService {
       .get<IApiSuccessResponse<IAuditLog[]>>(this.base, { params })
       .pipe(map((res) => ({ items: res.data, meta: res.meta as IPaginationMeta })));
   }
+
+  exportFile(filter: Omit<IAuditLogFilter, 'page' | 'limit'>, format: 'xlsx' | 'csv'): Observable<Blob> {
+    let params = new HttpParams().set('format', format);
+    for (const [key, value] of Object.entries(filter)) {
+      if (value !== undefined && value !== null && value !== '') params = params.set(key, String(value));
+    }
+    return this.http.get(`${this.base}/export`, { params, responseType: 'blob' });
+  }
 }

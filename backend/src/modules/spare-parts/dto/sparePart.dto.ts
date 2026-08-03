@@ -20,6 +20,13 @@ export const listSparePartsQuerySchema = z.object({
 });
 export type ListSparePartsQueryDto = z.infer<typeof listSparePartsQuerySchema>;
 
+export const exportSparePartsQuerySchema = z.object({
+  keyword: z.string().optional(),
+  lowStockOnly: z.coerce.boolean().optional(),
+  format: z.enum(['xlsx', 'csv']).default('xlsx'),
+});
+export type ExportSparePartsQueryDto = z.infer<typeof exportSparePartsQuerySchema>;
+
 export const sparePartIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });
 
 export const spareTxnTypeEnum = z.enum(['RESERVE', 'ISSUE', 'RETURN', 'ADJUST', 'PURCHASE', 'RECEIVE']);

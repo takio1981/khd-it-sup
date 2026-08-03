@@ -4,15 +4,26 @@
       <h1 class="text-xl font-semibold">ผู้ขาย/ผู้รับซ่อมภายนอก</h1>
       <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} ราย</p>
     </div>
-    <button
-      mat-flat-button
-      color="primary"
-      *khdHasPermission="'vendor:manage'"
-      (click)="showForm() ? cancelForm() : openCreateForm()"
-    >
-      <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
-      {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มผู้ขาย/ผู้รับซ่อม' }}
-    </button>
+    <div class="flex gap-2">
+      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
+        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+        Export
+      </button>
+      <mat-menu #exportMenu="matMenu">
+        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
+        <button mat-menu-item (click)="exportCsv()">CSV</button>
+        <button mat-menu-item (click)="exportPdf()">PDF</button>
+      </mat-menu>
+      <button
+        mat-flat-button
+        color="primary"
+        *khdHasPermission="'vendor:manage'"
+        (click)="showForm() ? cancelForm() : openCreateForm()"
+      >
+        <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
+        {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มผู้ขาย/ผู้รับซ่อม' }}
+      </button>
+    </div>
   </div>
 
   @if (showForm()) {

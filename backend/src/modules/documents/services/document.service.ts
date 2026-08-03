@@ -1,10 +1,12 @@
-import { DocumentRepository } from '@modules/documents/repositories/document.repository';
+import { DocumentRepository, type IGeneratedDocumentFilter } from '@modules/documents/repositories/document.repository';
 import type { GenerateDocumentDto, ListDocumentsQueryDto } from '@modules/documents/dto/document.dto';
 import { runningNumberService } from '@modules/settings/services/runningNumber.service';
 import { NotFoundError, BadRequestError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import type { IRequestContext } from '@common/interfaces';
+
+const EXPORT_MAX_ROWS = 5000;
 
 export class DocumentService {
   private readonly repo = new DocumentRepository();
@@ -17,6 +19,11 @@ export class DocumentService {
     const pagination = normalizePagination(query);
     const { items, total } = await this.repo.findManyGenerated({ ticketId: query.ticketId, templateCode: query.templateCode }, pagination);
     return buildPaginatedResult(items, total, pagination);
+  }
+
+  async listForExport(filter: IGeneratedDocumentFilter) {
+    const { items } = await this.repo.findManyGenerated(filter, { page: 1, limit: EXPORT_MAX_ROWS, skip: 0, take: EXPORT_MAX_ROWS });
+    return items;
   }
 
   /** ออกเลขที่เอกสารจริงจาก running_number_sequences (docType = templateCode) แล้วบันทึกไฟล์ที่ frontend render มาแล้วเป็นหลักฐาน */

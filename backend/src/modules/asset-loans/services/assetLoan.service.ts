@@ -17,6 +17,8 @@ import type { IRequestContext } from '@common/interfaces';
 
 export type AssetLoanStatus = 'BORROWED' | 'OVERDUE' | 'RETURNED';
 
+const EXPORT_MAX_ROWS = 5000;
+
 function computeStatus(loan: Pick<AssetLoan, 'actualReturnDate' | 'expectedReturnDate'>): AssetLoanStatus {
   if (loan.actualReturnDate) return 'RETURNED';
   if (loan.expectedReturnDate && loan.expectedReturnDate < new Date()) return 'OVERDUE';
@@ -35,6 +37,11 @@ export class AssetLoanService {
     const filter: IAssetLoanFilter = { status: query.status, keyword: query.keyword };
     const { items, total } = await this.repo.findMany(filter, pagination.skip, pagination.take);
     return buildPaginatedResult(items.map(withStatus), total, pagination);
+  }
+
+  async listForExport(filter: IAssetLoanFilter) {
+    const { items } = await this.repo.findMany(filter, 0, EXPORT_MAX_ROWS);
+    return items.map(withStatus);
   }
 
   async getStats() {

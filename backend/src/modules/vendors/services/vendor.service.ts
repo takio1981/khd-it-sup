@@ -1,9 +1,11 @@
-import { VendorRepository } from '@modules/vendors/repositories/vendor.repository';
+import { VendorRepository, type IVendorListFilter } from '@modules/vendors/repositories/vendor.repository';
 import type { CreateVendorDto, ListVendorsQueryDto, UpdateVendorDto } from '@modules/vendors/dto/vendor.dto';
 import { ConflictError, NotFoundError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import type { IRequestContext } from '@common/interfaces';
+
+const EXPORT_MAX_ROWS = 5000;
 
 export class VendorService {
   private readonly repo = new VendorRepository();
@@ -12,6 +14,11 @@ export class VendorService {
     const pagination = normalizePagination(query);
     const { items, total } = await this.repo.findMany({ keyword: query.keyword, activeOnly: query.activeOnly }, pagination);
     return buildPaginatedResult(items, total, pagination);
+  }
+
+  async listForExport(filter: IVendorListFilter) {
+    const { items } = await this.repo.findMany(filter, { page: 1, limit: EXPORT_MAX_ROWS, skip: 0, take: EXPORT_MAX_ROWS });
+    return items;
   }
 
   async getById(id: string) {

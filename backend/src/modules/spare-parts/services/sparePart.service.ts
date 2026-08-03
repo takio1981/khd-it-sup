@@ -1,4 +1,4 @@
-import { SparePartRepository } from '@modules/spare-parts/repositories/sparePart.repository';
+import { SparePartRepository, type ISparePartListFilter } from '@modules/spare-parts/repositories/sparePart.repository';
 import type {
   CreateSparePartDto,
   ListSparePartsQueryDto,
@@ -10,6 +10,8 @@ import { ConflictError, NotFoundError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import type { IRequestContext } from '@common/interfaces';
+
+const EXPORT_MAX_ROWS = 5000;
 
 const INCREASE_TYPES = new Set(['RETURN', 'PURCHASE', 'RECEIVE']);
 const DECREASE_TYPES = new Set(['RESERVE', 'ISSUE']);
@@ -28,6 +30,11 @@ export class SparePartService {
     const pagination = normalizePagination(query);
     const { items, total } = await this.repo.findMany({ keyword: query.keyword, lowStockOnly: query.lowStockOnly }, pagination);
     return buildPaginatedResult(items, total, pagination);
+  }
+
+  async listForExport(filter: ISparePartListFilter) {
+    const { items } = await this.repo.findMany(filter, { page: 1, limit: EXPORT_MAX_ROWS, skip: 0, take: EXPORT_MAX_ROWS });
+    return items;
   }
 
   async getById(id: string) {

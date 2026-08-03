@@ -36,4 +36,12 @@ export const listUsersQuerySchema = z.object({
 });
 export type ListUsersQueryDto = z.infer<typeof listUsersQuerySchema>;
 
+export const exportUsersQuerySchema = z.object({
+  roleId: z.string().uuid().optional(),
+  departmentId: z.string().uuid().optional(),
+  keyword: z.string().optional(),
+  format: z.enum(['xlsx', 'csv']).default('xlsx'),
+});
+export type ExportUsersQueryDto = z.infer<typeof exportUsersQuerySchema>;
+
 export const userIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });

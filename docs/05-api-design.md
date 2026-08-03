@@ -48,6 +48,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | POST | `/users/:id/reset-password` | `user:reset_password` | รีเซ็ตรหัสผ่าน (สุ่มรหัสชั่วคราว ส่งอีเมลอัตโนมัติ + บังคับเปลี่ยน) |
 | POST | `/users/:id/avatar` | `user:update` | อัปโหลดรูปโปรไฟล์ให้ผู้ใช้คนอื่น (`multipart/form-data`, field `avatar`) |
 | DELETE | `/users/:id/avatar` | `user:update` | ลบรูปโปรไฟล์ของผู้ใช้คนอื่น |
+| GET | `/users/export?format=xlsx\|csv` | `user:read` | Export รายชื่อผู้ใช้ (ใช้ filter เดียวกับ `/users`, สูงสุด 5,000 แถว) |
 
 ## 5.3 Departments / Divisions / Positions ✅
 
@@ -56,6 +57,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | GET | `/departments` | authenticated | รายชื่อหน่วยงานทั้งหมด |
 | GET | `/departments/:id` | authenticated | รายละเอียดหน่วยงาน |
 | POST/PATCH/DELETE | `/departments`, `/departments/:id` | `department:manage` | สร้าง/แก้ไข/ปิดใช้งานหน่วยงาน |
+| GET | `/departments/export?format=xlsx\|csv` | authenticated | Export รายชื่อหน่วยงานทั้งหมด |
 | GET | `/divisions` | authenticated | รายชื่อแผนกทั้งหมด (เติม dropdown) |
 | GET | `/divisions/:id` | authenticated | รายละเอียดแผนก |
 | POST/PATCH/DELETE | `/divisions`, `/divisions/:id` | `department:manage` | สร้าง/แก้ไข/ปิดใช้งานแผนก |
@@ -98,6 +100,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | PATCH | `/asset-loans/:id` | `asset:loan` | แก้ไขรายการยืม-คืน |
 | DELETE | `/asset-loans/:id` | `asset:loan` | ลบรายการยืม-คืน |
 | POST | `/asset-loans/:id/return` | `asset:loan` | บันทึกคืนครุภัณฑ์ (แจ้งเตือนผู้ยืมทุกช่องทาง) |
+| GET | `/asset-loans/export?format=xlsx\|csv` | authenticated | Export รายการยืม-คืน (ใช้ filter เดียวกับ `/asset-loans`, สูงสุด 5,000 แถว) |
 
 > รายการที่เกินกำหนดคืน (`expected_return_date` ผ่านไปแล้วและยังไม่คืน) ถูกแจ้งเตือนซ้ำอัตโนมัติทุกวันเวลา 08:00
 > (Asia/Bangkok) ผ่าน cron job ภายใน backend — ดู § 5.8
@@ -150,6 +153,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
 | GET | `/notifications/logs` | `audit:view` หรือ `settings:manage` | ประวัติการแจ้งเตือนทุกช่องทาง (Email/Telegram/LINE/Push) ใช้ตรวจสอบสถานะการส่ง |
+| GET | `/notifications/logs/export?format=xlsx\|csv` | `audit:view` หรือ `settings:manage` | Export ประวัติการแจ้งเตือน (ใช้ filter เดียวกับ `/notifications/logs`, สูงสุด 5,000 แถว) |
 | GET | `/notifications/me` | authenticated | แจ้งเตือนในแอป (bell) ของตนเอง (channel="PUSH" เฉพาะของ userId ตนเอง) |
 | GET | `/notifications/me/unread-count` | authenticated | จำนวนแจ้งเตือนในแอปที่ยังไม่อ่าน |
 | PATCH | `/notifications/me/:id/read` | authenticated | อ่านแจ้งเตือนในแอปรายการเดียว |
@@ -199,10 +203,11 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/audit-logs` | `audit:view` |
+| GET | `/audit-logs/export?format=xlsx\|csv` | `audit:view` |
 
 รองรับ query filter: `module`, `action` (`LOGIN`/`LOGOUT`/`CREATE`/`UPDATE`/`DELETE`/`PRINT`/`EXPORT`/`APPROVE`/`CONFIG_CHANGE`),
 `userId`, `dateFrom`, `dateTo`, `page`, `limit` — ผลลัพธ์รวม `user` (id/fullName/username) ของผู้กระทำ เรียงล่าสุดก่อนเสมอ
-(ตาราง `audit_logs` เป็น insert-only ledger บังคับด้วย MariaDB trigger)
+(ตาราง `audit_logs` เป็น insert-only ledger บังคับด้วย MariaDB trigger) `/export` ใช้ filter เดียวกัน (ยกเว้น page/limit) สูงสุด 5,000 แถว
 
 ---
 
@@ -217,6 +222,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | GET | `/spare-parts/transactions` | `spare_part:view`/`manage`/`issue` | ประวัติธุรกรรมทั้งหมด (filter `ticketId` — ใช้แสดงในหน้ารายละเอียดใบแจ้งซ่อม) |
 | GET | `/spare-parts/:id/transactions` | `spare_part:view`/`manage`/`issue` | ประวัติธุรกรรมของอะไหล่ชิ้นนี้ |
 | POST | `/spare-parts/:id/transactions` | `spare_part:issue`/`manage` | บันทึกธุรกรรม (`RESERVE`/`ISSUE`/`RETURN`/`ADJUST`/`PURCHASE`/`RECEIVE`) |
+| GET | `/spare-parts/export?format=xlsx\|csv` | `spare_part:view`/`manage`/`issue` | Export คลังอะไหล่ (ใช้ filter เดียวกับ `/spare-parts`, สูงสุด 5,000 แถว) |
 
 `quantityOnHand` ปรับแบบ atomic ผ่าน `prisma.$transaction` (อ่าน-เขียน-สร้างแถว transaction ในธุรกรรมเดียว) — ถ้าเบิก
 (`ISSUE`/`RESERVE`) เกินยอดคงเหลือจะถูกปฏิเสธด้วย `409 CONFLICT` ทันที ไม่มีการเขียนข้อมูลใดๆ เกิดขึ้น `ADJUST` เป็นประเภท
@@ -232,6 +238,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | POST | `/vendors` | `vendor:manage` | เพิ่มผู้ขาย/ผู้รับซ่อมใหม่ |
 | GET | `/vendors/:id` | `vendor:view`/`manage` | รายละเอียด |
 | PATCH | `/vendors/:id` | `vendor:manage` | แก้ไขข้อมูล/เปิด-ปิดใช้งาน |
+| GET | `/vendors/export?format=xlsx\|csv` | `vendor:view`/`manage` | Export รายชื่อผู้ขาย/ผู้รับซ่อมภายนอก (ใช้ filter เดียวกับ `/vendors`, สูงสุด 5,000 แถว) |
 
 ## 5.17 Vendor Repair Orders (ใบส่งซ่อมภายนอก) — `/api/v1/vendor-repair-orders` ✅
 
@@ -264,6 +271,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | GET | `/document-templates` | `document:print`/`generate` | รายการแบบฟอร์มที่เปิดใช้งาน (registry — ปัจจุบัน seed ไว้ `REPAIR_REQUEST` แบบเดียว) |
 | GET | `/documents` | `document:print`/`generate`/`audit:view` | ประวัติเอกสารที่ออกเลขที่แล้วทั้งหมด (filter: ticketId, templateCode) |
 | POST | `/documents/generate` | `document:generate` | ออกเลขที่เอกสารจริงจาก `running_number_sequences` (multipart: field `file` = PDF ที่ frontend render แล้ว, `templateCode`, `ticketId?`) |
+| GET | `/documents/export?format=xlsx\|csv` | `document:print`/`generate`/`audit:view` | Export ประวัติเอกสารที่ออกเลขที่แล้ว (ใช้ filter เดียวกับ `/documents`, สูงสุด 5,000 แถว) |
 
 **สถาปัตยกรรม**: `document_templates`/`generated_documents` เป็นเพียง "engine" — เนื้อหา/เลย์เอาต์ของแบบฟอร์มแต่ละแบบ
 render ที่ฝั่ง frontend เอง (เหมือน `ticket-print-preview.component.ts`) ไม่ใช่ backend เก็บ template ไว้ frontend

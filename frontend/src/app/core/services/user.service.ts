@@ -87,4 +87,12 @@ export class UserService {
   getAvatarBlob(fileUrl: string): Observable<Blob> {
     return this.http.get(resolveBackendFileUrl(fileUrl), { responseType: 'blob' });
   }
+
+  exportFile(filter: Omit<IUserListFilter, 'page' | 'limit'>, format: 'xlsx' | 'csv'): Observable<Blob> {
+    let params = new HttpParams().set('format', format);
+    for (const [key, value] of Object.entries(filter)) {
+      if (value !== undefined && value !== null && value !== '') params = params.set(key, String(value));
+    }
+    return this.http.get(`${this.base}/export`, { params, responseType: 'blob' });
+  }
 }

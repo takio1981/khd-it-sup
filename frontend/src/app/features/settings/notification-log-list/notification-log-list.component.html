@@ -1,5 +1,18 @@
 <div class="space-y-4">
-  <p class="text-sm text-neutral-500">ประวัติการแจ้งเตือนทุกช่องทาง (Email/Telegram/LINE) ใช้ตรวจสอบสถานะการส่ง</p>
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <p class="text-sm text-neutral-500">ประวัติการแจ้งเตือนทุกช่องทาง (Email/Telegram/LINE) ใช้ตรวจสอบสถานะการส่ง</p>
+    <div class="flex gap-2">
+      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
+        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+        Export
+      </button>
+      <mat-menu #exportMenu="matMenu">
+        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
+        <button mat-menu-item (click)="exportCsv()">CSV</button>
+        <button mat-menu-item (click)="exportPdf()">PDF</button>
+      </mat-menu>
+    </div>
+  </div>
 
   <div class="khd-card !p-3 flex flex-col sm:flex-row gap-3">
     <mat-form-field appearance="outline" class="sm:w-56 !mb-[-1.25em]">

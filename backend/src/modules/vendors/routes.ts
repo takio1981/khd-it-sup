@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import * as vendorController from '@modules/vendors/controllers/vendor.controller';
-import { createVendorSchema, listVendorsQuerySchema, updateVendorSchema, vendorIdParamSchema } from '@modules/vendors/dto/vendor.dto';
+import {
+  createVendorSchema,
+  exportVendorsQuerySchema,
+  listVendorsQuerySchema,
+  updateVendorSchema,
+  vendorIdParamSchema,
+} from '@modules/vendors/dto/vendor.dto';
 import { authenticate, requirePermission, validateRequest } from '@common/middleware';
 import { PERMISSIONS } from '@common/constants/permissions.const';
 
@@ -18,6 +24,21 @@ const VIEW_PERMS = [PERMISSIONS.VENDOR_VIEW, PERMISSIONS.VENDOR_MANAGE] as const
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/', requirePermission(...VIEW_PERMS), validateRequest({ query: listVendorsQuerySchema }), vendorController.listVendors);
+
+/**
+ * @openapi
+ * /vendors/export:
+ *   get:
+ *     tags: [Vendors]
+ *     summary: Export รายชื่อผู้ขาย/ผู้รับซ่อมภายนอกเป็น Excel/CSV (ใช้ filter เดียวกับรายการ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/export',
+  requirePermission(...VIEW_PERMS),
+  validateRequest({ query: exportVendorsQuerySchema }),
+  vendorController.exportVendors,
+);
 
 /**
  * @openapi

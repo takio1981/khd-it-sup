@@ -3,6 +3,7 @@ import * as assetLoanController from '@modules/asset-loans/controllers/assetLoan
 import {
   assetLoanIdParamSchema,
   createAssetLoanSchema,
+  exportAssetLoansQuerySchema,
   listAssetLoansQuerySchema,
   returnAssetLoanSchema,
   updateAssetLoanSchema,
@@ -43,6 +44,16 @@ router.get('/stats', assetLoanController.getAssetLoanStats);
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/chart', assetLoanController.getAssetLoanChartData);
+
+/**
+ * @openapi
+ * /asset-loans/export:
+ *   get:
+ *     tags: [AssetLoans]
+ *     summary: Export รายการยืม-คืนเป็น Excel/CSV (ใช้ filter เดียวกับรายการ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/export', validateRequest({ query: exportAssetLoansQuerySchema }), assetLoanController.exportAssetLoans);
 
 /**
  * @openapi

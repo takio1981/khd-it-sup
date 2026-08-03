@@ -27,4 +27,11 @@ export const listAssetLoansQuerySchema = z.object({
 });
 export type ListAssetLoansQueryDto = z.infer<typeof listAssetLoansQuerySchema>;
 
+export const exportAssetLoansQuerySchema = z.object({
+  status: z.enum(['BORROWED', 'OVERDUE', 'RETURNED']).optional(),
+  keyword: z.string().optional(),
+  format: z.enum(['xlsx', 'csv']).default('xlsx'),
+});
+export type ExportAssetLoansQueryDto = z.infer<typeof exportAssetLoansQuerySchema>;
+
 export const assetLoanIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });

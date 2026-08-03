@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as sparePartController from '@modules/spare-parts/controllers/sparePart.controller';
 import {
   createSparePartSchema,
+  exportSparePartsQuerySchema,
   listSparePartsQuerySchema,
   listTransactionsQuerySchema,
   recordTransactionSchema,
@@ -39,6 +40,21 @@ router.get(
   requirePermission(...VIEW_PERMS),
   validateRequest({ query: listTransactionsQuerySchema }),
   sparePartController.listTransactions,
+);
+
+/**
+ * @openapi
+ * /spare-parts/export:
+ *   get:
+ *     tags: [Spare Parts]
+ *     summary: Export คลังอะไหล่เป็น Excel/CSV (ใช้ filter เดียวกับรายการ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/export',
+  requirePermission(...VIEW_PERMS),
+  validateRequest({ query: exportSparePartsQuerySchema }),
+  sparePartController.exportSpareParts,
 );
 
 /**

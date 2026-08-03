@@ -2,8 +2,10 @@ import type { Prisma } from '@prisma/client';
 import { AuditLogRepository } from '@modules/audit-log/repositories/auditLog.repository';
 import { logger } from '@infrastructure/logger/logger';
 import type { IRequestContext } from '@common/interfaces';
-import type { ListAuditLogsQueryDto } from '@modules/audit-log/dto/auditLog.dto';
+import type { ExportAuditLogsQueryDto, ListAuditLogsQueryDto } from '@modules/audit-log/dto/auditLog.dto';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
+
+const EXPORT_MAX_ROWS = 5000;
 
 export interface IRecordAuditInput {
   action: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'PRINT' | 'EXPORT' | 'APPROVE' | 'CONFIG_CHANGE';
@@ -56,6 +58,20 @@ export class AuditLogService {
     };
     const { items, total } = await this.repo.findMany(where, pagination.skip, pagination.take);
     return buildPaginatedResult(items, total, pagination);
+  }
+
+  async listForExport(query: Omit<ExportAuditLogsQueryDto, 'format'>) {
+    const where: Prisma.AuditLogWhereInput = {
+      module: query.module || undefined,
+      action: query.action || undefined,
+      userId: query.userId || undefined,
+      createdAt:
+        query.dateFrom || query.dateTo
+          ? { gte: query.dateFrom, lte: query.dateTo }
+          : undefined,
+    };
+    const { items } = await this.repo.findMany(where, 0, EXPORT_MAX_ROWS);
+    return items;
   }
 }
 

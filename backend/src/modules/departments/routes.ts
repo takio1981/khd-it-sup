@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import * as departmentController from '@modules/departments/controllers/department.controller';
-import { createDepartmentSchema, departmentIdParamSchema, updateDepartmentSchema } from '@modules/departments/dto/department.dto';
+import {
+  createDepartmentSchema,
+  departmentIdParamSchema,
+  exportDepartmentsQuerySchema,
+  updateDepartmentSchema,
+} from '@modules/departments/dto/department.dto';
 import { authenticate, requirePermission, validateRequest } from '@common/middleware';
 import { PERMISSIONS } from '@common/constants/permissions.const';
 
@@ -16,6 +21,16 @@ router.use(authenticate);
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/', departmentController.listDepartments);
+
+/**
+ * @openapi
+ * /departments/export:
+ *   get:
+ *     tags: [Departments]
+ *     summary: Export รายชื่อหน่วยงานทั้งหมดเป็น Excel/CSV
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/export', validateRequest({ query: exportDepartmentsQuerySchema }), departmentController.exportDepartments);
 
 /**
  * @openapi

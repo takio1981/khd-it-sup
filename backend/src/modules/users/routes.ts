@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import * as userController from '@modules/users/controllers/user.controller';
-import { createUserSchema, listUsersQuerySchema, updateUserSchema, userIdParamSchema } from '@modules/users/dto/user.dto';
+import {
+  createUserSchema,
+  exportUsersQuerySchema,
+  listUsersQuerySchema,
+  updateUserSchema,
+  userIdParamSchema,
+} from '@modules/users/dto/user.dto';
 import { authenticate, requirePermission, validateRequest } from '@common/middleware';
 import { PERMISSIONS } from '@common/constants/permissions.const';
 import { avatarUploader } from '@infrastructure/storage/multer.config';
@@ -39,6 +45,21 @@ router.get('/roles', userController.listRoles);
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/stats', requirePermission(PERMISSIONS.USER_READ), userController.getStats);
+
+/**
+ * @openapi
+ * /users/export:
+ *   get:
+ *     tags: [Users]
+ *     summary: Export รายชื่อผู้ใช้เป็น Excel/CSV (ใช้ filter เดียวกับรายการ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/export',
+  requirePermission(PERMISSIONS.USER_READ),
+  validateRequest({ query: exportUsersQuerySchema }),
+  userController.exportUsers,
+);
 
 /**
  * @openapi

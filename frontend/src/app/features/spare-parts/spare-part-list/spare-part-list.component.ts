@@ -7,13 +7,18 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxjs';
 import { SparePartService } from '../../../core/services/spare-part.service';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { downloadBlob } from '../../../core/utils/download.util';
+import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
 import type { ISparePart, SparePartTxnType } from '../../../core/models/spare-part.model';
+
+const EXPORT_PDF_MAX_ROWS = 500;
 
 const STOCK_ADJUST_TYPES: SparePartTxnType[] = ['RECEIVE', 'PURCHASE', 'ADJUST', 'RETURN'];
 const TXN_TYPE_LABEL_TH: Record<string, string> = {
@@ -91,6 +96,7 @@ export class StockAdjustDialogComponent {
     MatSelectModule,
     MatSlideToggleModule,
     MatButtonModule,
+    MatMenuModule,
     IconComponent,
     HasPermissionDirective,
   ],
@@ -108,6 +114,7 @@ export class SparePartListComponent {
   readonly pageSize = signal(20);
   readonly pageIndex = signal(0);
   readonly loading = signal(true);
+  readonly exporting = signal(false);
   readonly showForm = signal(false);
   readonly saving = signal(false);
   readonly editingId = signal<string | null>(null);
@@ -211,6 +218,59 @@ export class SparePartListComponent {
       },
       error: () => this.saving.set(false),
     });
+  }
+
+  private currentFilter() {
+    return { keyword: this.keyword || undefined, lowStockOnly: this.lowStockOnly || undefined };
+  }
+
+  exportExcel(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.sparePartService.exportFile(this.currentFilter(), 'xlsx').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `spare-parts-${Date.now()}.xlsx`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  exportCsv(): void {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    this.sparePartService.exportFile(this.currentFilter(), 'csv').subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `spare-parts-${Date.now()}.csv`);
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  async exportPdf(): Promise<void> {
+    if (this.exporting()) return;
+    this.exporting.set(true);
+    try {
+      const res = await firstValueFrom(this.sparePartService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
+      await exportTableToPdf({
+        title: 'รายงานคลังอะไหล่',
+        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        columns: ['รหัส', 'ชื่ออะไหล่', 'คงเหลือ', 'จุดสั่งซื้อ', 'หน่วย'],
+        rows: res.items.map((p) => [p.code, p.name, String(p.quantityOnHand), String(p.reorderLevel), p.unit]),
+        filename: `spare-parts-${Date.now()}.pdf`,
+      });
+    } catch {
+      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   openStockDialog(part: ISparePart): void {

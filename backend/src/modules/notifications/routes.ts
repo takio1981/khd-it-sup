@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as notificationController from '@modules/notifications/controllers/notification.controller';
 import {
+  exportNotificationLogsQuerySchema,
   listMyNotificationsQuerySchema,
   listNotificationLogsQuerySchema,
   notificationIdParamSchema,
@@ -24,6 +25,21 @@ router.get(
   requirePermission(PERMISSIONS.AUDIT_VIEW, PERMISSIONS.SETTINGS_MANAGE),
   validateRequest({ query: listNotificationLogsQuerySchema }),
   notificationController.listNotificationLogs,
+);
+
+/**
+ * @openapi
+ * /notifications/logs/export:
+ *   get:
+ *     tags: [Notifications]
+ *     summary: Export ประวัติการแจ้งเตือนเป็น Excel/CSV (ใช้ filter เดียวกับรายการ)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/logs/export',
+  requirePermission(PERMISSIONS.AUDIT_VIEW, PERMISSIONS.SETTINGS_MANAGE),
+  validateRequest({ query: exportNotificationLogsQuerySchema }),
+  notificationController.exportNotificationLogs,
 );
 
 /**
