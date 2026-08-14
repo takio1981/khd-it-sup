@@ -50,7 +50,16 @@ export class RepairTicketService {
     return this.http.get<IApiSuccessResponse<ITimelineEvent[]>>(`${this.base}/${id}/timeline`).pipe(map((res) => res.data));
   }
 
-  create(payload: ICreateTicketPayload): Observable<IRepairTicketDetail> {
+  /** files (สูงสุด 3 ภาพ — บังคับที่ backend ด้วย) ถ้ามีจะส่งเป็น multipart/form-data พร้อมแนบไฟล์ในคำขอเดียวกันเลย */
+  create(payload: ICreateTicketPayload, files?: File[]): Observable<IRepairTicketDetail> {
+    if (files?.length) {
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(payload)) {
+        if (value !== undefined && value !== null && value !== '') formData.append(key, String(value));
+      }
+      files.forEach((file) => formData.append('attachments', file));
+      return this.http.post<IApiSuccessResponse<IRepairTicketDetail>>(this.base, formData).pipe(map((res) => res.data));
+    }
     return this.http.post<IApiSuccessResponse<IRepairTicketDetail>>(this.base, payload).pipe(map((res) => res.data));
   }
 

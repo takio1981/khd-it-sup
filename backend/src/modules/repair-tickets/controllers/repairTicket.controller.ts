@@ -88,6 +88,12 @@ export const getTicketTimeline = asyncHandler(async (req: Request, res: Response
 
 export const createTicket = asyncHandler(async (req: Request, res: Response) => {
   const ticket = await repairTicketService.create(req.body as CreateTicketDto, contextOf(req));
+
+  const files = req.files as Express.Multer.File[] | undefined;
+  if (files?.length) {
+    await repairTicketService.addAttachments(ticket.id, files, contextOf(req));
+  }
+
   sendCreated(res, ticket);
 });
 

@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { QrCodeRepository } from '@modules/qrcode/repositories/qrcode.repository';
 import { encryptAssetId, decryptAssetId } from '@infrastructure/qrcode/qrToken.util';
 import { generateQrDataUrl, generateQrPngBuffer } from '@infrastructure/qrcode/qrImage.util';
@@ -8,6 +10,33 @@ import type { IRequestContext } from '@common/interfaces';
 
 function buildScanUrl(token: string): string {
   return `${env.FRONTEND_BASE_URL}/qr/scan/${encodeURIComponent(token)}`;
+}
+
+const IMAGE_MIME_BY_EXT: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+};
+
+/**
+ * ฝังรูปครุภัณฑ์เป็น base64 data URL ตรงใน response ของหน้าสแกน QR (public, ไม่ login) แทนการอ้าง fileUrl เดิม
+ * เพราะไฟล์แนบทั้งหมดถูก serve ผ่าน /files/:subdir/:filename ที่บังคับ authenticate เสมอ (ดู serveFile.controller.ts)
+ * — ผู้สแกนที่ยังไม่ login จะโหลดรูปไม่ได้ถ้าใช้ fileUrl ตรงๆ อ่านไฟล์ไม่ได้ (เช่นถูกลบไปแล้ว) ให้ข้ามรูปนั้นแทนที่จะ throw
+ */
+async function toPhotoDataUrl(fileUrl: string): Promise<string | null> {
+  const filename = path.basename(fileUrl);
+  const mime = IMAGE_MIME_BY_EXT[path.extname(filename).toLowerCase()];
+  if (!mime) return null;
+
+  try {
+    const filePath = path.resolve(env.UPLOAD_DIR, 'assets', filename);
+    const buffer = await fs.readFile(filePath);
+    return `data:${mime};base64,${buffer.toString('base64')}`;
+  } catch {
+    return null;
+  }
 }
 
 export class QrCodeService {
@@ -91,7 +120,7 @@ export class QrCodeService {
 
     await this.repo.logScan(assetId, scannedByUserId, ipAddress, userAgent);
 
-    const { loans, ...rest } = asset;
+    const { loans, photos, ...rest } = asset;
     const activeLoan = loans[0]
       ? {
           id: loans[0].id,
@@ -102,6 +131,12 @@ export class QrCodeService {
         }
       : null;
 
-    return { ...rest, activeLoan };
+    const resolvedPhotos = (
+      await Promise.all(
+        photos.map(async (p) => ({ id: p.id, caption: p.caption, dataUrl: await toPhotoDataUrl(p.fileUrl) })),
+      )
+    ).filter((p): p is { id: string; caption: string | null; dataUrl: string } => p.dataUrl !== null);
+
+    return { ...rest, activeLoan, photos: resolvedPhotos };
   }
 }

@@ -42,6 +42,11 @@ export class QrCodeRepository {
         brand: true,
         status: true,
         photoUrl: true,
+        photos: {
+          select: { id: true, fileUrl: true, caption: true },
+          orderBy: { uploadedAt: 'desc' },
+          take: 8,
+        },
         category: { select: { nameTh: true, nameEn: true, icon: true } },
         department: { select: { nameTh: true } },
         room: { select: { name: true } },

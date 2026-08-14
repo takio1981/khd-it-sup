@@ -77,11 +77,14 @@ router.get(
  *   post:
  *     tags: [Repair Tickets]
  *     summary: แจ้งซ่อมใหม่ (auto-generate เลขที่ ticket และเริ่ม workflow instance อัตโนมัติ)
+ *       รองรับแนบรูปภาพเครื่อง/อาการเสียได้พร้อมกันสูงสุด 3 ภาพ (multipart/form-data, field "attachments" —
+ *       ถ้าไม่แนบไฟล์ส่งเป็น application/json ตามปกติได้เหมือนเดิม)
  *     security: [{ bearerAuth: [] }]
  */
 router.post(
   '/',
   requirePermission(PERMISSIONS.TICKET_CREATE),
+  ticketAttachmentUploader.array('attachments', 3),
   validateRequest({ body: createTicketSchema }),
   ticketController.createTicket,
 );

@@ -129,6 +129,14 @@ export class QrScanComponent {
     contactPhone: [''],
   });
 
+  /** รูปครุภัณฑ์ที่บันทึกไว้ในระบบ — คลิกดูขยายได้ */
+  readonly viewingPhotoUrl = signal<string | null>(null);
+
+  /** รูปเครื่อง/อาการเสียที่แนบตอนแจ้งซ่อม — เลือกได้สูงสุด MAX_TICKET_PHOTOS ภาพ (บังคับซ้ำที่ backend ด้วย) */
+  readonly MAX_TICKET_PHOTOS = 3;
+  readonly ticketPhotos = signal<{ file: File; previewUrl: string }[]>([]);
+  readonly photoError = signal<string | null>(null);
+
   /** ยืม-คืนอุปกรณ์ผ่านสแกน QR (self-service) — ตัดสินใจโหมด "ยืม"/"คืน" จาก activeLoan ของครุภัณฑ์ที่สแกนได้ */
   readonly showLoanForm = signal(false);
   readonly submittingLoan = signal(false);
@@ -168,6 +176,49 @@ export class QrScanComponent {
     return ref.afterClosed().pipe(map((result) => result === true));
   }
 
+  openTicketForm(): void {
+    this.form.reset({ description: '', urgency: 'MEDIUM', locationNote: '', contactPhone: '' });
+    this.clearTicketPhotos();
+    this.showForm.set(true);
+  }
+
+  closeTicketForm(): void {
+    this.clearTicketPhotos();
+    this.showForm.set(false);
+  }
+
+  private clearTicketPhotos(): void {
+    this.ticketPhotos().forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    this.ticketPhotos.set([]);
+    this.photoError.set(null);
+  }
+
+  onTicketPhotosSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = ''; // เคลียร์ input เพื่อให้เลือกไฟล์เดิมซ้ำได้อีกครั้งถ้าลบออกไปแล้ว
+
+    const remaining = this.MAX_TICKET_PHOTOS - this.ticketPhotos().length;
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'));
+    const accepted = imageFiles.slice(0, Math.max(0, remaining));
+
+    if (imageFiles.length < files.length || accepted.length < imageFiles.length || remaining <= 0) {
+      this.photoError.set(`แนบรูปได้สูงสุด ${this.MAX_TICKET_PHOTOS} ภาพ และรองรับเฉพาะไฟล์รูปภาพเท่านั้น`);
+    } else {
+      this.photoError.set(null);
+    }
+
+    const added = accepted.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+    this.ticketPhotos.update((list) => [...list, ...added]);
+  }
+
+  removeTicketPhoto(index: number): void {
+    const list = this.ticketPhotos();
+    URL.revokeObjectURL(list[index].previewUrl);
+    this.ticketPhotos.set(list.filter((_, i) => i !== index));
+    this.photoError.set(null);
+  }
+
   submitTicket(): void {
     const asset = this.asset();
     if (!asset || this.form.invalid || this.submitting()) return;
@@ -178,13 +229,14 @@ export class QrScanComponent {
         this.submitting.set(false);
         return;
       }
+      const files = this.ticketPhotos().map((p) => p.file);
       this.repairTicketService
-        .create({ assetId: asset.id, ...this.form.getRawValue() } as ICreateTicketPayload)
+        .create({ assetId: asset.id, ...this.form.getRawValue() } as ICreateTicketPayload, files)
         .subscribe({
           next: (ticket) => {
             this.submitting.set(false);
             this.createdTicketNumber.set(ticket.ticketNumber);
-            this.showForm.set(false);
+            this.closeTicketForm();
           },
           error: () => {
             this.submitting.set(false);

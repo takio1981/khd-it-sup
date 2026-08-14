@@ -49,6 +49,23 @@
         </div>
       </div>
 
+      @if (a.photos.length > 0) {
+        <div class="khd-card">
+          <h2 class="text-sm font-medium mb-3">รูปภาพครุภัณฑ์ ({{ a.photos.length }})</h2>
+          <div class="grid grid-cols-3 gap-2">
+            @for (photo of a.photos; track photo.id) {
+              <button
+                type="button"
+                class="appearance-none aspect-square rounded-lg overflow-hidden border border-black/5 dark:border-white/10"
+                (click)="viewingPhotoUrl.set(photo.dataUrl)"
+              >
+                <img [src]="photo.dataUrl" [alt]="photo.caption ?? a.assetNumber" class="w-full h-full object-cover" />
+              </button>
+            }
+          </div>
+        </div>
+      }
+
       @if (a.repairTickets.length > 0) {
         <div class="khd-card">
           <h2 class="text-sm font-medium mb-3">ประวัติการแจ้งซ่อมล่าสุด</h2>
@@ -118,8 +135,39 @@
             <input matInput formControlName="contactPhone" />
           </mat-form-field>
 
+          <div>
+            <p class="text-xs text-neutral-500 mb-2">
+              แนบรูปเครื่อง/อาการเสีย (ถ้ามี) — สูงสุด {{ MAX_TICKET_PHOTOS }} ภาพ
+            </p>
+            <div class="flex flex-wrap gap-2">
+              @for (photo of ticketPhotos(); track photo.previewUrl; let i = $index) {
+                <div class="relative h-16 w-16 rounded-lg overflow-hidden border border-black/10 dark:border-white/10">
+                  <img [src]="photo.previewUrl" alt="" class="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    class="absolute top-0 right-0 flex items-center justify-center h-5 w-5 rounded-bl-lg bg-black/60 text-white"
+                    (click)="removeTicketPhoto(i)"
+                  >
+                    <khd-icon name="x-mark" [size]="12" />
+                  </button>
+                </div>
+              }
+              @if (ticketPhotos().length < MAX_TICKET_PHOTOS) {
+                <label
+                  class="flex items-center justify-center h-16 w-16 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-400 cursor-pointer"
+                >
+                  <khd-icon name="paper-clip" [size]="22" />
+                  <input type="file" accept="image/*" multiple class="hidden" (change)="onTicketPhotosSelected($event)" />
+                </label>
+              }
+            </div>
+            @if (photoError(); as pe) {
+              <p class="text-xs text-rose-600 mt-1">{{ pe }}</p>
+            }
+          </div>
+
           <div class="flex gap-2">
-            <button mat-stroked-button type="button" class="!flex-1" (click)="showForm.set(false)">ยกเลิก</button>
+            <button mat-stroked-button type="button" class="!flex-1" (click)="closeTicketForm()">ยกเลิก</button>
             <button mat-flat-button color="primary" type="submit" class="!flex-1" [disabled]="form.invalid || submitting()">
               @if (submitting()) {
                 <mat-spinner diameter="18" class="!inline-block !mr-2" />
@@ -166,7 +214,7 @@
         </form>
       } @else {
         <div class="space-y-2">
-          <button mat-flat-button color="primary" class="!w-full !h-11" (click)="showForm.set(true)">
+          <button mat-flat-button color="primary" class="!w-full !h-11" (click)="openTicketForm()">
             <khd-icon name="wrench-screwdriver" [size]="18" class="!mr-2" />
             แจ้งซ่อมครุภัณฑ์นี้
           </button>
@@ -178,4 +226,20 @@
       }
     }
   </div>
+
+  @if (viewingPhotoUrl(); as url) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      (click)="viewingPhotoUrl.set(null)"
+    >
+      <img [src]="url" alt="" class="max-h-full max-w-full rounded-lg object-contain" />
+      <button
+        type="button"
+        class="absolute top-4 right-4 flex items-center justify-center h-9 w-9 rounded-full bg-white/10 text-white"
+        (click)="viewingPhotoUrl.set(null)"
+      >
+        <khd-icon name="x-mark" [size]="20" />
+      </button>
+    </div>
+  }
 </div>

@@ -120,14 +120,25 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | POST | `/qrcodes/assets/:assetId/generate` | `qrcode:generate` | สร้าง/สร้างใหม่ QR (encrypt asset id ด้วย AES → `qr_token`, regenerate ทำให้สติกเกอร์เดิมใช้ไม่ได้) |
 | GET | `/qrcodes/assets/:assetId/print` | `qrcode:print` | คืนรูป QR เป็น PNG ความละเอียดสูงสำหรับพิมพ์ติดสติกเกอร์ |
 | POST | `/qrcodes/bulk-print` | `qrcode:print` | สร้าง QR หลายรายการพร้อมกัน (array of assetId) |
-| GET | `/qrcodes/resolve/:token` | **public** (optional auth) | ถอดรหัส token → คืนข้อมูลครุภัณฑ์แบบย่อ สำหรับหน้า scan (รวม `activeLoan` — รายการยืมปัจจุบันที่ยังไม่คืน ถ้ามี) |
+| GET | `/qrcodes/resolve/:token` | **public** (optional auth) | ถอดรหัส token → คืนข้อมูลครุภัณฑ์แบบย่อ สำหรับหน้า scan (รวม `activeLoan` — รายการยืมปัจจุบันที่ยังไม่คืน ถ้ามี, และ `photos` — รูปครุภัณฑ์ทั้งหมดที่บันทึกไว้ สูงสุด 8 รูป) |
 
 > **หน้า `/qr/scan/:token`** (frontend, public landing page — ไม่ต้อง login เพื่อดูข้อมูลเครื่องและเลือกการกระทำ):
-> แสดงข้อมูลครุภัณฑ์ + ประวัติแจ้งซ่อมล่าสุด พร้อมปุ่ม "แจ้งซ่อมครุภัณฑ์นี้" (`POST /repair-tickets`) และ "ยืม/คืน
-> อุปกรณ์นี้" (`POST /asset-loans` หรือ `POST /asset-loans/:id/return` แล้วแต่ `activeLoan` ของครุภัณฑ์นั้น — ปุ่มสลับ
-> ป้ายกำกับอัตโนมัติเป็น "ยืม" หรือ "คืน" ตามว่าเครื่องว่างอยู่หรือมีคนยืมอยู่แล้ว โดยยังไม่ต้องรู้ว่าใครเป็นผู้ยืมก่อน
-> login) **ให้เลือก/กรอกฟอร์มได้ก่อนโดยไม่ต้อง login** — ระบบจะถาม username/password ผ่าน dialog เฉพาะตอนกด "บันทึก"
-> เท่านั้น (ไม่ redirect ไปหน้า login แยกอีกต่อไป) เมื่อ login ผ่าน dialog สำเร็จจะส่งรายการที่กรอกไว้ต่อให้อัตโนมัติ
+> แสดงข้อมูลครุภัณฑ์ + รูปภาพครุภัณฑ์ทั้งหมด (คลิกดูขยายได้) + ประวัติแจ้งซ่อมล่าสุด พร้อมปุ่ม "แจ้งซ่อมครุภัณฑ์นี้"
+> (`POST /repair-tickets`, แนบรูปเครื่อง/อาการเสียได้สูงสุด 3 ภาพในคำขอเดียวกัน) และ "ยืม/คืนอุปกรณ์นี้" (`POST
+> /asset-loans` หรือ `POST /asset-loans/:id/return` แล้วแต่ `activeLoan` ของครุภัณฑ์นั้น — ปุ่มสลับป้ายกำกับอัตโนมัติ
+> เป็น "ยืม" หรือ "คืน" ตามว่าเครื่องว่างอยู่หรือมีคนยืมอยู่แล้ว โดยยังไม่ต้องรู้ว่าใครเป็นผู้ยืมก่อน login) **ให้เลือก/
+> กรอกฟอร์มได้ก่อนโดยไม่ต้อง login** — ระบบจะถาม username/password ผ่าน dialog เฉพาะตอนกด "บันทึก" เท่านั้น (ไม่
+> redirect ไปหน้า login แยกอีกต่อไป) เมื่อ login ผ่าน dialog สำเร็จจะส่งรายการที่กรอกไว้ต่อให้อัตโนมัติ
+>
+> **รูปครุภัณฑ์ในหน้า scan (public)**: ฝังเป็น base64 data URL ตรงใน response ของ `resolve` เอง (ไม่ใช่ URL ไปที่
+> `/files/...` เหมือนหน้า admin ปกติ) เพราะไฟล์แนบทุกชนิดถูก serve ผ่าน endpoint ที่บังคับ authenticate เสมอ — ผู้สแกน
+> ที่ยังไม่ login จะโหลดรูปด้วย URL ตรงๆ ไม่ได้ จึงต้องฝังไฟล์มาให้เลยตอน resolve เฉพาะไฟล์รูปภาพ (jpg/png/webp/gif)
+> เท่านั้น อ่านไฟล์ไม่สำเร็จจะข้ามรูปนั้นไปเงียบๆ ไม่ทำให้ resolve ทั้งหมด fail
+>
+> **แนบรูปตอนแจ้งซ่อม**: `POST /repair-tickets` รองรับทั้ง `application/json` แบบเดิม และ `multipart/form-data` (field
+> `attachments`, สูงสุด 3 ไฟล์ — รูปภาพเท่านั้น ไม่เกิน 5 MB/ไฟล์) ในคำขอเดียวกัน ไม่ต้องเรียก `POST
+> /repair-tickets/:id/attachments` แยกภายหลัง และไม่ต้องมีสิทธิ์ `ticket:upload_attachment` เพิ่มเติม (แนบได้เฉพาะตอน
+> สร้างตั๋วของตัวเองเท่านั้น จึงปลอดภัยโดยไม่ต้องขยายสิทธิ์)
 
 ## 5.8 Repair Tickets — `/api/v1/repair-tickets` ✅
 
@@ -136,7 +147,7 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | GET | `/repair-tickets` | `ticket:read` / `ticket:track` (เห็นเฉพาะของตน) | รายการใบแจ้งซ่อม (filter: status, urgency, department, technician, date range) |
 | GET | `/repair-tickets/:id` | `ticket:read` / `ticket:track` | รายละเอียด + progress ของ workflow ปัจจุบัน |
 | GET | `/repair-tickets/:id/timeline` | `ticket:read` / `ticket:track` | Timeline แบบ immutable ทั้งหมด เรียงตามเวลา |
-| POST | `/repair-tickets` | `ticket:create` | สร้างใบแจ้งซ่อมใหม่ (auto-generate เลขที่ + เริ่ม workflow instance) |
+| POST | `/repair-tickets` | `ticket:create` | สร้างใบแจ้งซ่อมใหม่ (auto-generate เลขที่ + เริ่ม workflow instance) — รองรับแนบรูปเครื่อง/อาการเสียได้พร้อมกันสูงสุด 3 ภาพ (`multipart/form-data`, field `attachments`; ไม่แนบไฟล์ส่งเป็น `application/json` ตามปกติได้เหมือนเดิม) |
 | POST | `/repair-tickets/:id/receive` | `ticket:receive` | IT Officer รับเรื่อง (SUBMITTED → RECEIVED) |
 | POST | `/repair-tickets/:id/assign` | `ticket:assign` | มอบหมายช่างผู้รับผิดชอบ (ไม่เปลี่ยนสถานะ workflow) |
 | POST | `/repair-tickets/:id/transition` | `ticket:update_status` | เปลี่ยนสถานะตาม `workflow_transitions` ที่อนุญาต (ไม่รวม close/cancel) |

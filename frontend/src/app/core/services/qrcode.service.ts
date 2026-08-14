@@ -21,6 +21,13 @@ export interface IQrScanActiveLoan {
   expectedReturnDate: string | null;
 }
 
+export interface IQrScanPhoto {
+  id: string;
+  caption: string | null;
+  /** ฝังเป็น base64 data URL มาจาก backend อยู่แล้ว — ใช้ <img [src]> ได้ตรงๆ ไม่ต้อง fetch แบบ authenticated blob */
+  dataUrl: string;
+}
+
 export interface IQrScanResult {
   id: string;
   assetNumber: string;
@@ -29,6 +36,7 @@ export interface IQrScanResult {
   brand: string | null;
   status: string;
   photoUrl: string | null;
+  photos: IQrScanPhoto[];
   category: { nameTh: string; nameEn: string; icon: string | null };
   department: { nameTh: string } | null;
   room: { name: string } | null;
