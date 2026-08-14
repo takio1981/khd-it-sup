@@ -122,10 +122,12 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | POST | `/qrcodes/bulk-print` | `qrcode:print` | สร้าง QR หลายรายการพร้อมกัน (array of assetId) |
 | GET | `/qrcodes/resolve/:token` | **public** (optional auth) | ถอดรหัส token → คืนข้อมูลครุภัณฑ์แบบย่อ สำหรับหน้า scan (รวม `activeLoan` — รายการยืมปัจจุบันที่ยังไม่คืน ถ้ามี) |
 
-> **หน้า `/qr/scan/:token`** (frontend, public landing page ไม่ต้อง login ก่อนดูข้อมูลเครื่อง): แสดงข้อมูลครุภัณฑ์ +
-> ประวัติแจ้งซ่อมล่าสุด, หลัง login แล้วเลือกได้ทั้ง "แจ้งซ่อมครุภัณฑ์นี้" (`POST /repair-tickets`) และ (ถ้ามีสิทธิ์
-> `asset:loan`/`asset:loan_self`) "ยืม/คืนอุปกรณ์นี้" (`POST /asset-loans` หรือ `POST /asset-loans/:id/return` แล้วแต่
-> `activeLoan` ของครุภัณฑ์นั้น ๆ) — ปุ่มยืม/คืนสลับกันอัตโนมัติตามว่าเครื่องว่างอยู่, ตัวเองยืมอยู่, หรือคนอื่นยืมอยู่
+> **หน้า `/qr/scan/:token`** (frontend, public landing page — ไม่ต้อง login เพื่อดูข้อมูลเครื่องและเลือกการกระทำ):
+> แสดงข้อมูลครุภัณฑ์ + ประวัติแจ้งซ่อมล่าสุด พร้อมปุ่ม "แจ้งซ่อมครุภัณฑ์นี้" (`POST /repair-tickets`) และ "ยืม/คืน
+> อุปกรณ์นี้" (`POST /asset-loans` หรือ `POST /asset-loans/:id/return` แล้วแต่ `activeLoan` ของครุภัณฑ์นั้น — ปุ่มสลับ
+> ป้ายกำกับอัตโนมัติเป็น "ยืม" หรือ "คืน" ตามว่าเครื่องว่างอยู่หรือมีคนยืมอยู่แล้ว โดยยังไม่ต้องรู้ว่าใครเป็นผู้ยืมก่อน
+> login) **ให้เลือก/กรอกฟอร์มได้ก่อนโดยไม่ต้อง login** — ระบบจะถาม username/password ผ่าน dialog เฉพาะตอนกด "บันทึก"
+> เท่านั้น (ไม่ redirect ไปหน้า login แยกอีกต่อไป) เมื่อ login ผ่าน dialog สำเร็จจะส่งรายการที่กรอกไว้ต่อให้อัตโนมัติ
 
 ## 5.8 Repair Tickets — `/api/v1/repair-tickets` ✅
 

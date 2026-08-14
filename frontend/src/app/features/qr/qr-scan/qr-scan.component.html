@@ -63,12 +63,12 @@
         </div>
       }
 
-      @if (a.activeLoan && !canReturn(a)) {
+      @if (a.activeLoan; as loan) {
         <div class="khd-card !bg-amber-50 dark:!bg-amber-950/30 border border-amber-200 dark:border-amber-900">
           <div class="flex items-center gap-2">
             <khd-icon name="user-circle" [size]="18" class="text-amber-600 dark:text-amber-400" />
             <p class="text-sm text-amber-800 dark:text-amber-300">
-              อุปกรณ์นี้ถูกยืมอยู่โดย <span class="font-medium">{{ a.activeLoan.borrowerName }}</span>
+              อุปกรณ์นี้ถูกยืมอยู่โดย <span class="font-medium">{{ loan.borrowerName }}</span>
             </p>
           </div>
         </div>
@@ -90,12 +90,7 @@
         </div>
       }
 
-      @if (!authService.isAuthenticated()) {
-        <div class="khd-card text-center">
-          <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-3">กรุณาเข้าสู่ระบบก่อนแจ้งซ่อมหรือยืม-คืนครุภัณฑ์นี้</p>
-          <button mat-flat-button color="primary" (click)="goToLogin()">เข้าสู่ระบบ</button>
-        </div>
-      } @else if (showForm()) {
+      @if (showForm()) {
         <form [formGroup]="form" (ngSubmit)="submitTicket()" class="khd-card space-y-3">
           <h2 class="text-sm font-medium">แจ้งปัญหา — {{ a.assetNumber }}</h2>
 
@@ -135,14 +130,9 @@
         </form>
       } @else if (showLoanForm()) {
         <form [formGroup]="loanForm" (ngSubmit)="submitLoan()" class="khd-card space-y-3">
-          <h2 class="text-sm font-medium">{{ canReturn(a) ? 'คืนอุปกรณ์' : 'ยืมอุปกรณ์' }} — {{ a.assetNumber }}</h2>
+          <h2 class="text-sm font-medium">{{ isBorrowMode(a) ? 'ยืมอุปกรณ์' : 'คืนอุปกรณ์' }} — {{ a.assetNumber }}</h2>
 
-          @if (canReturn(a)) {
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>สภาพตอนคืน (ถ้ามี)</mat-label>
-              <textarea matInput formControlName="conditionOnReturn" rows="2"></textarea>
-            </mat-form-field>
-          } @else {
+          @if (isBorrowMode(a)) {
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>วัตถุประสงค์การยืม</mat-label>
               <input matInput formControlName="purpose" />
@@ -157,6 +147,11 @@
               <mat-label>สภาพตอนยืม (ถ้ามี)</mat-label>
               <textarea matInput formControlName="conditionOnBorrow" rows="2"></textarea>
             </mat-form-field>
+          } @else {
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>สภาพตอนคืน (ถ้ามี)</mat-label>
+              <textarea matInput formControlName="conditionOnReturn" rows="2"></textarea>
+            </mat-form-field>
           }
 
           <div class="flex gap-2">
@@ -165,7 +160,7 @@
               @if (submittingLoan()) {
                 <mat-spinner diameter="18" class="!inline-block !mr-2" />
               }
-              {{ canReturn(a) ? 'ยืนยันคืนอุปกรณ์' : 'ยืนยันยืมอุปกรณ์' }}
+              {{ isBorrowMode(a) ? 'ยืนยันยืมอุปกรณ์' : 'ยืนยันคืนอุปกรณ์' }}
             </button>
           </div>
         </form>
@@ -175,17 +170,10 @@
             <khd-icon name="wrench-screwdriver" [size]="18" class="!mr-2" />
             แจ้งซ่อมครุภัณฑ์นี้
           </button>
-          @if (canBorrow(a)) {
-            <button mat-stroked-button class="!w-full !h-11" (click)="openLoanForm()">
-              <khd-icon name="arrow-path" [size]="18" class="!mr-2" />
-              ยืมอุปกรณ์นี้
-            </button>
-          } @else if (canReturn(a)) {
-            <button mat-stroked-button class="!w-full !h-11" (click)="openLoanForm()">
-              <khd-icon name="arrow-path" [size]="18" class="!mr-2" />
-              คืนอุปกรณ์นี้
-            </button>
-          }
+          <button mat-stroked-button class="!w-full !h-11" (click)="openLoanForm()">
+            <khd-icon name="arrow-path" [size]="18" class="!mr-2" />
+            {{ isBorrowMode(a) ? 'ยืมอุปกรณ์นี้' : 'คืนอุปกรณ์นี้' }}
+          </button>
         </div>
       }
     }

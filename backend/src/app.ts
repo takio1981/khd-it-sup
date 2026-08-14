@@ -71,7 +71,6 @@ export function createApp(): Express {
   api.use('/departments', departmentRoutes);
   api.use('/positions', positionRoutes);
   api.use('/divisions', divisionRoutes);
-  api.use('/', locationRoutes);
   api.use('/assets', assetRoutes);
   api.use('/asset-loans', assetLoanRoutes);
   api.use('/qrcodes', qrcodeRoutes);
@@ -84,6 +83,11 @@ export function createApp(): Express {
   api.use('/spare-parts', sparePartRoutes);
   api.use('/vendors', vendorRoutes);
   api.use('/vendor-repair-orders', vendorRepairOrderRoutes);
+  // locationRoutes/documentRoutes mount ที่ root ('/') ต้องอยู่ท้ายสุดเสมอ — เพราะ Express จับคู่ prefix '/' กับทุก
+  // request ที่ผ่าน api router จึงต้องให้ router ที่ระบุ path เจาะจง (เช่น /qrcodes) ถูกลองจับคู่ก่อนเสมอ ไม่งั้น
+  // blanket `router.use(authenticate)` ภายใน locationRoutes จะดัก request ที่ยังไม่ login ทุกตัวไปก่อนถึง route
+  // สาธารณะอย่าง GET /qrcodes/resolve/:token (ใช้ optionalAuthenticate) ทำให้กลายเป็นต้อง login เสมอทั้งที่ตั้งใจให้ public
+  api.use('/', locationRoutes);
   api.use('/', documentRoutes);
   api.get('/files/:subdir/:filename', authenticate, serveFile);
   app.use(env.API_PREFIX, api);
