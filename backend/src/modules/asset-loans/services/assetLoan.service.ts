@@ -8,12 +8,18 @@ import type {
   ReturnAssetLoanDto,
   UpdateAssetLoanDto,
 } from '@modules/asset-loans/dto/assetLoan.dto';
-import { BadRequestError, ConflictError, NotFoundError } from '@common/errors';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import { notificationService, type AssetLoanNotificationEvent } from '@modules/notifications/services/notification.service';
 import { logger } from '@infrastructure/logger/logger';
+import { PERMISSIONS } from '@common/constants/permissions.const';
 import type { IRequestContext } from '@common/interfaces';
+
+/** true ถ้า ctx มีแค่สิทธิ์ self-service (asset:loan_self) ไม่มีสิทธิ์เต็ม (asset:loan) — ต้องบังคับยืม/คืนได้เฉพาะของตัวเอง */
+function isSelfServiceOnly(ctx: IRequestContext): boolean {
+  return !ctx.user.permissions.includes(PERMISSIONS.ASSET_LOAN) && ctx.user.permissions.includes(PERMISSIONS.ASSET_LOAN_SELF);
+}
 
 export type AssetLoanStatus = 'BORROWED' | 'OVERDUE' | 'RETURNED';
 
@@ -75,6 +81,10 @@ export class AssetLoanService {
   }
 
   async create(dto: CreateAssetLoanDto, ctx: IRequestContext) {
+    if (isSelfServiceOnly(ctx) && dto.borrowerId !== ctx.user.id) {
+      throw new ForbiddenError('สิทธิ์ยืม-คืนของคุณอนุญาตให้บันทึกการยืมสำหรับตัวเองเท่านั้น');
+    }
+
     const asset = await prisma.asset.findFirst({ where: { id: dto.assetId, deletedAt: null } });
     if (!asset) throw new NotFoundError('ไม่พบครุภัณฑ์ที่ระบุ');
 
@@ -105,7 +115,9 @@ export class AssetLoanService {
       ctx,
     );
 
-    await this.notifySafe('BORROWED', loan);
+    // ไม่ await — ตอนนี้แจ้งเตือนถึงทั้งผู้ยืม + เจ้าหน้าที่ไอทีทุกคน (ดู notification.service.ts) ทำให้ส่งอีเมลหลายฉบับ
+    // ถ้า await จะทำให้ endpoint นี้ตอบช้าลงมาก (วัดได้ ~10 วินาที) กระทบ UX ตอนยืมเองผ่านสแกน QR บนมือถือโดยตรง
+    void this.notifySafe('BORROWED', loan);
 
     return withStatus(loan);
   }
@@ -114,6 +126,10 @@ export class AssetLoanService {
     const existing = await this.repo.findById(id);
     if (!existing) throw new NotFoundError('ไม่พบรายการยืม');
     if (existing.actualReturnDate) throw new BadRequestError('รายการนี้คืนแล้ว');
+
+    if (isSelfServiceOnly(ctx) && existing.borrowerId !== ctx.user.id) {
+      throw new ForbiddenError('สิทธิ์ยืม-คืนของคุณอนุญาตให้บันทึกการคืนสำหรับรายการของตัวเองเท่านั้น');
+    }
 
     const loan = await this.repo.markReturned(id, ctx.user.id, dto.conditionOnReturn);
 
@@ -128,7 +144,7 @@ export class AssetLoanService {
       ctx,
     );
 
-    await this.notifySafe('RETURNED', loan);
+    void this.notifySafe('RETURNED', loan);
 
     return withStatus(loan);
   }

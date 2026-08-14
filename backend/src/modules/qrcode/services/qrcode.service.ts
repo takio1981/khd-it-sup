@@ -91,6 +91,17 @@ export class QrCodeService {
 
     await this.repo.logScan(assetId, scannedByUserId, ipAddress, userAgent);
 
-    return asset;
+    const { loans, ...rest } = asset;
+    const activeLoan = loans[0]
+      ? {
+          id: loans[0].id,
+          borrowerId: loans[0].borrower.id,
+          borrowerName: loans[0].borrower.fullName,
+          borrowDate: loans[0].borrowDate,
+          expectedReturnDate: loans[0].expectedReturnDate,
+        }
+      : null;
+
+    return { ...rest, activeLoan };
   }
 }

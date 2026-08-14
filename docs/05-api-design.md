@@ -92,18 +92,26 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 
 | Method | Path | Permission | คำอธิบาย |
 |---|---|---|---|
-| GET | `/asset-loans` | authenticated | รายการยืม-คืน (filter: status BORROWED/OVERDUE/RETURNED, keyword) |
-| GET | `/asset-loans/stats` | authenticated | สรุปจำนวน (ทั้งหมด/กำลังยืม/เกินกำหนด/คืนแล้ว) |
-| GET | `/asset-loans/chart` | authenticated | ข้อมูลกราฟ (ครุภัณฑ์/ผู้ยืมที่ถูกยืมบ่อยที่สุด) |
-| GET | `/asset-loans/:id` | authenticated | รายละเอียดรายการยืม-คืน |
-| POST | `/asset-loans` | `asset:loan` | บันทึกยืมครุภัณฑ์ (แจ้งเตือนผู้ยืมทุกช่องทางทันที) |
+| GET | `/asset-loans` | `asset:loan` | รายการยืม-คืนทั้งหมดทุกคน (filter: status BORROWED/OVERDUE/RETURNED, keyword) |
+| GET | `/asset-loans/stats` | `asset:loan` | สรุปจำนวน (ทั้งหมด/กำลังยืม/เกินกำหนด/คืนแล้ว) |
+| GET | `/asset-loans/chart` | `asset:loan` | ข้อมูลกราฟ (ครุภัณฑ์/ผู้ยืมที่ถูกยืมบ่อยที่สุด) |
+| GET | `/asset-loans/:id` | `asset:loan` | รายละเอียดรายการยืม-คืน |
+| POST | `/asset-loans` | `asset:loan` **หรือ** `asset:loan_self` | บันทึกยืมครุภัณฑ์ (แจ้งเตือนผู้ยืม + เจ้าหน้าที่ไอทีทุกคนทุกช่องทาง) — ผู้มีแค่ `asset:loan_self` ระบุ `borrowerId` เป็นใครก็ได้ไม่ได้ ต้องเป็นตัวเองเท่านั้น (บังคับที่ service layer, ไม่งั้น `403 FORBIDDEN`) |
 | PATCH | `/asset-loans/:id` | `asset:loan` | แก้ไขรายการยืม-คืน |
 | DELETE | `/asset-loans/:id` | `asset:loan` | ลบรายการยืม-คืน |
-| POST | `/asset-loans/:id/return` | `asset:loan` | บันทึกคืนครุภัณฑ์ (แจ้งเตือนผู้ยืมทุกช่องทาง) |
-| GET | `/asset-loans/export?format=xlsx\|csv` | authenticated | Export รายการยืม-คืน (ใช้ filter เดียวกับ `/asset-loans`, สูงสุด 5,000 แถว) |
+| POST | `/asset-loans/:id/return` | `asset:loan` **หรือ** `asset:loan_self` | บันทึกคืนครุภัณฑ์ (แจ้งเตือนผู้ยืม + เจ้าหน้าที่ไอทีทุกช่องทาง) — ผู้มีแค่ `asset:loan_self` คืนได้เฉพาะรายการที่ตัวเองเป็นผู้ยืมเท่านั้น |
+| GET | `/asset-loans/export?format=xlsx\|csv` | `asset:loan` | Export รายการยืม-คืน (ใช้ filter เดียวกับ `/asset-loans`, สูงสุด 5,000 แถว) |
 
 > รายการที่เกินกำหนดคืน (`expected_return_date` ผ่านไปแล้วและยังไม่คืน) ถูกแจ้งเตือนซ้ำอัตโนมัติทุกวันเวลา 08:00
 > (Asia/Bangkok) ผ่าน cron job ภายใน backend — ดู § 5.8
+>
+> **`asset:loan_self` (self-service ผ่านสแกน QR)**: role `USER` มีสิทธิ์นี้ (ไม่มี `asset:loan` เต็ม) ให้พนักงานทุกคนยืม-คืน
+> อุปกรณ์ของตัวเองได้เองผ่านหน้า `/qr/scan/:token` โดยไม่เห็น/แก้ไข/ลบรายการของผู้อื่น และเข้า `GET /asset-loans` (รายการเต็ม)
+> ไม่ได้ — เมนู "ยืมครุภัณฑ์-อุปกรณ์" ในแถบเมนูยังคงอิง `asset:loan` เดิมเท่านั้น ไม่แสดงให้ role `USER` เห็น
+>
+> **Performance**: การแจ้งเตือน (`notifyAssetLoanEvent`) ไม่ await ก่อนตอบ response (เดิม await ทำให้ endpoint ตอบช้าถึง
+> ~10 วินาทีตอนต้องส่งอีเมลหลายฉบับ — วัดได้จริงหลังเพิ่มการแจ้งเตือนเจ้าหน้าที่ไอที) แจ้งเตือนทำงานเป็น fire-and-forget
+> เบื้องหลังหลัง response ส่งกลับไปแล้ว (`notifySafe` ดัก error เองอยู่แล้วจึงไม่มีผลต่อความถูกต้องของ response)
 
 ## 5.7 QR Code — `/api/v1/qrcodes` ✅
 
@@ -112,7 +120,12 @@ Base URL: `/api/v1` (ต่อจาก path prefix ของ deployment เช�
 | POST | `/qrcodes/assets/:assetId/generate` | `qrcode:generate` | สร้าง/สร้างใหม่ QR (encrypt asset id ด้วย AES → `qr_token`, regenerate ทำให้สติกเกอร์เดิมใช้ไม่ได้) |
 | GET | `/qrcodes/assets/:assetId/print` | `qrcode:print` | คืนรูป QR เป็น PNG ความละเอียดสูงสำหรับพิมพ์ติดสติกเกอร์ |
 | POST | `/qrcodes/bulk-print` | `qrcode:print` | สร้าง QR หลายรายการพร้อมกัน (array of assetId) |
-| GET | `/qrcodes/resolve/:token` | **public** (optional auth) | ถอดรหัส token → คืนข้อมูลครุภัณฑ์แบบย่อ สำหรับหน้า scan |
+| GET | `/qrcodes/resolve/:token` | **public** (optional auth) | ถอดรหัส token → คืนข้อมูลครุภัณฑ์แบบย่อ สำหรับหน้า scan (รวม `activeLoan` — รายการยืมปัจจุบันที่ยังไม่คืน ถ้ามี) |
+
+> **หน้า `/qr/scan/:token`** (frontend, public landing page ไม่ต้อง login ก่อนดูข้อมูลเครื่อง): แสดงข้อมูลครุภัณฑ์ +
+> ประวัติแจ้งซ่อมล่าสุด, หลัง login แล้วเลือกได้ทั้ง "แจ้งซ่อมครุภัณฑ์นี้" (`POST /repair-tickets`) และ (ถ้ามีสิทธิ์
+> `asset:loan`/`asset:loan_self`) "ยืม/คืนอุปกรณ์นี้" (`POST /asset-loans` หรือ `POST /asset-loans/:id/return` แล้วแต่
+> `activeLoan` ของครุภัณฑ์นั้น ๆ) — ปุ่มยืม/คืนสลับกันอัตโนมัติตามว่าเครื่องว่างอยู่, ตัวเองยืมอยู่, หรือคนอื่นยืมอยู่
 
 ## 5.8 Repair Tickets — `/api/v1/repair-tickets` ✅
 

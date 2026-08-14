@@ -74,6 +74,12 @@
 - **Automated test coverage บางมาก** เทียบกับขนาดระบบปัจจุบัน — มีไฟล์ทดสอบหลักไม่กี่ไฟล์ (auth, jwt, pagination)
   ฟีเจอร์ใหญ่ที่เพิ่มทีหลัง (workflow เต็ม, ยืม-คืน, การแจ้งเตือนทุกช่องทาง, avatar, realtime) ยังไม่มี automated test
   คุ้มครองเลย ปัจจุบันพึ่งพาการทดสอบ end-to-end ผ่านเบราว์เซอร์จริงเป็นหลักแทน
-- **ไม่รองรับ PWA** — ติดตั้งเป็นแอปบนมือถือ (add to home screen) ไม่ได้
+
+**PWA + ยืม-คืนผ่านสแกน QR (self-service) — ✅ เสร็จสมบูรณ์แล้ว**: ติดตั้งเป็นแอปบนมือถือได้จริง (manifest.webmanifest +
+ไอคอนชุดครบ 192/512/512-maskable/apple-touch-icon + Angular Service Worker cache เฉพาะไฟล์ static ให้เปิดแอปซ้ำเร็วขึ้น —
+ตั้งใจไม่ cache ข้อมูล API เลย ไม่รองรับ offline submit) สแกน QR ที่ติดครุภัณฑ์ → login (ถ้ายังไม่ได้ login) → ดูข้อมูลเครื่อง
+→ เลือกแจ้งซ่อม หรือ ยืม-คืนอุปกรณ์นั้นได้จากหน้าเดียว (`/qr/scan/:token`) พนักงานทุกคน (role `USER`) ยืม-คืนอุปกรณ์ของตัวเองได้
+เองผ่านสิทธิ์ใหม่ `asset:loan_self` (จำกัดเฉพาะรายการของตัวเอง ไม่เห็น/แก้ของผู้อื่น แยกจาก `asset:loan` เต็มรูปแบบของ
+IT/Admin) แจ้งเตือนอัตโนมัติไปยังทั้งผู้ยืมและเจ้าหน้าที่ไอทีทุกคนทุกช่องทาง (อีเมล/Telegram/LINE/กระดิ่งในแอป)
 
 ดูต่อ: [Architecture](01-architecture.md) · [Database Design](03-database-design.md) · [API Design](05-api-design.md)

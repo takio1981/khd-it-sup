@@ -173,6 +173,11 @@ export class NotificationService {
     const actionLabel = ASSET_LOAN_EVENT_LABEL_TH[event];
     const detailUrl = `${env.FRONTEND_BASE_URL}/asset-loans`;
 
+    // BORROWED/RETURNED (ไม่รวม OVERDUE ซึ่งมี flow แจ้งเตือนอัตโนมัติของตัวเองอยู่แล้ว) ต้องแจ้งเจ้าหน้าที่ไอทีด้วย
+    // เดิมแจ้งแค่ผู้ยืม — สำคัญมากขึ้นตอนนี้เพราะพนักงานทั่วไปยืม-คืนเองผ่านสแกน QR ได้แล้ว (ไม่ผ่าน IT บันทึกให้เหมือนก่อน)
+    const notifyItOfficers = event === 'BORROWED' || event === 'RETURNED';
+    const itOfficers = notifyItOfficers ? await this.resolveItOfficers() : [];
+
     if (settings.emailEnabled && loan.borrower.email) {
       const html = buildAssetLoanEmailHtml({
         assetLabel,
@@ -188,6 +193,7 @@ export class NotificationService {
       });
       const subject = `[ยืมครุภัณฑ์-อุปกรณ์] ${actionLabel}`;
       await this.sendEmail(loan.borrower.email, subject, html, 'AssetLoan', loan.id);
+      await Promise.all(itOfficers.map((o) => this.sendEmail(o.email, subject, html, 'AssetLoan', loan.id)));
     }
 
     if (settings.telegramEnabled || settings.lineEnabled) {
@@ -223,11 +229,13 @@ export class NotificationService {
       }
     }
 
-    // แจ้งเตือนในแอป (bell) + realtime push ผ่าน Socket.IO ให้ผู้ยืม — ทำงานอิสระจากช่องทางภายนอก (email/telegram/line)
-    try {
-      await this.pushInApp(loan.borrower.id, actionLabel, `${assetLabel} — ${actionLabel}`, 'AssetLoan', loan.id);
-    } catch {
-      // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
+    // แจ้งเตือนในแอป (bell) + realtime push ผ่าน Socket.IO ให้ผู้ยืม + เจ้าหน้าที่ไอที — ทำงานอิสระจากช่องทางภายนอก (email/telegram/line)
+    for (const userId of [loan.borrower.id, ...itOfficers.map((o) => o.id)]) {
+      try {
+        await this.pushInApp(userId, actionLabel, `${assetLabel} — ${actionLabel}`, 'AssetLoan', loan.id);
+      } catch {
+        // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
+      }
     }
   }
 
@@ -325,6 +333,14 @@ export class NotificationService {
     const html = buildForgotPasswordEmailHtml({ fullName: user.fullName, username: user.username, resetUrl, expiresInMinutes });
     const subject = 'คำขอตั้งรหัสผ่านใหม่ — IT Service Desk';
     await this.sendEmail(user.email, subject, html);
+  }
+
+  /** เจ้าหน้าที่ไอทีที่ยังใช้งานอยู่ทุกคน — ใช้แจ้งเตือนเหตุการณ์ยืม-คืนอุปกรณ์ (คู่ขนานกับ resolveRecipients ของใบแจ้งซ่อม) */
+  private async resolveItOfficers(): Promise<{ id: string; email: string }[]> {
+    return prisma.user.findMany({
+      where: { isActive: true, deletedAt: null, role: { code: 'IT_OFFICER' } },
+      select: { id: true, email: true },
+    });
   }
 
   private async resolveRecipients(

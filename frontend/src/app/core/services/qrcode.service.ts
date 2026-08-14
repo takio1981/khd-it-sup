@@ -13,6 +13,14 @@ export interface IGenerateQrResult {
   dataUrl: string;
 }
 
+export interface IQrScanActiveLoan {
+  id: string;
+  borrowerId: string;
+  borrowerName: string;
+  borrowDate: string;
+  expectedReturnDate: string | null;
+}
+
 export interface IQrScanResult {
   id: string;
   assetNumber: string;
@@ -27,6 +35,7 @@ export interface IQrScanResult {
   floor: { name: string } | null;
   building: { name: string } | null;
   repairTickets: { id: string; ticketNumber: string; status: string; createdAt: string; closedAt: string | null }[];
+  activeLoan: IQrScanActiveLoan | null;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -52,6 +52,17 @@ export class QrCodeRepository {
           orderBy: { createdAt: 'desc' },
           take: 10,
         },
+        loans: {
+          where: { actualReturnDate: null },
+          select: {
+            id: true,
+            borrowDate: true,
+            expectedReturnDate: true,
+            borrower: { select: { id: true, fullName: true } },
+          },
+          orderBy: { borrowDate: 'desc' },
+          take: 1,
+        },
       },
     });
   }

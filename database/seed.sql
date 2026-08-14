@@ -32,7 +32,8 @@ INSERT INTO `permissions` (`id`, `code`, `module`, `description`) VALUES
 (UUID(), 'asset:update',          'asset',     'แก้ไขครุภัณฑ์'),
 (UUID(), 'asset:delete',          'asset',     'ลบครุภัณฑ์'),
 (UUID(), 'asset:view_history',    'asset',     'ดูประวัติครุภัณฑ์'),
-(UUID(), 'asset:loan',            'asset',     'บันทึกยืม-คืนอุปกรณ์'),
+(UUID(), 'asset:loan',            'asset',     'บันทึกยืม-คืนอุปกรณ์ (ดู/แก้ไข/ลบได้ทุกรายการ)'),
+(UUID(), 'asset:loan_self',       'asset',     'ยืม-คืนอุปกรณ์ของตนเองผ่านสแกน QR (self-service ไม่เห็น/แก้รายการของผู้อื่น)'),
 (UUID(), 'qrcode:generate',       'qrcode',    'สร้าง/พิมพ์ QR Code'),
 (UUID(), 'qrcode:print',          'qrcode',    'พิมพ์ QR Code'),
 (UUID(), 'ticket:create',         'ticket',    'แจ้งซ่อม'),
@@ -108,11 +109,11 @@ WHERE `code` IN (
   'vendor:view'
 );
 
--- User: create ticket, track ticket, print QR, view history
+-- User: create ticket, track ticket, print QR, view history, self-service borrow/return via QR scan
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_user, `id` FROM `permissions`
 WHERE `code` IN (
-  'asset:read','asset:view_history','qrcode:print',
+  'asset:read','asset:view_history','qrcode:print','asset:loan_self',
   'ticket:create','ticket:read','ticket:track'
 );
 
