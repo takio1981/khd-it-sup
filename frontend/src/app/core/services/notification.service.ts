@@ -53,9 +53,12 @@ export class NotificationService {
     });
   }
 
+  /** ดึงเฉพาะแจ้งเตือนที่ยังไม่ได้อ่าน — กระดิ่งแสดงเฉพาะรายการที่ยังไม่อ่านเท่านั้น ไม่ปนรายการที่อ่านแล้ว */
   refreshMyNotifications(): void {
     this.http
-      .get<IApiSuccessResponse<IInAppNotification[]>>(`${this.base}/me`, { params: { limit: String(BELL_LIST_LIMIT) } })
+      .get<IApiSuccessResponse<IInAppNotification[]>>(`${this.base}/me`, {
+        params: { limit: String(BELL_LIST_LIMIT), unreadOnly: 'true' },
+      })
       .subscribe((res) => this.items.set(res.data));
   }
 
@@ -63,21 +66,20 @@ export class NotificationService {
     this.http.get<IApiSuccessResponse<{ count: number }>>(`${this.base}/me/unread-count`).subscribe((res) => this.unreadCount.set(res.data.count));
   }
 
+  /** อ่านแล้วต้องหายจากกระดิ่งทันที เพราะรายการในกระดิ่งแสดงเฉพาะที่ยังไม่ได้อ่านเท่านั้น */
   markAsRead(id: string): void {
     const target = this.items().find((n) => n.id === id);
     if (!target || target.readAt) return;
 
     this.http.patch<IApiSuccessResponse<{ message: string }>>(`${this.base}/me/${id}/read`, {}).subscribe(() => {
-      const readAt = new Date().toISOString();
-      this.items.update((list) => list.map((n) => (n.id === id ? { ...n, readAt } : n)));
+      this.items.update((list) => list.filter((n) => n.id !== id));
       this.unreadCount.update((n) => Math.max(0, n - 1));
     });
   }
 
   markAllAsRead(): void {
     this.http.patch<IApiSuccessResponse<{ message: string }>>(`${this.base}/me/read-all`, {}).subscribe(() => {
-      const readAt = new Date().toISOString();
-      this.items.update((list) => list.map((n) => ({ ...n, readAt: n.readAt ?? readAt })));
+      this.items.set([]);
       this.unreadCount.set(0);
     });
   }

@@ -18,6 +18,7 @@ export type ExportNotificationLogsQueryDto = z.infer<typeof exportNotificationLo
 export const listMyNotificationsQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().optional(),
+  unreadOnly: z.coerce.boolean().optional(),
 });
 export type ListMyNotificationsQueryDto = z.infer<typeof listMyNotificationsQuerySchema>;
 

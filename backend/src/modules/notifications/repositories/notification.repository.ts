@@ -35,8 +35,12 @@ export class NotificationRepository {
   }
 
   /** แจ้งเตือนในแอป (bell) ของผู้ใช้คนหนึ่ง — recipient เก็บ userId แทนอีเมล/chat id สำหรับ channel="PUSH" */
-  async findManyForUser(userId: string, skip: number, take: number) {
-    const where: Prisma.NotificationLogWhereInput = { channel: 'PUSH', recipient: userId };
+  async findManyForUser(userId: string, skip: number, take: number, unreadOnly = false) {
+    const where: Prisma.NotificationLogWhereInput = {
+      channel: 'PUSH',
+      recipient: userId,
+      readAt: unreadOnly ? null : undefined,
+    };
     const [items, total] = await Promise.all([
       prisma.notificationLog.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
       prisma.notificationLog.count({ where }),

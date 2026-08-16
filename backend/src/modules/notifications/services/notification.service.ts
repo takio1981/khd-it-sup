@@ -424,9 +424,9 @@ export class NotificationService {
   }
 
   /** รายการแจ้งเตือนในแอป (bell) ของผู้ใช้ปัจจุบัน — เฉพาะ channel="PUSH" ของตนเองเท่านั้น */
-  async listMyNotifications(userId: string, pagination: { page?: number; limit?: number }) {
+  async listMyNotifications(userId: string, pagination: { page?: number; limit?: number; unreadOnly?: boolean }) {
     const normalized = normalizePagination(pagination);
-    const { items, total } = await this.repo.findManyForUser(userId, normalized.skip, normalized.take);
+    const { items, total } = await this.repo.findManyForUser(userId, normalized.skip, normalized.take, pagination.unreadOnly);
     return buildPaginatedResult(items, total, normalized);
   }
 
