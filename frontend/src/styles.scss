@@ -82,6 +82,12 @@ html.dark-theme ::-webkit-scrollbar-thumb {
   @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium;
 }
 
+// --- กระดิ่งแจ้งเตือน (mat-menu panel) — เนื้อหาข้างในกว้าง 320px (w-80) แต่ mat-menu panel ค่า default
+// max-width แคบกว่า (280px) ทำให้ปุ่ม "อ่านทั้งหมด" ในหัวกล่องถูกตัดขอบ ต้องขยาย panel ให้พอดีกับเนื้อหาจริง
+.khd-notif-menu-panel {
+  max-width: 340px !important;
+}
+
 // --- Table header — พื้นมิ้นต์อ่อนโทนแบรนด์ ใช้ร่วมกันทุกตาราง (mat-table) ในระบบ ---
 .mat-mdc-table .mat-mdc-header-row {
   background-color: rgb(0 108 69 / 0.06);
