@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
@@ -48,6 +48,7 @@ export class UserListComponent {
   private readonly userService = inject(UserService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly route = inject(ActivatedRoute);
   readonly authService = inject(AuthService);
 
   readonly displayedColumns = ['fullName', 'username', 'role', 'department', 'status', 'actions'];
@@ -66,6 +67,7 @@ export class UserListComponent {
       this.pageIndex.set(0);
       this.fetch();
     });
+    this.keyword = this.route.snapshot.queryParamMap.get('keyword') ?? '';
     this.fetch();
   }
 

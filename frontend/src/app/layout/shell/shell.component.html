@@ -1,7 +1,7 @@
 <mat-sidenav-container class="h-screen">
   <mat-sidenav
     [mode]="isMobile() ? 'over' : 'side'"
-    [opened]="isMobile() ? sidenavOpened() : true"
+    [opened]="sidenavOpened()"
     class="!w-64 !border-r-0 shadow-soft"
   >
     <div class="flex h-16 items-center gap-2 px-5 border-b border-black/5 dark:border-white/10">
@@ -33,13 +33,31 @@
     }
 
     <mat-toolbar class="relative z-10 !bg-white dark:!bg-neutral-900 !border-b !border-black/5 dark:!border-white/10 !px-3 md:!px-6 shadow-soft">
-      @if (isMobile()) {
-        <button mat-icon-button (click)="toggleSidenav()" aria-label="เปิดเมนู">
-          <khd-icon name="bars-3" [size]="22" />
+      <div
+        class="flex items-center rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.06] overflow-hidden shrink-0"
+      >
+        <button
+          mat-icon-button
+          class="!rounded-none !h-9 !w-9 !leading-9"
+          (click)="toggleSidenav()"
+          [matTooltip]="sidenavOpened() ? 'ซ่อนเมนู' : 'แสดงเมนู'"
+          [attr.aria-label]="sidenavOpened() ? 'ซ่อนเมนู' : 'แสดงเมนู'"
+        >
+          <khd-icon name="bars-3" [size]="18" />
         </button>
-      }
+        <span class="h-4 w-px bg-black/10 dark:bg-white/10"></span>
+        <button
+          mat-icon-button
+          class="!rounded-none !h-9 !w-9 !leading-9"
+          (click)="openSearch()"
+          matTooltip="ค้นหา (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้)"
+          aria-label="ค้นหา (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้)"
+        >
+          <khd-icon name="magnifying-glass" [size]="18" />
+        </button>
+      </div>
 
-      <span class="hidden md:block text-sm text-neutral-500 truncate">{{ orgName() }}</span>
+      <span class="hidden md:block text-sm text-neutral-500 truncate ml-3">{{ orgName() }}</span>
       <span class="flex-1"></span>
 
       <button mat-icon-button [matTooltip]="themeService.mode() === 'dark' ? 'สลับเป็นโหมดสว่าง' : 'สลับเป็นโหมดมืด'" (click)="toggleTheme()">

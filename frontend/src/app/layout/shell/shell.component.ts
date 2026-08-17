@@ -20,6 +20,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
 import { PageWatermarkComponent } from '../../shared/components/page-watermark/page-watermark.component';
 import { UserAvatarComponent } from '../../shared/components/user-avatar/user-avatar.component';
 import { ProfileDialogComponent } from '../../shared/components/profile-dialog/profile-dialog.component';
+import { GlobalSearchDialogComponent } from '../../shared/components/global-search-dialog/global-search-dialog.component';
 import { NAV_ITEMS } from '../nav-items';
 import { environment } from '../../../environments/environment';
 import type { IInAppNotification } from '../../core/models/notification.model';
@@ -110,6 +111,10 @@ export class ShellComponent {
 
   openProfileDialog(): void {
     this.dialog.open(ProfileDialogComponent, { width: '380px' });
+  }
+
+  openSearch(): void {
+    this.dialog.open(GlobalSearchDialogComponent, { width: '640px', maxWidth: '92vw', autoFocus: true, panelClass: 'khd-search-dialog-panel' });
   }
 
   logout(): void {

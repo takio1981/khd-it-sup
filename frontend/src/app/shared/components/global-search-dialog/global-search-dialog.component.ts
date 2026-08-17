@@ -1,0 +1,77 @@
+import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { catchError, debounceTime, distinctUntilChanged, of, Subject, switchMap } from 'rxjs';
+import { SearchService, type IGlobalSearchResult } from '../../../core/services/search.service';
+import { IconComponent } from '../icon/icon.component';
+import { getStatusLabel } from '../../../core/constants/status.const';
+
+const EMPTY_RESULT: IGlobalSearchResult = { tickets: [], assets: [], users: [] };
+
+/** ค้นหาข้ามระบบ (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้) — เปิดจากปุ่มแว่นขยายในแถบด้านบน */
+@Component({
+  selector: 'khd-global-search-dialog',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [FormsModule, MatDialogModule, MatProgressSpinnerModule, IconComponent],
+  templateUrl: './global-search-dialog.component.html',
+})
+export class GlobalSearchDialogComponent {
+  private readonly dialogRef = inject(MatDialogRef<GlobalSearchDialogComponent>);
+  private readonly router = inject(Router);
+  private readonly searchService = inject(SearchService);
+
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+
+  readonly getStatusLabel = getStatusLabel;
+
+  keyword = '';
+  readonly loading = signal(false);
+  readonly searched = signal(false);
+  readonly result = signal<IGlobalSearchResult>(EMPTY_RESULT);
+  private readonly keyword$ = new Subject<string>();
+
+  readonly hasAnyResult = () =>
+    this.result().tickets.length > 0 || this.result().assets.length > 0 || this.result().users.length > 0;
+
+  constructor() {
+    this.keyword$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((q) => {
+          const trimmed = q.trim();
+          if (!trimmed) {
+            this.loading.set(false);
+            this.searched.set(false);
+            return of(EMPTY_RESULT);
+          }
+          this.loading.set(true);
+          return this.searchService.search(trimmed).pipe(catchError(() => of(EMPTY_RESULT)));
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe((res) => {
+        this.loading.set(false);
+        this.searched.set(this.keyword.trim().length > 0);
+        this.result.set(res);
+      });
+  }
+
+  onKeywordChange(): void {
+    this.keyword$.next(this.keyword);
+  }
+
+  goTo(link: string): void {
+    this.dialogRef.close();
+    void this.router.navigateByUrl(link);
+  }
+
+  goToUsers(username: string): void {
+    this.dialogRef.close();
+    void this.router.navigate(['/users'], { queryParams: { keyword: username } });
+  }
+}
