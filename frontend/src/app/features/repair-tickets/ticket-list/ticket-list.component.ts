@@ -56,7 +56,7 @@ export class TicketListComponent {
   readonly urgencyLabels = URGENCY_LABEL_TH;
   readonly urgencyColor = URGENCY_COLOR;
 
-  readonly displayedColumns = ['ticketNumber', 'description', 'urgency', 'status', 'technician', 'createdAt'];
+  readonly displayedColumns = ['ticketNumber', 'description', 'urgency', 'status', 'reportedBy', 'technician', 'createdAt'];
   readonly tickets = signal<IRepairTicketListItem[]>([]);
   readonly total = signal(0);
   readonly pageSize = signal(20);

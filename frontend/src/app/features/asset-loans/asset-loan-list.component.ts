@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin, type Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
@@ -61,6 +62,7 @@ export class AssetLoanListComponent {
   private readonly assetLoanService = inject(AssetLoanService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly route = inject(ActivatedRoute);
 
   readonly statusLabel = STATUS_LABEL_TH;
   readonly statusColor = STATUS_COLOR;
@@ -77,6 +79,7 @@ export class AssetLoanListComponent {
   keyword = '';
 
   constructor() {
+    this.keyword = this.route.snapshot.queryParamMap.get('keyword') ?? '';
     this.fetch();
   }
 

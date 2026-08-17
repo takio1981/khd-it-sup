@@ -1,5 +1,6 @@
 import { AssetService } from '@modules/assets/services/asset.service';
 import { UserService } from '@modules/users/services/user.service';
+import { AssetLoanService } from '@modules/asset-loans/services/assetLoan.service';
 import { repairTicketService } from '@modules/repair-tickets/services/repairTicket.service';
 import { PERMISSIONS } from '@common/constants/permissions.const';
 import type { IRequestContext } from '@common/interfaces';
@@ -8,11 +9,13 @@ const RESULT_LIMIT = 5;
 
 const assetService = new AssetService();
 const userService = new UserService();
+const assetLoanService = new AssetLoanService();
 
 export interface IGlobalSearchResult {
   tickets: Array<{ id: string; ticketNumber: string; description: string; status: string; assetLabel: string | null }>;
   assets: Array<{ id: string; assetNumber: string; label: string; status: string }>;
   users: Array<{ id: string; fullName: string; username: string; email: string | null }>;
+  loans: Array<{ id: string; assetLabel: string; borrowerName: string; status: string }>;
 }
 
 /** ค้นหาข้ามระบบ (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้) — แต่ละประเภทแสดงเฉพาะเมื่อผู้ใช้มีสิทธิ์ดูข้อมูลประเภทนั้นเท่านั้น
@@ -24,11 +27,13 @@ export class SearchService {
     const canTicket = perms.includes(PERMISSIONS.TICKET_READ) || perms.includes(PERMISSIONS.TICKET_TRACK);
     const canAsset = perms.includes(PERMISSIONS.ASSET_READ);
     const canUser = perms.includes(PERMISSIONS.USER_READ);
+    const canLoan = perms.includes(PERMISSIONS.ASSET_LOAN);
 
-    const [ticketResult, assetResult, userResult] = await Promise.all([
+    const [ticketResult, assetResult, userResult, loanResult] = await Promise.all([
       canTicket ? repairTicketService.list({ keyword, page: 1, limit: RESULT_LIMIT }, ctx) : null,
       canAsset ? assetService.list({ keyword, page: 1, limit: RESULT_LIMIT }) : null,
       canUser ? userService.list({ keyword, page: 1, limit: RESULT_LIMIT }) : null,
+      canLoan ? assetLoanService.list({ keyword, page: 1, limit: RESULT_LIMIT }) : null,
     ]);
 
     return {
@@ -50,6 +55,12 @@ export class SearchService {
         fullName: u.fullName,
         username: u.username,
         email: u.email,
+      })),
+      loans: (loanResult?.items ?? []).map((l) => ({
+        id: l.id,
+        assetLabel: [l.asset.brand, l.asset.model].filter(Boolean).join(' ') || l.asset.assetNumber,
+        borrowerName: l.borrower.fullName,
+        status: l.status,
       })),
     };
   }

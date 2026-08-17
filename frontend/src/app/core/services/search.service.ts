@@ -26,10 +26,18 @@ export interface IGlobalSearchUser {
   email: string | null;
 }
 
+export interface IGlobalSearchLoan {
+  id: string;
+  assetLabel: string;
+  borrowerName: string;
+  status: 'BORROWED' | 'OVERDUE' | 'RETURNED';
+}
+
 export interface IGlobalSearchResult {
   tickets: IGlobalSearchTicket[];
   assets: IGlobalSearchAsset[];
   users: IGlobalSearchUser[];
+  loans: IGlobalSearchLoan[];
 }
 
 /** ค้นหาข้ามระบบ (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้) — ผลลัพธ์แต่ละประเภทถูกกรองตามสิทธิ์ของผู้ใช้แล้วโดย backend */

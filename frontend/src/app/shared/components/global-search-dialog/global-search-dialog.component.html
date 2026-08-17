@@ -81,5 +81,25 @@
         </button>
       }
     }
+
+    @if (result().loans.length > 0) {
+      <p class="px-2 pt-3 pb-1 text-xs font-medium text-neutral-400 flex items-center gap-1.5">
+        <khd-icon name="arrow-path" [size]="14" />
+        ยืม-คืนอุปกรณ์
+      </p>
+      @for (l of result().loans; track l.id) {
+        <button
+          type="button"
+          (click)="goToLoans()"
+          class="w-full text-left rounded-lg px-2.5 py-2 hover:bg-black/5 dark:hover:bg-white/5 flex items-start gap-2"
+        >
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium truncate">{{ l.assetLabel }}</p>
+            <p class="text-xs text-neutral-500 truncate">ผู้ยืม: {{ l.borrowerName }}</p>
+          </div>
+          <span class="text-[11px] text-neutral-500 shrink-0 mt-0.5">{{ getLoanStatusLabel(l.status) }}</span>
+        </button>
+      }
+    }
   }
 </div>

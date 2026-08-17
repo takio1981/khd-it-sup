@@ -9,7 +9,13 @@ import { SearchService, type IGlobalSearchResult } from '../../../core/services/
 import { IconComponent } from '../icon/icon.component';
 import { getStatusLabel } from '../../../core/constants/status.const';
 
-const EMPTY_RESULT: IGlobalSearchResult = { tickets: [], assets: [], users: [] };
+const EMPTY_RESULT: IGlobalSearchResult = { tickets: [], assets: [], users: [], loans: [] };
+
+const LOAN_STATUS_LABEL_TH: Record<string, string> = {
+  BORROWED: 'กำลังยืม',
+  OVERDUE: 'เกินกำหนด',
+  RETURNED: 'คืนแล้ว',
+};
 
 /** ค้นหาข้ามระบบ (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้) — เปิดจากปุ่มแว่นขยายในแถบด้านบน */
 @Component({
@@ -27,6 +33,7 @@ export class GlobalSearchDialogComponent {
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
   readonly getStatusLabel = getStatusLabel;
+  readonly getLoanStatusLabel = (status: string) => LOAN_STATUS_LABEL_TH[status] ?? status;
 
   keyword = '';
   readonly loading = signal(false);
@@ -35,7 +42,10 @@ export class GlobalSearchDialogComponent {
   private readonly keyword$ = new Subject<string>();
 
   readonly hasAnyResult = () =>
-    this.result().tickets.length > 0 || this.result().assets.length > 0 || this.result().users.length > 0;
+    this.result().tickets.length > 0 ||
+    this.result().assets.length > 0 ||
+    this.result().users.length > 0 ||
+    this.result().loans.length > 0;
 
   constructor() {
     this.keyword$
@@ -73,5 +83,10 @@ export class GlobalSearchDialogComponent {
   goToUsers(username: string): void {
     this.dialogRef.close();
     void this.router.navigate(['/users'], { queryParams: { keyword: username } });
+  }
+
+  goToLoans(): void {
+    this.dialogRef.close();
+    void this.router.navigate(['/asset-loans'], { queryParams: { keyword: this.keyword.trim() } });
   }
 }
