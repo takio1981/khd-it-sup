@@ -24,6 +24,7 @@ export type Permission =
   | 'ticket:close'
   | 'ticket:accept'
   | 'ticket:approve'
+  | 'ticket:approve_unit_head'
   | 'user:create'
   | 'user:read'
   | 'user:update'
@@ -53,6 +54,7 @@ export interface IAuthUser {
   mustChangePassword: boolean;
   avatarUrl: string | null;
   gender: Gender | null;
+  isUnitHead: boolean;
 }
 
 export interface ILoginRequest {

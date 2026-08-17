@@ -74,6 +74,7 @@ export class UserService {
       roleId: dto.roleId,
       departmentId: dto.departmentId,
       positionId: dto.positionId,
+      isUnitHead: dto.isUnitHead ?? false,
       mustChangePassword: true,
       createdBy: ctx.user.id,
     });

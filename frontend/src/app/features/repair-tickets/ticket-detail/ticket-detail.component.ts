@@ -146,6 +146,14 @@ export class TicketDetailComponent {
   readonly isOwnTicketReporter = computed(
     () => !!this.ticket() && this.ticket()!.reportedBy.id === this.authService.currentUser()?.id,
   );
+
+  readonly hasFullApprovePermission = computed(() => this.authService.hasAnyPermission(['ticket:approve']));
+  /** หัวหน้างาน/กลุ่มงานลงนามได้เฉพาะใบแจ้งซ่อมของหน่วยงานตนเอง (ต้องตั้งค่า isUnitHead ไว้ในข้อมูลผู้ใช้งานด้วย) */
+  readonly isUnitHeadOfTicketDept = computed(() => {
+    const user = this.authService.currentUser();
+    return !!user?.isUnitHead && !!this.ticket()?.department && user.departmentId === this.ticket()!.department!.id;
+  });
+  readonly canShowApproveUnitHead = computed(() => this.hasFullApprovePermission() || this.isUnitHeadOfTicketDept());
   readonly canApproveUnitHead = computed(() => !!this.ticket() && !this.ticket()!.unitHeadApprovedAt);
   readonly canApproveDigitalHealthHead = computed(
     () => !!this.ticket() && !!this.ticket()!.inspectedAt && !this.ticket()!.digitalHealthHeadApprovedAt,

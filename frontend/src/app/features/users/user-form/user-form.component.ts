@@ -6,6 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UserService, type IRole } from '../../../core/services/user.service';
 import { DepartmentService } from '../../../core/services/department.service';
@@ -28,6 +29,7 @@ export interface IUserFormDialogData {
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatProgressSpinnerModule,
     UserAvatarComponent,
   ],
@@ -62,6 +64,7 @@ export class UserFormComponent {
     roleId: [this.data.user?.role.id ?? '', Validators.required],
     departmentId: [this.data.user?.department?.id ?? ''],
     positionId: [this.data.user?.position?.id ?? ''],
+    isUnitHead: [this.data.user?.isUnitHead ?? false],
   });
 
   readonly genderPreview = toSignal(this.form.controls.gender.valueChanges, { initialValue: this.form.controls.gender.value });

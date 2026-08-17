@@ -166,7 +166,12 @@
 
         <div class="khd-doc-signrow">
           <div class="khd-doc-signbox">
-            <p class="khd-doc-signline">ลงชื่อ .................... เจ้าหน้าที่ผู้ดำเนินการซ่อม</p>
+            @if (data.ticket.summarySignature) {
+              <img [src]="data.ticket.summarySignature" class="khd-doc-signimg" alt="ลายเซ็นเจ้าหน้าที่ผู้ดำเนินการซ่อม" />
+              <p class="khd-doc-signname">เจ้าหน้าที่ผู้ดำเนินการซ่อม</p>
+            } @else {
+              <p class="khd-doc-signline">ลงชื่อ .................... เจ้าหน้าที่ผู้ดำเนินการซ่อม</p>
+            }
             <p class="khd-doc-signname">({{ data.ticket.inspectedBy?.fullName ?? '....................' }})</p>
             <p class="khd-doc-signdate">ตำแหน่ง ....................</p>
             <p class="khd-doc-signdate">ลงวันที่ {{ data.ticket.inspectedAt ? thaiDate(data.ticket.inspectedAt) : '....................' }}</p>

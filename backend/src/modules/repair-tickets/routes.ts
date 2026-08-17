@@ -155,12 +155,15 @@ router.patch(
  * /repair-tickets/{id}/approve-unit-head:
  *   post:
  *     tags: [Repair Tickets]
- *     summary: หัวหน้างาน/กลุ่มงานของผู้แจ้งซ่อมลงนามรับทราบคำขอ (ส่วนที่ 1 ของแบบฟอร์ม, endorsement เท่านั้น)
+ *     summary: >
+ *       หัวหน้างาน/กลุ่มงานของผู้แจ้งซ่อมลงนามรับทราบคำขอ (ส่วนที่ 1 ของแบบฟอร์ม, endorsement เท่านั้น) — ผู้มีสิทธิ์
+ *       ticket:approve_unit_head เท่านั้น (ไม่มี ticket:approve เต็ม) ต้องตั้งค่า is_unit_head ไว้และอยู่หน่วยงานเดียว
+ *       กับผู้แจ้งซ่อมด้วย
  *     security: [{ bearerAuth: [] }]
  */
 router.post(
   '/:id/approve-unit-head',
-  requirePermission(PERMISSIONS.TICKET_APPROVE),
+  requirePermission(PERMISSIONS.TICKET_APPROVE, PERMISSIONS.TICKET_APPROVE_UNIT_HEAD),
   validateRequest({ params: ticketIdParamSchema }),
   ticketController.approveUnitHead,
 );

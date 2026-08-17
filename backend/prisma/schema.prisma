@@ -139,6 +139,7 @@ model User {
   departmentId        String?   @map("department_id") @db.Char(36)
   positionId          String?   @map("position_id") @db.Char(36)
   isActive            Boolean   @default(true) @map("is_active")
+  isUnitHead          Boolean   @default(false) @map("is_unit_head")
   mustChangePassword  Boolean   @default(false) @map("must_change_password")
   lastLoginAt         DateTime? @map("last_login_at")
   createdAt           DateTime  @default(now()) @map("created_at")

@@ -11,6 +11,7 @@ export const createUserSchema = z.object({
   roleId: z.string().uuid('roleId ต้องเป็น UUID'),
   departmentId: z.string().uuid().optional(),
   positionId: z.string().uuid().optional(),
+  isUnitHead: z.boolean().optional(),
 });
 export type CreateUserDto = z.infer<typeof createUserSchema>;
 
@@ -24,6 +25,7 @@ export const updateUserSchema = z.object({
   departmentId: z.string().uuid().nullable().optional(),
   positionId: z.string().uuid().nullable().optional(),
   isActive: z.boolean().optional(),
+  isUnitHead: z.boolean().optional(),
 });
 export type UpdateUserDto = z.infer<typeof updateUserSchema>;
 

@@ -14,6 +14,7 @@ export interface IAuthUser {
   mustChangePassword: boolean;
   avatarUrl: string | null;
   gender: Gender | null;
+  isUnitHead: boolean;
 }
 
 export interface IPaginationQuery {

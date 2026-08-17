@@ -131,11 +131,11 @@
               <khd-icon name="check-circle" [size]="14" class="!inline text-emerald-500 !mr-1" />
               หัวหน้างาน/กลุ่มงานลงนามแล้ว โดย {{ t.unitHeadApprovedBy?.fullName }} · {{ t.unitHeadApprovedAt | date: 'd MMM yyyy, HH:mm' }}
             </p>
-          } @else {
+          } @else if (canShowApproveUnitHead()) {
             <button
               mat-stroked-button
               class="!w-full !text-xs"
-              *khdHasPermission="'ticket:approve'"
+              *khdHasPermission="['ticket:approve', 'ticket:approve_unit_head']"
               [disabled]="acting()"
               (click)="approveUnitHead()"
             >

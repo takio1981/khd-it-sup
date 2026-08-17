@@ -7,6 +7,7 @@ export interface IUserListItem {
   avatarUrl: string | null;
   gender: 'MALE' | 'FEMALE' | null;
   isActive: boolean;
+  isUnitHead: boolean;
   mustChangePassword: boolean;
   lastLoginAt: string | null;
   role: { id: string; code: string; nameTh: string };
@@ -24,6 +25,7 @@ export interface ICreateUserPayload {
   roleId: string;
   departmentId?: string;
   positionId?: string;
+  isUnitHead?: boolean;
 }
 
 export interface IUserStats {

@@ -95,6 +95,7 @@ CREATE TABLE `users` (
   `department_id`    CHAR(36)     NULL,
   `position_id`      CHAR(36)     NULL,
   `is_active`        TINYINT(1)   NOT NULL DEFAULT 1,
+  `is_unit_head`     TINYINT(1)   NOT NULL DEFAULT 0 COMMENT 'เป็นหัวหน้างาน/กลุ่มงาน — ลงนามอนุมัติคำขอแจ้งซ่อมของบุคลากรในหน่วยงาน (department_id) เดียวกันได้',
   `must_change_password` TINYINT(1) NOT NULL DEFAULT 0,
   `last_login_at`    DATETIME(3)  NULL,
   `created_at`       DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

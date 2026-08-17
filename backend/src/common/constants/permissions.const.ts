@@ -27,6 +27,7 @@ export const PERMISSIONS = {
   TICKET_CLOSE: 'ticket:close',
   TICKET_ACCEPT: 'ticket:accept',
   TICKET_APPROVE: 'ticket:approve',
+  TICKET_APPROVE_UNIT_HEAD: 'ticket:approve_unit_head',
 
   USER_CREATE: 'user:create',
   USER_READ: 'user:read',

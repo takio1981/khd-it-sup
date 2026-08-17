@@ -338,10 +338,21 @@ export class RepairTicketService {
     return ticket;
   }
 
-  /** ส่วนที่ 1 ของแบบฟอร์มกระดาษ — หัวหน้างาน/กลุ่มงานของผู้แจ้งซ่อมลงนามรับทราบ/อนุมัติคำขอ (endorsement เท่านั้น ไม่ block workflow) */
+  /** ส่วนที่ 1 ของแบบฟอร์มกระดาษ — หัวหน้างาน/กลุ่มงานของผู้แจ้งซ่อมลงนามรับทราบ/อนุมัติคำขอ (endorsement เท่านั้น ไม่ block workflow)
+   *  ผู้มีสิทธิ์ ticket:approve (แอดมิน/ไอที) ลงนามแทนใบไหนก็ได้เหมือนเดิม — ส่วนผู้มีแค่ ticket:approve_unit_head ต้องตั้งค่า
+   *  is_unit_head ไว้จริงและอยู่หน่วยงานเดียวกับใบแจ้งซ่อมนี้เท่านั้นถึงจะลงนามได้ (เช็คสดจาก DB ไม่ใช้ค่าจาก JWT เพื่อให้
+   *  แอดมินเปิด/ปิด is_unit_head แล้วมีผลทันทีโดยไม่ต้องรอ token หมดอายุ) */
   async approveUnitHead(id: string, ctx: IRequestContext) {
     const existing = await this.repo.findById(id);
     if (!existing) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
+
+    const canApproveAny = ctx.user.permissions.includes(PERMISSIONS.TICKET_APPROVE);
+    if (!canApproveAny) {
+      const approver = await prisma.user.findUnique({ where: { id: ctx.user.id }, select: { isUnitHead: true, departmentId: true } });
+      if (!approver?.isUnitHead || !existing.departmentId || approver.departmentId !== existing.departmentId) {
+        throw new ForbiddenError('คุณเซ็นลงนามอนุมัติได้เฉพาะใบแจ้งซ่อมของหน่วยงานที่ท่านเป็นหัวหน้างาน/กลุ่มงานเท่านั้น');
+      }
+    }
 
     const ticket = await this.repo.update(id, { unitHeadApprovedByUserId: ctx.user.id, unitHeadApprovedAt: new Date() });
 

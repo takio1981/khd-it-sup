@@ -38,6 +38,7 @@ function toAuthUser(user: UserWithRole): IAuthUser {
     mustChangePassword: user.mustChangePassword,
     avatarUrl: user.avatarUrl,
     gender: user.gender,
+    isUnitHead: user.isUnitHead,
   };
 }
 

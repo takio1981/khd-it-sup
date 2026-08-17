@@ -46,6 +46,7 @@ INSERT INTO `permissions` (`id`, `code`, `module`, `description`) VALUES
 (UUID(), 'ticket:cancel',         'ticket',    'ยกเลิกใบแจ้งซ่อม'),
 (UUID(), 'ticket:close',          'ticket',    'ปิดงานซ่อม'),
 (UUID(), 'ticket:accept',         'ticket',    'เซ็นรับงานคืน (ผู้แจ้งซ่อมยืนยันรับมอบอุปกรณ์ของตนเองเท่านั้น)'),
+(UUID(), 'ticket:approve_unit_head', 'ticket', 'ลงนามอนุมัติ (หัวหน้างาน/กลุ่มงาน) เฉพาะใบแจ้งซ่อมของหน่วยงานตนเอง — ต้องตั้งค่า is_unit_head ไว้ด้วย'),
 (UUID(), 'ticket:approve',        'ticket',    'ลงนามอนุมัติ (หัวหน้างาน/หัวหน้ากลุ่มงาน)'),
 (UUID(), 'user:create',           'user',      'สร้างผู้ใช้'),
 (UUID(), 'user:read',             'user',      'ดูรายชื่อผู้ใช้'),
@@ -95,27 +96,28 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_it_officer, `id` FROM `permissions`
 WHERE `code` IN (
   'dashboard:view','asset:read','asset:loan','qrcode:generate',
-  'ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment','ticket:approve',
+  'ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment','ticket:approve','ticket:close',
   'document:print','document:generate',
   'spare_part:view','spare_part:issue',
   'vendor:view','vendor:manage'
 );
 
--- Technician: update repair status, upload images, record repair
+-- Technician: update repair status, upload images, record repair, close job
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_technician, `id` FROM `permissions`
 WHERE `code` IN (
-  'asset:read','asset:loan','ticket:read','ticket:update_status','ticket:upload_attachment',
+  'asset:read','asset:loan','ticket:read','ticket:update_status','ticket:upload_attachment','ticket:close',
   'spare_part:view','spare_part:issue',
   'vendor:view'
 );
 
--- User: create ticket, track ticket, print QR, view history, self-service borrow/return via QR scan
+-- User: create ticket, track ticket, print QR, view history, self-service borrow/return via QR scan,
+-- self-accept-close own ticket, approve-as-unit-head own department's tickets (requires is_unit_head=1)
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_user, `id` FROM `permissions`
 WHERE `code` IN (
   'asset:read','asset:view_history','qrcode:print','asset:loan_self',
-  'ticket:create','ticket:read','ticket:track','ticket:accept'
+  'ticket:create','ticket:read','ticket:track','ticket:accept','ticket:approve_unit_head'
 );
 
 -- =====================================================================================
