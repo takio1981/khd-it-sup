@@ -5,7 +5,7 @@
     type="text"
     [(ngModel)]="keyword"
     (ngModelChange)="onKeywordChange()"
-    placeholder="ค้นหาตั๋วซ่อม / ครุภัณฑ์ / ผู้ใช้งาน..."
+    placeholder="ค้นหาตั๋วซ่อม / ครุภัณฑ์ / ผู้ใช้งาน / ยืม-คืน..."
     class="flex-1 min-w-0 bg-transparent outline-none text-sm placeholder:text-neutral-400"
   />
   @if (loading()) {
@@ -18,7 +18,7 @@
 
 <div class="max-h-[60vh] overflow-y-auto px-2 py-2">
   @if (!searched()) {
-    <p class="text-center text-sm text-neutral-400 py-10">พิมพ์คำค้นหาเพื่อค้นหาข้ามระบบ (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้งาน)</p>
+    <p class="text-center text-sm text-neutral-400 py-10">พิมพ์คำค้นหาเพื่อค้นหาข้ามระบบ (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้งาน/ยืม-คืน)</p>
   } @else if (!loading() && !hasAnyResult()) {
     <p class="text-center text-sm text-neutral-400 py-10">ไม่พบผลลัพธ์ที่ตรงกับ "{{ keyword }}"</p>
   } @else {

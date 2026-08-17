@@ -43,6 +43,8 @@ function buildWhere(filter: ITicketListFilter): Prisma.RepairTicketWhereInput {
           OR: [
             { ticketNumber: { contains: filter.keyword } },
             { description: { contains: filter.keyword } },
+            { reportedBy: { fullName: { contains: filter.keyword } } },
+            { reportedBy: { username: { contains: filter.keyword } } },
           ],
         }
       : {}),

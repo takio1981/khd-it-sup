@@ -32,6 +32,7 @@ export class NotificationService {
       if (this.authService.isAuthenticated()) {
         this.refreshUnreadCount();
         this.refreshMyNotifications();
+        this.requestNativeNotificationPermission();
       } else {
         this.items.set([]);
         this.unreadCount.set(0);
@@ -50,7 +51,29 @@ export class NotificationService {
       };
       this.items.update((list) => [item, ...list].slice(0, BELL_LIST_LIMIT));
       this.unreadCount.update((n) => n + 1);
+      this.showNativeNotification(payload.title, payload.message);
     });
+  }
+
+  /** ขอสิทธิ์แจ้งเตือนของเบราว์เซอร์/OS (เช่น Windows Action Center) ครั้งเดียวหลัง login — ถ้าผู้ใช้เคยตอบแล้ว (granted/denied) จะไม่ถามซ้ำ */
+  private requestNativeNotificationPermission(): void {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      void Notification.requestPermission();
+    }
+  }
+
+  /** แจ้งเตือนแบบ native ของเบราว์เซอร์/OS เมื่อมีแจ้งเตือนใหม่เข้ามาแบบ real-time — แสดงเฉพาะตอนที่ผู้ใช้ไม่ได้โฟกัสแท็บนี้อยู่
+   *  (ถ้ากำลังดูอยู่แล้วกระดิ่งก็อัปเดตให้เห็นทันที ไม่จำเป็นต้อง popup ซ้ำ) */
+  private showNativeNotification(title: string, body: string): void {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (document.visibilityState === 'visible' && document.hasFocus()) return;
+
+    const notification = new Notification(title, { body, icon: 'icons/icon-192.png', tag: 'khd-it-sup-notification' });
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
   }
 
   /** ดึงเฉพาะแจ้งเตือนที่ยังไม่ได้อ่าน — กระดิ่งแสดงเฉพาะรายการที่ยังไม่อ่านเท่านั้น ไม่ปนรายการที่อ่านแล้ว */

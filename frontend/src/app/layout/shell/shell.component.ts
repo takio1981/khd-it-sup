@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
@@ -34,6 +34,7 @@ import type { IInAppNotification } from '../../core/models/notification.model';
     RouterLink,
     RouterLinkActive,
     DatePipe,
+    NgTemplateOutlet,
     MatSidenavModule,
     MatToolbarModule,
     MatListModule,
