@@ -159,10 +159,9 @@
 
 .khd-doc-textblock {
   margin: 0;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  padding: 6px 8px;
-  min-height: 20px;
+  border-bottom: 1px dotted #999;
+  padding-bottom: 2px;
+  min-height: 18px;
   white-space: pre-line;
 }
 
@@ -202,6 +201,13 @@
   margin: 0 0 4px;
 }
 
+.khd-doc-signimg {
+  display: block;
+  height: 44px;
+  margin: 0 auto 2px;
+  object-fit: contain;
+}
+
 .khd-doc-signname {
   margin: 0 0 2px;
   font-size: 12px;
@@ -227,5 +233,12 @@
 @media print {
   .khd-doc {
     padding: 0;
+  }
+
+  /** "สรุปผลการซ่อม" ต้องขึ้นหน้าใหม่เสมอเมื่อพิมพ์ผ่าน window.print() ของเบราว์เซอร์โดยตรง —
+   *  ฝั่ง export PDF (jsPDF+html2canvas) จัดการขึ้นหน้าใหม่เองแยกต่างหากใน buildPdfBlob() เพราะไม่รับ CSS page-break */
+  .khd-doc-newpage {
+    break-before: page;
+    page-break-before: always;
   }
 }

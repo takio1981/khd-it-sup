@@ -45,6 +45,7 @@ INSERT INTO `permissions` (`id`, `code`, `module`, `description`) VALUES
 (UUID(), 'ticket:upload_attachment', 'ticket', 'อัปโหลดรูป/ไฟล์แนบ'),
 (UUID(), 'ticket:cancel',         'ticket',    'ยกเลิกใบแจ้งซ่อม'),
 (UUID(), 'ticket:close',          'ticket',    'ปิดงานซ่อม'),
+(UUID(), 'ticket:accept',         'ticket',    'เซ็นรับงานคืน (ผู้แจ้งซ่อมยืนยันรับมอบอุปกรณ์ของตนเองเท่านั้น)'),
 (UUID(), 'ticket:approve',        'ticket',    'ลงนามอนุมัติ (หัวหน้างาน/หัวหน้ากลุ่มงาน)'),
 (UUID(), 'user:create',           'user',      'สร้างผู้ใช้'),
 (UUID(), 'user:read',             'user',      'ดูรายชื่อผู้ใช้'),
@@ -114,7 +115,7 @@ INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_user, `id` FROM `permissions`
 WHERE `code` IN (
   'asset:read','asset:view_history','qrcode:print','asset:loan_self',
-  'ticket:create','ticket:read','ticket:track'
+  'ticket:create','ticket:read','ticket:track','ticket:accept'
 );
 
 -- =====================================================================================

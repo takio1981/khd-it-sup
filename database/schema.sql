@@ -426,6 +426,7 @@ CREATE TABLE `repair_tickets` (
   `recommendation`         TEXT         NULL COMMENT 'สรุปผลการซ่อมจากช่าง: ข้อเสนอแนะ/คำแนะนำป้องกัน',
   `summary_by_user_id`     CHAR(36)     NULL COMMENT 'ช่างผู้บันทึกสรุปผลการซ่อม',
   `summary_at`             DATETIME(3)  NULL,
+  `summary_signature`      MEDIUMTEXT   NULL COMMENT 'ลายเซ็นช่างผู้ซ่อม (base64 PNG data URL จาก signature pad บนมือถือ/เว็บ)',
 
   -- ส่วนที่ 1 ของแบบฟอร์มกระดาษ: ข้อมูลอุปกรณ์/อุปกรณ์เสริมที่ผู้แจ้งซ่อมกรอกตอนแจ้ง
   `equipment_type`       VARCHAR(30)  NULL COMMENT 'COMPUTER_CASE|NOTEBOOK|PRINTER|SCANNER|MONITOR|OTHER',
@@ -458,6 +459,11 @@ CREATE TABLE `repair_tickets` (
   `digital_health_head_approved_by` CHAR(36)    NULL,
   `digital_health_head_approved_at` DATETIME(3) NULL,
 
+  -- เซ็นรับงานคืน (ผู้ตรวจรับงาน) — ผู้แจ้งซ่อมเซ็นเองตอนสถานะ "ผู้แจ้งรับมอบ" ผ่าน ticket:accept (self-service เฉพาะของตน)
+  -- ถ้าแอดมินปิดงานแทนด้วย ticket:close (ไม่มีลายเซ็น) จะเป็น NULL ทั้งคู่
+  `accepted_by_user_id`   CHAR(36)     NULL,
+  `acceptor_signature`    MEDIUMTEXT   NULL COMMENT 'ลายเซ็นผู้ตรวจรับงาน (base64 PNG data URL จาก signature pad บนมือถือ/เว็บ)',
+
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_repair_tickets_number` (`ticket_number`),
   KEY `idx_repair_tickets_asset` (`asset_id`),
@@ -473,7 +479,8 @@ CREATE TABLE `repair_tickets` (
   CONSTRAINT `fk_repair_tickets_summary_by` FOREIGN KEY (`summary_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_repair_tickets_unit_head` FOREIGN KEY (`unit_head_approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_repair_tickets_inspected_by` FOREIGN KEY (`inspected_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_repair_tickets_dh_head` FOREIGN KEY (`digital_health_head_approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_repair_tickets_dh_head` FOREIGN KEY (`digital_health_head_approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_repair_tickets_accepted_by` FOREIGN KEY (`accepted_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `repair_ticket_attachments` (

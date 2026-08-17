@@ -49,6 +49,7 @@ export interface IRepairSummary {
   recommendation: string | null;
   summaryAt: string | null;
   summaryByUser: { id: string; fullName: string } | null;
+  summarySignature: string | null;
 }
 
 export interface IRepairTicketDetail extends IRepairTicketListItem, IRepairSummary {
@@ -95,6 +96,10 @@ export interface IRepairTicketDetail extends IRepairTicketListItem, IRepairSumma
   // ส่วนที่ 2 — ลงนามหัวหน้ากลุ่มงานสุขภาพดิจิทัล
   digitalHealthHeadApprovedAt: string | null;
   digitalHealthHeadApprovedBy: { id: string; fullName: string } | null;
+
+  // เซ็นรับงานคืน (ผู้ตรวจรับงาน) — ผู้แจ้งซ่อมเซ็นเองตอนสถานะ "ผู้แจ้งรับมอบ"
+  acceptedBy: { id: string; fullName: string } | null;
+  acceptorSignature: string | null;
 }
 
 export interface ITimelineAttachment {

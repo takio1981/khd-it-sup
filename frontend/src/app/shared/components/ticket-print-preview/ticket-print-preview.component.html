@@ -7,7 +7,7 @@
 
 <mat-dialog-content class="!max-h-[75vh]">
   <div id="khd-print-area">
-    <div class="khd-doc">
+    <div id="khd-print-main" class="khd-doc">
       @let dateParts = thaiDateParts(data.ticket.createdAt);
       <div class="khd-doc-header">
         <img [src]="logoObjectUrl() || 'logo1.png'" alt="" class="khd-doc-logo" />
@@ -105,6 +105,22 @@
           </span>
         </div>
 
+        @if (imageAttachments().length > 0 || videoAttachments.length > 0) {
+          <div class="khd-doc-field khd-block !mt-2">
+            <span class="khd-doc-label">ภาพ/วิดีโอประกอบการแจ้งซ่อม</span>
+            @if (imageAttachments().length > 0) {
+              <div class="khd-doc-photo-grid">
+                @for (img of imageAttachments(); track img.id) {
+                  <img [src]="img.objectUrl" class="khd-doc-photo" alt="ภาพประกอบ" />
+                }
+              </div>
+            }
+            @for (vid of videoAttachments; track vid.id) {
+              <p class="khd-doc-video-note">แนบไฟล์วิดีโอ: {{ vid.filename }} (ดูได้ในระบบ)</p>
+            }
+          </div>
+        }
+
         <div class="khd-doc-signrow">
           <div class="khd-doc-signbox">
             <p class="khd-doc-signline">ลงชื่อ .................... ผู้แจ้งซ่อม</p>
@@ -169,24 +185,10 @@
         </p>
         <p>2) กรณีเห็นควรซื้อใหม่ทดแทน กลุ่มงาน (ผู้แจ้งซ่อม) กรอกแบบฟอร์มขอซื้อคืน พร้อมแนบสำเนาแบบฟอร์มนี้และนำเครื่องส่งคืนพัสดุด้วยทุกครั้ง</p>
       </div>
+    </div>
 
-      @if (imageAttachments().length > 0 || videoAttachments.length > 0) {
-        <div class="khd-doc-section">
-          <p class="khd-doc-section-title">ภาพ/วิดีโอประกอบการแจ้งซ่อม</p>
-          @if (imageAttachments().length > 0) {
-            <div class="khd-doc-photo-grid">
-              @for (img of imageAttachments(); track img.id) {
-                <img [src]="img.objectUrl" class="khd-doc-photo" alt="ภาพประกอบ" />
-              }
-            </div>
-          }
-          @for (vid of videoAttachments; track vid.id) {
-            <p class="khd-doc-video-note">แนบไฟล์วิดีโอ: {{ vid.filename }} (ดูได้ในระบบ)</p>
-          }
-        </div>
-      }
-
-      @if (data.ticket.rootCause || data.ticket.repairAction) {
+    @if (data.ticket.rootCause || data.ticket.repairAction) {
+      <div id="khd-print-summary" class="khd-doc khd-doc-newpage">
         <div class="khd-doc-section khd-doc-summary">
           <p class="khd-doc-section-title">สรุปผลการซ่อม (สำหรับเจ้าหน้าที่ไอที/ช่างเทคนิค)</p>
           @if (data.ticket.rootCause) {
@@ -221,19 +223,30 @@
 
         <div class="khd-doc-signrow">
           <div class="khd-doc-signbox">
-            <p class="khd-doc-signline">ลงชื่อ ....................</p>
+            @if (data.ticket.summarySignature) {
+              <img [src]="data.ticket.summarySignature" class="khd-doc-signimg" alt="ลายเซ็นช่างผู้ซ่อม" />
+            } @else {
+              <p class="khd-doc-signline">ลงชื่อ ....................</p>
+            }
             <p class="khd-doc-signdate">
               ({{ data.ticket.summaryByUser?.fullName ?? '-' }}) ช่างผู้ซ่อม
               @if (data.ticket.summaryAt) { · {{ data.ticket.summaryAt | date: 'd MMM yyyy' }} }
             </p>
           </div>
           <div class="khd-doc-signbox">
-            <p class="khd-doc-signline">ลงชื่อ ....................</p>
-            <p class="khd-doc-signdate">ผู้ตรวจรับงาน</p>
+            @if (data.ticket.acceptorSignature) {
+              <img [src]="data.ticket.acceptorSignature" class="khd-doc-signimg" alt="ลายเซ็นผู้ตรวจรับงาน" />
+            } @else {
+              <p class="khd-doc-signline">ลงชื่อ ....................</p>
+            }
+            <p class="khd-doc-signdate">
+              @if (data.ticket.acceptedBy) { ({{ data.ticket.acceptedBy.fullName }}) }
+              ผู้ตรวจรับงาน
+            </p>
           </div>
         </div>
-      }
-    </div>
+      </div>
+    }
   </div>
 </mat-dialog-content>
 

@@ -37,6 +37,7 @@ const PERMISSIONS: { code: string; module: string; description: string }[] = [
   { code: 'ticket:upload_attachment', module: 'ticket', description: 'อัปโหลดรูป/ไฟล์แนบ' },
   { code: 'ticket:cancel', module: 'ticket', description: 'ยกเลิกใบแจ้งซ่อม' },
   { code: 'ticket:close', module: 'ticket', description: 'ปิดงานซ่อม' },
+  { code: 'ticket:accept', module: 'ticket', description: 'เซ็นรับงานคืน (ผู้แจ้งซ่อมยืนยันรับมอบอุปกรณ์ของตนเองเท่านั้น)' },
   { code: 'user:create', module: 'user', description: 'สร้างผู้ใช้' },
   { code: 'user:read', module: 'user', description: 'ดูรายชื่อผู้ใช้' },
   { code: 'user:update', module: 'user', description: 'แก้ไขผู้ใช้' },
@@ -70,7 +71,7 @@ const ROLE_PERMISSION_MAP: Record<string, string[] | '*'> = {
     'document:print', 'document:generate',
   ],
   TECHNICIAN: ['asset:read', 'ticket:read', 'ticket:update_status', 'ticket:upload_attachment'],
-  USER: ['asset:read', 'asset:view_history', 'qrcode:print', 'ticket:create', 'ticket:read', 'ticket:track'],
+  USER: ['asset:read', 'asset:view_history', 'qrcode:print', 'ticket:create', 'ticket:read', 'ticket:track', 'ticket:accept'],
 };
 
 const ASSET_CATEGORIES: { code: string; nameTh: string; nameEn: string; icon: string; requiresSerial: boolean }[] = [

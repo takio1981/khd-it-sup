@@ -29,13 +29,26 @@ export const assignTicketSchema = z.object({
 });
 export type AssignTicketDto = z.infer<typeof assignTicketSchema>;
 
+/** base64 PNG data URL จาก signature pad — จำกัดความยาวกันของขนาดใหญ่ผิดปกติหลุดเข้ามา (canvas เซ็นชื่อจริงไม่ควรเกินนี้) */
+const signatureDataUrlSchema = z
+  .string()
+  .max(500_000)
+  .regex(/^data:image\/png;base64,/, 'ลายเซ็นต้องเป็น PNG data URL')
+  .optional();
+
 export const repairSummarySchema = z.object({
   rootCause: z.string().max(2000).optional(),
   repairAction: z.string().max(2000).optional(),
   partsUsed: z.string().max(1000).optional(),
   recommendation: z.string().max(1000).optional(),
+  summarySignature: signatureDataUrlSchema,
 });
 export type RepairSummaryDto = z.infer<typeof repairSummarySchema>;
+
+export const closeTicketSchema = z.object({
+  acceptorSignature: signatureDataUrlSchema,
+});
+export type CloseTicketDto = z.infer<typeof closeTicketSchema>;
 
 export const transitionTicketSchema = z.object({
   toStepCode: z.string().min(1, 'กรุณาระบุ step ปลายทาง'),

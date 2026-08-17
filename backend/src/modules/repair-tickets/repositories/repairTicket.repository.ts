@@ -91,6 +91,7 @@ export class RepairTicketRepository {
         unitHeadApprovedBy: { select: { id: true, fullName: true } },
         inspectedBy: { select: { id: true, fullName: true } },
         digitalHealthHeadApprovedBy: { select: { id: true, fullName: true } },
+        acceptedBy: { select: { id: true, fullName: true } },
         attachments: { orderBy: { uploadedAt: 'desc' } },
         workflowInstance: {
           include: {

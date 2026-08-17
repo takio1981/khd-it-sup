@@ -152,31 +152,44 @@ export class TicketPrintPreviewComponent {
   }
 
   /** สร้าง PDF จาก #khd-print-area (jsPDF + html2canvas) — คืนเป็น Blob เพื่อให้ทั้ง save เองและอัปโหลดขึ้น backend ได้
-   *  ใช้ JPEG ไม่ใช่ PNG เพราะตัวอักษร anti-aliased ทำให้ PNG บีบอัดได้แย่มาก (ไฟล์บวมเป็นสิบ MB) */
+   *  ใช้ JPEG ไม่ใช่ PNG เพราะตัวอักษร anti-aliased ทำให้ PNG บีบอัดได้แย่มาก (ไฟล์บวมเป็นสิบ MB)
+   *
+   *  เนื้อหาหลัก (#khd-print-main) กับ "สรุปผลการซ่อม" (#khd-print-summary) render เป็นคนละ canvas แยกกัน แล้วบังคับให้
+   *  ส่วนสรุปผลการซ่อมเริ่มหน้าใหม่เสมอด้วย pdf.addPage() ตรง ๆ — เพราะ html2canvas rasterize ทั้ง DOM เป็นภาพเดียวแล้ว
+   *  ตัดตามความสูงพิกเซล จึงไม่รับรู้ CSS page-break (.khd-doc-newpage) ที่ใช้ได้เฉพาะฝั่ง window.print() เท่านั้น */
   private async buildPdfBlob(): Promise<Blob | null> {
     const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
-    const target = document.getElementById('khd-print-area');
-    if (!target) return null;
-
-    const canvas = await html2canvas(target, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
-    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+    const mainTarget = document.getElementById('khd-print-main');
+    if (!mainTarget) return null;
 
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
-    let heightLeft = imgHeight;
-    let position = 0;
-    pdf.addImage(imgData, 'JPEG', 0, position, pageWidth, imgHeight);
-    heightLeft -= pageHeight;
+    const addRegion = async (target: HTMLElement, startNewPage: boolean): Promise<void> => {
+      const canvas = await html2canvas(target, { scale: 1.5, useCORS: true, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
+      if (startNewPage) pdf.addPage();
+
+      let heightLeft = imgHeight;
+      let position = 0;
       pdf.addImage(imgData, 'JPEG', 0, position, pageWidth, imgHeight);
       heightLeft -= pageHeight;
-    }
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pageWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+    };
+
+    await addRegion(mainTarget, false);
+
+    const summaryTarget = document.getElementById('khd-print-summary');
+    if (summaryTarget) await addRegion(summaryTarget, true);
 
     return pdf.output('blob');
   }

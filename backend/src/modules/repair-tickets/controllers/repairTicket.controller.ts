@@ -3,6 +3,7 @@ import { repairTicketService } from '@modules/repair-tickets/services/repairTick
 import type {
   AssignTicketDto,
   CancelTicketDto,
+  CloseTicketDto,
   CommentTicketDto,
   CreateTicketDto,
   ExportTicketsQueryDto,
@@ -119,7 +120,7 @@ export const cancelTicket = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const closeTicket = asyncHandler(async (req: Request, res: Response) => {
-  const ticket = await repairTicketService.close(req.params.id, contextOf(req));
+  const ticket = await repairTicketService.close(req.params.id, req.body as CloseTicketDto, contextOf(req));
   sendSuccess(res, ticket);
 });
 

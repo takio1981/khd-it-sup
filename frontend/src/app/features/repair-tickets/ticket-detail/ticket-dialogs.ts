@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, inject, signal } from '@angular/core';
 import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -8,6 +8,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { UserService, type ITechnician } from '../../../core/services/user.service';
 import { INSPECTION_OUTCOME_LABEL_TH } from '../../../core/constants/status.const';
+import { SignaturePadComponent } from '../../../shared/components/signature-pad/signature-pad.component';
+import type { IRepairSummaryPayload } from '../../../core/services/repair-ticket.service';
 import type { IInspectionPayload, InspectionOutcome } from '../../../core/models/repair-ticket.model';
 import type { ISparePart } from '../../../core/models/spare-part.model';
 
@@ -87,7 +89,7 @@ export interface IRepairSummaryDialogData {
   selector: 'khd-repair-summary-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule, SignaturePadComponent],
   template: `
     <h2 mat-dialog-title>{{ data.mode === 'edit' ? 'แก้ไขสรุปผลการซ่อม' : 'สรุปผลการซ่อม' }}</h2>
     <form [formGroup]="form">
@@ -108,10 +110,14 @@ export interface IRepairSummaryDialogData {
           <mat-label>ข้อเสนอแนะ/คำแนะนำป้องกัน (ถ้ามี)</mat-label>
           <textarea matInput formControlName="recommendation" rows="2"></textarea>
         </mat-form-field>
+        <div>
+          <p class="text-xs text-neutral-500 mb-1">ลายเซ็นช่างผู้ซ่อม (ถ้ามี — เซ็นได้จากหน้าจอมือถือ/แท็บเล็ตโดยตรง)</p>
+          <khd-signature-pad #sigPad />
+        </div>
       </mat-dialog-content>
       <mat-dialog-actions align="end">
         <button mat-button mat-dialog-close>ยกเลิก</button>
-        <button mat-flat-button color="primary" [disabled]="form.invalid" [mat-dialog-close]="form.getRawValue()">
+        <button mat-flat-button color="primary" [disabled]="form.invalid" (click)="submit(sigPad)">
           {{ data.mode === 'edit' ? 'บันทึกการแก้ไข' : 'บันทึกและซ่อมเสร็จสิ้น' }}
         </button>
       </mat-dialog-actions>
@@ -120,6 +126,7 @@ export interface IRepairSummaryDialogData {
 })
 export class RepairSummaryDialogComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly dialogRef = inject(MatDialogRef<RepairSummaryDialogComponent>);
   readonly data = inject<IRepairSummaryDialogData>(MAT_DIALOG_DATA, { optional: true }) ?? { mode: 'complete' };
 
   readonly form = this.fb.nonNullable.group({
@@ -128,6 +135,12 @@ export class RepairSummaryDialogComponent {
     partsUsed: [this.data.initial?.partsUsed ?? ''],
     recommendation: [this.data.initial?.recommendation ?? ''],
   });
+
+  submit(sigPad: SignaturePadComponent): void {
+    if (this.form.invalid) return;
+    const payload: IRepairSummaryPayload = { ...this.form.getRawValue(), summarySignature: sigPad.getDataUrl() ?? undefined };
+    this.dialogRef.close(payload);
+  }
 }
 
 /** Dialog บันทึกผลตรวจสอบเบื้องต้นโดยเจ้าหน้าที่ไอที (ส่วนที่ 2 ของแบบฟอร์มกระดาษ — ก่อนเริ่มซ่อมจริง) */
@@ -282,4 +295,51 @@ export class IssuePartDialogComponent {
     quantity: [1, [Validators.required, Validators.min(1)]],
     note: [''],
   });
+}
+
+export interface IAcceptTicketDialogData {
+  /** true = ผู้แจ้งซ่อมเองเซ็นรับงานผ่านสิทธิ์ ticket:accept (บังคับเซ็น) — false = แอดมินปิดงานแทนผ่าน ticket:close (เซ็นได้แต่ไม่บังคับ) */
+  requireSignature: boolean;
+}
+
+export interface IAcceptTicketDialogResult {
+  acceptorSignature?: string;
+}
+
+/** Dialog ปิดงาน/เซ็นรับงานคืน — แสดงเป็น "เซ็นรับงาน" (บังคับเซ็น) เมื่อผู้แจ้งซ่อมปิดงานของตนเอง หรือ "ปิดงาน"
+ *  (เซ็นได้แต่ไม่บังคับ) เมื่อแอดมิน/ไอทีปิดงานแทน — ลายเซ็นเซ็นได้จากหน้าจอมือถือ/แท็บเล็ตโดยตรงผ่าน khd-signature-pad */
+@Component({
+  selector: 'khd-accept-ticket-dialog',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatDialogModule, MatButtonModule, SignaturePadComponent],
+  template: `
+    <h2 mat-dialog-title>{{ data.requireSignature ? 'เซ็นรับงาน' : 'ปิดงาน' }}</h2>
+    <mat-dialog-content>
+      <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+        {{
+          data.requireSignature
+            ? 'กรุณาเซ็นชื่อยืนยันว่าท่านได้รับอุปกรณ์คืนเรียบร้อยแล้ว'
+            : 'ยืนยันปิดงานซ่อมนี้ (เซ็นชื่อผู้ตรวจรับงานได้ถ้าต้องการ ไม่บังคับ)'
+        }}
+      </p>
+      <khd-signature-pad #sigPad />
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>ยกเลิก</button>
+      <button mat-flat-button color="primary" [disabled]="data.requireSignature && sigPad.isEmpty()" (click)="submit(sigPad)">
+        ยืนยัน
+      </button>
+    </mat-dialog-actions>
+  `,
+})
+export class AcceptTicketDialogComponent {
+  private readonly dialogRef = inject(MatDialogRef<AcceptTicketDialogComponent>);
+  readonly data = inject<IAcceptTicketDialogData>(MAT_DIALOG_DATA);
+
+  submit(sigPad: SignaturePadComponent): void {
+    if (this.data.requireSignature && sigPad.isEmpty()) return;
+    const result: IAcceptTicketDialogResult = { acceptorSignature: sigPad.getDataUrl() ?? undefined };
+    this.dialogRef.close(result);
+  }
 }

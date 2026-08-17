@@ -5,6 +5,7 @@ import { timelineService } from '@modules/timeline/services/timeline.service';
 import { runningNumberService } from '@modules/settings/services/runningNumber.service';
 import type {
   AssignTicketDto,
+  CloseTicketDto,
   CommentTicketDto,
   CreateTicketDto,
   ExportTicketsQueryDto,
@@ -274,12 +275,13 @@ export class RepairTicketService {
 
     const extraTicketData: Record<string, unknown> = {};
     if (dto.toStepCode === 'COMPLETED' && dto.repairSummary) {
-      const { rootCause, repairAction, partsUsed, recommendation } = dto.repairSummary;
+      const { rootCause, repairAction, partsUsed, recommendation, summarySignature } = dto.repairSummary;
       Object.assign(extraTicketData, {
         rootCause,
         repairAction,
         partsUsed,
         recommendation,
+        summarySignature,
         summaryByUserId: ctx.user.id,
         summaryAt: new Date(),
       });
@@ -292,8 +294,25 @@ export class RepairTicketService {
     return this.applyTransition(id, 'CANCELLED', undefined, 'CANCEL', ctx, { cancelledAt: new Date(), cancelReason: reason }, reason);
   }
 
-  async close(id: string, ctx: IRequestContext) {
-    return this.applyTransition(id, 'CLOSED', undefined, 'CLOSE', ctx, { closedAt: new Date() });
+  /** ปิดงาน — ผู้มีสิทธิ์ ticket:close (แอดมิน/ไอที) ปิดใบแจ้งซ่อมของใครก็ได้ (ไม่บังคับเซ็นชื่อ ใช้เป็นทางออกกรณีติดต่อ
+   *  ผู้แจ้งไม่ได้) ส่วนผู้มีแค่ ticket:accept (ผู้แจ้งซ่อมทั่วไป) ปิดได้เฉพาะใบแจ้งซ่อมของตนเองเท่านั้น — เจตนาให้เป็นการ
+   *  "เซ็นรับงานคืน" ของผู้แจ้งซ่อมเอง (ส่วน "ผู้ตรวจรับงาน" ในแบบฟอร์มกระดาษ) ไม่ใช่สิทธิ์ปิดงานแบบเต็มของแอดมิน */
+  async close(id: string, dto: CloseTicketDto, ctx: IRequestContext) {
+    const canCloseAny = ctx.user.permissions.includes(PERMISSIONS.TICKET_CLOSE);
+    if (!canCloseAny) {
+      const existing = await this.repo.findById(id);
+      if (!existing) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
+      if (existing.reportedByUserId !== ctx.user.id) {
+        throw new ForbiddenError('คุณเซ็นรับงานได้เฉพาะใบแจ้งซ่อมของตนเองเท่านั้น');
+      }
+    }
+
+    const extraTicketData: Record<string, unknown> = { closedAt: new Date() };
+    if (dto.acceptorSignature) {
+      Object.assign(extraTicketData, { acceptedByUserId: ctx.user.id, acceptorSignature: dto.acceptorSignature });
+    }
+
+    return this.applyTransition(id, 'CLOSED', undefined, 'CLOSE', ctx, extraTicketData);
   }
 
   /** แก้ไข/บันทึกสรุปผลการซ่อมย้อนหลัง — ไม่บังคับต้อง transition workflow (ใช้แก้ไขข้อมูลหลังบันทึกครั้งแรกได้) */
@@ -306,6 +325,7 @@ export class RepairTicketService {
       repairAction: dto.repairAction,
       partsUsed: dto.partsUsed,
       recommendation: dto.recommendation,
+      summarySignature: dto.summarySignature,
       summaryByUserId: ctx.user.id,
       summaryAt: new Date(),
     });

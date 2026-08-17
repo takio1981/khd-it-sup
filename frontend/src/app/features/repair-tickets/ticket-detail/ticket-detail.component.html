@@ -54,9 +54,10 @@
                 <khd-icon name="pencil-square" [size]="16" class="!mr-2" />ลงนามอนุมัติ (หัวหน้ากลุ่มงานสุขภาพดิจิทัล)
               </button>
             }
-            @if (canClose()) {
-              <button mat-menu-item *khdHasPermission="'ticket:close'" (click)="close()">
-                <khd-icon name="check-circle" [size]="16" class="!mr-2" />ปิดงาน
+            @if (canClose() && (hasFullClosePermission() || isOwnTicketReporter())) {
+              <button mat-menu-item *khdHasPermission="['ticket:close', 'ticket:accept']" (click)="openAcceptDialog()">
+                <khd-icon name="check-circle" [size]="16" class="!mr-2" />
+                {{ hasFullClosePermission() ? 'ปิดงาน' : 'เซ็นรับงาน' }}
               </button>
             }
             <button mat-menu-item *khdHasPermission="'ticket:cancel'" (click)="openCancelDialog()" class="!text-red-600">

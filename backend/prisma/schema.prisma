@@ -159,6 +159,7 @@ model User {
   unitHeadApprovedTickets          RepairTicket[]  @relation("TicketUnitHeadApprover")
   inspectedTickets                 RepairTicket[]  @relation("TicketInspectedBy")
   digitalHealthHeadApprovedTickets RepairTicket[]  @relation("TicketDigitalHealthHeadApprover")
+  acceptedTickets     RepairTicket[]               @relation("TicketAcceptedBy")
   timelineEvents      RepairTicketTimelineEvent[]
   approvals           Approval[]
   auditLogs           AuditLog[]
@@ -551,6 +552,7 @@ model RepairTicket {
   recommendation    String?      @db.Text
   summaryByUserId   String?      @map("summary_by_user_id") @db.Char(36)
   summaryAt         DateTime?    @map("summary_at")
+  summarySignature  String?      @map("summary_signature") @db.MediumText
 
   // ส่วนที่ 1 ของแบบฟอร์มกระดาษ — ข้อมูลอุปกรณ์/อุปกรณ์เสริมที่ผู้แจ้งซ่อมกรอกตอนแจ้ง
   equipmentType      String?   @map("equipment_type") @db.VarChar(30)
@@ -583,6 +585,10 @@ model RepairTicket {
   digitalHealthHeadApprovedByUserId String?   @map("digital_health_head_approved_by") @db.Char(36)
   digitalHealthHeadApprovedAt       DateTime? @map("digital_health_head_approved_at")
 
+  // เซ็นรับงานคืน (ผู้ตรวจรับงาน) — ผู้แจ้งซ่อมเซ็นเองตอนสถานะ "ผู้แจ้งรับมอบ" ผ่าน ticket:accept (self-service เฉพาะของตน)
+  acceptedByUserId  String?      @map("accepted_by_user_id") @db.Char(36)
+  acceptorSignature String?      @map("acceptor_signature") @db.MediumText
+
   asset             Asset?                      @relation(fields: [assetId], references: [id], onDelete: SetNull)
   reportedBy        User                        @relation("TicketReporter", fields: [reportedByUserId], references: [id])
   department        Department?                 @relation(fields: [departmentId], references: [id], onDelete: SetNull)
@@ -591,6 +597,7 @@ model RepairTicket {
   unitHeadApprovedBy User?                       @relation("TicketUnitHeadApprover", fields: [unitHeadApprovedByUserId], references: [id], onDelete: SetNull)
   inspectedBy       User?                        @relation("TicketInspectedBy", fields: [inspectedByUserId], references: [id], onDelete: SetNull)
   digitalHealthHeadApprovedBy User?              @relation("TicketDigitalHealthHeadApprover", fields: [digitalHealthHeadApprovedByUserId], references: [id], onDelete: SetNull)
+  acceptedBy        User?                        @relation("TicketAcceptedBy", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
   workflowInstance  WorkflowInstance?            @relation(fields: [workflowInstanceId], references: [id], onDelete: SetNull)
   attachments       RepairTicketAttachment[]
   timeline          RepairTicketTimelineEvent[]

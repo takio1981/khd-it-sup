@@ -3,6 +3,7 @@ import * as ticketController from '@modules/repair-tickets/controllers/repairTic
 import {
   assignTicketSchema,
   cancelTicketSchema,
+  closeTicketSchema,
   commentTicketSchema,
   createTicketSchema,
   exportTicketsQuerySchema,
@@ -214,13 +215,15 @@ router.post(
  * /repair-tickets/{id}/close:
  *   post:
  *     tags: [Repair Tickets]
- *     summary: ปิดงาน (อนุญาตเฉพาะจาก step USER_ACCEPTANCE ตาม workflow)
+ *     summary: >
+ *       ปิดงาน (อนุญาตเฉพาะจาก step USER_ACCEPTANCE ตาม workflow) — ผู้มีสิทธิ์ ticket:accept เท่านั้น
+ *       (ไม่มี ticket:close เต็ม) ปิดได้เฉพาะใบแจ้งซ่อมของตนเอง และควรแนบ acceptorSignature (ลายเซ็นเซ็นรับงาน)
  *     security: [{ bearerAuth: [] }]
  */
 router.post(
   '/:id/close',
-  requirePermission(PERMISSIONS.TICKET_CLOSE),
-  validateRequest({ params: ticketIdParamSchema }),
+  requirePermission(PERMISSIONS.TICKET_CLOSE, PERMISSIONS.TICKET_ACCEPT),
+  validateRequest({ params: ticketIdParamSchema, body: closeTicketSchema }),
   ticketController.closeTicket,
 );
 

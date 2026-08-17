@@ -13,7 +13,10 @@ import type {
   ITimelineEvent,
 } from '../models/repair-ticket.model';
 
-export type IRepairSummaryPayload = Pick<IRepairSummary, 'rootCause' | 'repairAction' | 'partsUsed' | 'recommendation'>;
+export type IRepairSummaryPayload = Pick<IRepairSummary, 'rootCause' | 'repairAction' | 'partsUsed' | 'recommendation'> & {
+  /** base64 PNG data URL จาก khd-signature-pad — undefined ถ้ายังไม่ได้เซ็น (ไม่ใช่ null เหมือน read-model) */
+  summarySignature?: string;
+};
 
 export interface ITicketListFilter {
   page?: number;
@@ -96,8 +99,10 @@ export class RepairTicketService {
       .pipe(map((res) => res.data));
   }
 
-  close(id: string): Observable<IRepairTicketDetail> {
-    return this.http.post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/close`, {}).pipe(map((res) => res.data));
+  close(id: string, acceptorSignature?: string): Observable<IRepairTicketDetail> {
+    return this.http
+      .post<IApiSuccessResponse<IRepairTicketDetail>>(`${this.base}/${id}/close`, { acceptorSignature })
+      .pipe(map((res) => res.data));
   }
 
   addComment(id: string, comment: string): Observable<ITimelineEvent> {

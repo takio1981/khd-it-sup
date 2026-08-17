@@ -25,6 +25,7 @@ export const PERMISSIONS = {
   TICKET_UPLOAD_ATTACHMENT: 'ticket:upload_attachment',
   TICKET_CANCEL: 'ticket:cancel',
   TICKET_CLOSE: 'ticket:close',
+  TICKET_ACCEPT: 'ticket:accept',
   TICKET_APPROVE: 'ticket:approve',
 
   USER_CREATE: 'user:create',

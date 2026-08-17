@@ -12,6 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { SparePartService } from '../../../core/services/spare-part.service';
 import { VendorService } from '../../../core/services/vendor.service';
 import { VendorRepairOrderService } from '../../../core/services/vendor-repair-order.service';
@@ -28,7 +29,9 @@ import {
   RepairSummaryDialogComponent,
   InspectionDialogComponent,
   IssuePartDialogComponent,
+  AcceptTicketDialogComponent,
   type IIssuePartDialogResult,
+  type IAcceptTicketDialogResult,
 } from './ticket-dialogs';
 import type { IRepairSummaryPayload } from '../../../core/services/repair-ticket.service';
 import type { IInspectionPayload, IRepairTicketDetail, ITimelineEvent } from '../../../core/models/repair-ticket.model';
@@ -86,6 +89,7 @@ const VENDOR_ORDER_STATUS_LABEL_TH: Record<string, string> = {
 })
 export class TicketDetailComponent {
   private readonly repairTicketService = inject(RepairTicketService);
+  private readonly authService = inject(AuthService);
   private readonly sparePartService = inject(SparePartService);
   private readonly vendorService = inject(VendorService);
   private readonly vendorRepairOrderService = inject(VendorRepairOrderService);
@@ -138,6 +142,10 @@ export class TicketDetailComponent {
 
   readonly canReceive = computed(() => this.ticket()?.status === 'SUBMITTED');
   readonly canClose = computed(() => this.ticket()?.status === 'USER_ACCEPTANCE');
+  readonly hasFullClosePermission = computed(() => this.authService.hasAnyPermission(['ticket:close']));
+  readonly isOwnTicketReporter = computed(
+    () => !!this.ticket() && this.ticket()!.reportedBy.id === this.authService.currentUser()?.id,
+  );
   readonly canApproveUnitHead = computed(() => !!this.ticket() && !this.ticket()!.unitHeadApprovedAt);
   readonly canApproveDigitalHealthHead = computed(
     () => !!this.ticket() && !!this.ticket()!.inspectedAt && !this.ticket()!.digitalHealthHeadApprovedAt,
@@ -220,9 +228,16 @@ export class TicketDetailComponent {
     });
   }
 
-  close(): void {
-    this.acting.set(true);
-    this.repairTicketService.close(this.id()).subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
+  openAcceptDialog(): void {
+    const requireSignature = !this.hasFullClosePermission();
+    const ref = this.dialog.open(AcceptTicketDialogComponent, { width: '420px', data: { requireSignature } });
+    ref.afterClosed().subscribe((result: IAcceptTicketDialogResult | undefined) => {
+      if (!result) return;
+      this.acting.set(true);
+      this.repairTicketService
+        .close(this.id(), result.acceptorSignature)
+        .subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
+    });
   }
 
   approveUnitHead(): void {
