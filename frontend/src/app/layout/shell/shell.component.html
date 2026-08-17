@@ -2,6 +2,7 @@
   <mat-sidenav
     [mode]="isMobile() ? 'over' : 'side'"
     [opened]="sidenavOpened()"
+    (openedChange)="sidenavOpened.set($event)"
     class="!w-64 !border-r-0 shadow-soft"
   >
     <div class="flex h-16 items-center justify-between gap-2 px-4 border-b border-black/5 dark:border-white/10">
@@ -12,7 +13,9 @@
           <p class="text-[11px] text-neutral-500 truncate">IT Service Desk</p>
         </div>
       </div>
-      <ng-container *ngTemplateOutlet="pillGroup" />
+      @if (sidenavOpened()) {
+        <ng-container *ngTemplateOutlet="pillGroup" />
+      }
     </div>
 
     <mat-nav-list class="!py-2">
