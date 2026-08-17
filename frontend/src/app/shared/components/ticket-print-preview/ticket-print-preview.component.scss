@@ -13,10 +13,24 @@
 }
 
 .khd-doc-header {
-  text-align: center;
+  display: grid;
+  grid-template-columns: 20mm 1fr 48mm;
+  align-items: start;
+  gap: 8px;
   border-bottom: 2px solid #111;
   padding-bottom: 8px;
   margin-bottom: 14px;
+}
+
+.khd-doc-logo {
+  width: 18mm;
+  height: 18mm;
+  object-fit: contain;
+}
+
+.khd-doc-header-center {
+  text-align: center;
+  padding-top: 2px;
 }
 
 .khd-doc-org {
@@ -27,15 +41,25 @@
 
 .khd-doc-title {
   margin: 0 0 6px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
 }
 
-.khd-doc-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #444;
+.khd-doc-numbox {
+  font-size: 11.5px;
+}
+
+.khd-doc-numbox-inner {
+  margin: 0;
+  border: 1px solid #111;
+  padding: 3px 6px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.khd-doc-datefield {
+  margin: 4px 0 0;
+  text-align: right;
 }
 
 .khd-doc-section {
@@ -60,6 +84,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px 16px;
+
+  &.khd-cols-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 }
 
 .khd-doc-field {
@@ -76,6 +104,14 @@
     align-items: stretch;
     gap: 2px;
   }
+
+  &.khd-doc-field-inline {
+    gap: 8px;
+
+    .khd-doc-value {
+      flex: 0 1 45mm;
+    }
+  }
 }
 
 .khd-doc-label {
@@ -89,6 +125,11 @@
   flex: 1;
   min-height: 16px;
   padding-bottom: 1px;
+}
+
+.khd-doc-note {
+  white-space: nowrap;
+  font-size: 12px;
 }
 
 .khd-doc-checklist {
@@ -161,10 +202,26 @@
   margin: 0 0 4px;
 }
 
+.khd-doc-signname {
+  margin: 0 0 2px;
+  font-size: 12px;
+}
+
 .khd-doc-signdate {
   margin: 0;
   font-size: 12px;
   color: #444;
+}
+
+.khd-doc-footnote {
+  font-size: 10.5px;
+  color: #444;
+  margin-bottom: 14px;
+  break-inside: avoid;
+
+  p {
+    margin: 0 0 2px;
+  }
 }
 
 @media print {

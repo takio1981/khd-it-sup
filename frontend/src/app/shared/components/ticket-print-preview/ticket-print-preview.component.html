@@ -8,48 +8,61 @@
 <mat-dialog-content class="!max-h-[75vh]">
   <div id="khd-print-area">
     <div class="khd-doc">
+      @let dateParts = thaiDateParts(data.ticket.createdAt);
       <div class="khd-doc-header">
-        <p class="khd-doc-title">แบบฟอร์มการขอรับบริการซ่อมแซมคอมพิวเตอร์และอุปกรณ์</p>
-        <p class="khd-doc-org">{{ groupName }} {{ orgName }}</p>
-        <div class="khd-doc-meta">
-          <span>ใบแจ้งซ่อม เลขที่ {{ data.ticket.ticketNumber }}</span>
-          <span>วันที่ {{ thaiDate(data.ticket.createdAt) }}</span>
+        <img [src]="logoObjectUrl() || 'logo1.png'" alt="" class="khd-doc-logo" />
+        <div class="khd-doc-header-center">
+          <p class="khd-doc-title">แบบฟอร์มการขอรับบริการซ่อมแซมคอมพิวเตอร์และอุปกรณ์</p>
+          <p class="khd-doc-org">{{ groupName }} {{ orgName }}</p>
+        </div>
+        <div class="khd-doc-numbox">
+          <p class="khd-doc-numbox-inner">ใบแจ้งซ่อม เลขที่ {{ data.ticket.ticketNumber }}</p>
+          <p class="khd-doc-datefield">วันที่ {{ dateParts.day }} เดือน {{ dateParts.month }} พ.ศ. {{ dateParts.year }}</p>
         </div>
       </div>
 
       <div class="khd-doc-section">
         <p class="khd-doc-section-title">ส่วนที่ 1 สำหรับกลุ่มงาน (ผู้แจ้งซ่อม)</p>
 
-        <div class="khd-doc-grid">
-          <div class="khd-doc-field khd-col-2">
-            <span class="khd-doc-label">ชื่อ-สกุล</span>
-            <span class="khd-doc-value">{{ data.ticket.reportedBy.fullName }}</span>
+        <div class="khd-doc-grid khd-cols-3">
+          <div class="khd-doc-field">
+            <span class="khd-doc-label">ชื่อ</span>
+            <span class="khd-doc-value">{{ firstName() }}</span>
           </div>
           <div class="khd-doc-field">
-            <span class="khd-doc-label">ตำแหน่ง</span>
+            <span class="khd-doc-label">สกุล</span>
+            <span class="khd-doc-value">{{ lastName() }}</span>
+          </div>
+          <div class="khd-doc-field">
+            <span class="khd-doc-label">งาน</span>
             <span class="khd-doc-value">{{ data.ticket.reportedBy.position?.nameTh ?? '-' }}</span>
-          </div>
-          <div class="khd-doc-field">
-            <span class="khd-doc-label">กลุ่มงาน/หน่วยงาน</span>
-            <span class="khd-doc-value">{{ data.ticket.department?.nameTh ?? '-' }}</span>
           </div>
         </div>
 
-        <div class="khd-doc-checklist">
-          @for (t of ['COMPUTER_CASE', 'NOTEBOOK', 'PRINTER', 'SCANNER', 'MONITOR', 'OTHER']; track t) {
+        <div class="khd-doc-field khd-doc-field-inline !mt-2">
+          <span class="khd-doc-label">กลุ่มงาน</span>
+          <span class="khd-doc-value">{{ data.ticket.department?.nameTh ?? '-' }}</span>
+          <span class="khd-doc-note">ขอแจ้งการชำรุด เพื่อดำเนินการซ่อมแซมแก้ไข ดังนี้</span>
+        </div>
+
+        <div class="khd-doc-checklist !mt-2">
+          @for (t of ['COMPUTER_CASE', 'NOTEBOOK', 'PRINTER', 'SCANNER', 'MONITOR']; track t) {
             <span class="khd-doc-checkitem">{{ check(data.ticket.equipmentType === t) }} {{ equipmentTypeLabels[t] }}</span>
           }
-          @if (data.ticket.equipmentType === 'OTHER' && data.ticket.equipmentTypeOther) {
-            <span class="khd-doc-checkitem">({{ data.ticket.equipmentTypeOther }})</span>
-          }
+        </div>
+        <div class="khd-doc-checklist">
+          <span class="khd-doc-checkitem">
+            {{ check(data.ticket.equipmentType === 'OTHER') }} อื่นๆ ระบุ
+            {{ data.ticket.equipmentType === 'OTHER' ? data.ticket.equipmentTypeOther || '' : '' }}
+          </span>
         </div>
 
         <div class="khd-doc-field khd-block !mt-2">
-          <span class="khd-doc-label">ลักษณะการชำรุด/อาการเบื้องต้น</span>
+          <span class="khd-doc-label">ระบุลักษณะการชำรุด/อาการเบื้องต้น</span>
           <p class="khd-doc-textblock">{{ data.ticket.description }}</p>
         </div>
 
-        <div class="khd-doc-grid !mt-2">
+        <div class="khd-doc-grid khd-cols-3 !mt-2">
           <div class="khd-doc-field">
             <span class="khd-doc-label">ยี่ห้อ</span>
             <span class="khd-doc-value">{{ data.ticket.asset?.brand ?? '-' }}</span>
@@ -71,7 +84,7 @@
             <span class="khd-doc-value">{{ data.ticket.asset?.assetNumber ?? '-' }}</span>
           </div>
           <div class="khd-doc-field">
-            <span class="khd-doc-label">เลขทรัพย์สิน</span>
+            <span class="khd-doc-label">เลขสินทรัพย์</span>
             <span class="khd-doc-value">{{ data.ticket.asset?.govAssetNumber ?? '-' }}</span>
           </div>
         </div>
@@ -84,25 +97,24 @@
           <span class="khd-doc-checkitem">
             {{ check(data.ticket.hasOtherAccessory) }} อื่นๆ ระบุ {{ data.ticket.hasOtherAccessory ? data.ticket.otherAccessoryNote : '' }}
           </span>
+        </div>
+        <div class="khd-doc-checklist">
           <span class="khd-doc-checkitem">
-            {{ check(!data.ticket.hasAdapterCable && !data.ticket.hasVgaCable && !data.ticket.hasPowerCable && !data.ticket.hasOtherAccessory) }} ไม่มี
+            {{ check(!data.ticket.hasAdapterCable && !data.ticket.hasVgaCable && !data.ticket.hasPowerCable && !data.ticket.hasOtherAccessory) }}
+            ไม่มี
           </span>
         </div>
 
         <div class="khd-doc-signrow">
           <div class="khd-doc-signbox">
-            <p class="khd-doc-signline">ลงชื่อ ....................................................</p>
-            <p class="khd-doc-signdate">({{ data.ticket.reportedBy.fullName }}) ผู้แจ้งซ่อม</p>
+            <p class="khd-doc-signline">ลงชื่อ .................... ผู้แจ้งซ่อม</p>
+            <p class="khd-doc-signname">({{ data.ticket.reportedBy.fullName }})</p>
+            <p class="khd-doc-signdate">ตำแหน่ง {{ data.ticket.reportedBy.position?.nameTh ?? '....................' }}</p>
           </div>
           <div class="khd-doc-signbox">
-            <p class="khd-doc-signline">ลงชื่อ ....................................................</p>
-            <p class="khd-doc-signdate">
-              @if (data.ticket.unitHeadApprovedBy) {
-                ({{ data.ticket.unitHeadApprovedBy.fullName }}) หัวหน้างาน/กลุ่มงาน
-              } @else {
-                หัวหน้างาน/กลุ่มงาน
-              }
-            </p>
+            <p class="khd-doc-signline">ลงชื่อ .................... หัวหน้างาน/กลุ่มงาน</p>
+            <p class="khd-doc-signname">({{ data.ticket.unitHeadApprovedBy?.fullName ?? '....................' }})</p>
+            <p class="khd-doc-signdate">ตำแหน่ง ....................</p>
           </div>
         </div>
       </div>
@@ -110,20 +122,23 @@
       <div class="khd-doc-section">
         <p class="khd-doc-section-title">ส่วนที่ 2 สำหรับเจ้าหน้าที่กลุ่มงานสุขภาพดิจิทัล</p>
 
+        <div class="khd-doc-checklist">
+          <span class="khd-doc-checkitem">{{ check(data.ticket.inspectionOutcome === 'IN_HOUSE') }} ตรวจสอบแล้ว</span>
+          <span class="khd-doc-checkitem">
+            {{ check(data.ticket.inspectionOutcome === 'IN_HOUSE' && !data.ticket.requestPartsNeeded) }} ไม่ขอเบิกอะไหล่
+          </span>
+          <span class="khd-doc-checkitem">
+            {{ check(data.ticket.inspectionOutcome === 'IN_HOUSE' && data.ticket.requestPartsNeeded) }} ขออนุมัติซื้ออะไหล่ ดังนี้
+          </span>
+        </div>
+        @if (data.ticket.inspectionOutcome === 'IN_HOUSE' && data.ticket.requestPartsNeeded) {
+          <div class="khd-doc-partslist">
+            <p>1) {{ data.ticket.requestedPart1Name || '-' }} จำนวน {{ data.ticket.requestedPart1Qty ?? '-' }}</p>
+            <p>2) {{ data.ticket.requestedPart2Name || '-' }} จำนวน {{ data.ticket.requestedPart2Qty ?? '-' }}</p>
+            <p>3) {{ data.ticket.requestedPart3Name || '-' }} จำนวน {{ data.ticket.requestedPart3Qty ?? '-' }}</p>
+          </div>
+        }
         <div class="khd-doc-checklist khd-doc-checklist-col">
-          <span class="khd-doc-checkitem">
-            {{ check(data.ticket.inspectionOutcome === 'IN_HOUSE' && !data.ticket.requestPartsNeeded) }} ตรวจสอบแล้ว ไม่ขอเบิกอะไหล่
-          </span>
-          <span class="khd-doc-checkitem">
-            {{ check(data.ticket.inspectionOutcome === 'IN_HOUSE' && data.ticket.requestPartsNeeded) }} ตรวจสอบแล้ว ขออนุมัติซื้ออะไหล่ ดังนี้
-          </span>
-          @if (data.ticket.inspectionOutcome === 'IN_HOUSE' && data.ticket.requestPartsNeeded) {
-            <div class="khd-doc-partslist">
-              <p>1. {{ data.ticket.requestedPart1Name || '-' }} จำนวน {{ data.ticket.requestedPart1Qty ?? '-' }}</p>
-              <p>2. {{ data.ticket.requestedPart2Name || '-' }} จำนวน {{ data.ticket.requestedPart2Qty ?? '-' }}</p>
-              <p>3. {{ data.ticket.requestedPart3Name || '-' }} จำนวน {{ data.ticket.requestedPart3Qty ?? '-' }}</p>
-            </div>
-          }
           <span class="khd-doc-checkitem">
             {{ check(data.ticket.inspectionOutcome === 'SEND_EXTERNAL') }} ตรวจสอบแล้ว ไม่สามารถซ่อมเองได้ เห็นควรส่งซ่อมภายนอก
             เนื่องจาก {{ data.ticket.inspectionOutcome === 'SEND_EXTERNAL' ? (data.ticket.sendExternalReason || '-') : '.......................' }}
@@ -135,26 +150,24 @@
 
         <div class="khd-doc-signrow">
           <div class="khd-doc-signbox">
-            <p class="khd-doc-signline">ลงชื่อ ....................................................</p>
-            <p class="khd-doc-signdate">
-              @if (data.ticket.inspectedBy) {
-                ({{ data.ticket.inspectedBy.fullName }}) เจ้าหน้าที่ผู้ดำเนินการซ่อม
-              } @else {
-                เจ้าหน้าที่ผู้ดำเนินการซ่อม
-              }
-            </p>
+            <p class="khd-doc-signline">ลงชื่อ .................... เจ้าหน้าที่ผู้ดำเนินการซ่อม</p>
+            <p class="khd-doc-signname">({{ data.ticket.inspectedBy?.fullName ?? '....................' }})</p>
+            <p class="khd-doc-signdate">ตำแหน่ง ....................</p>
+            <p class="khd-doc-signdate">ลงวันที่ {{ data.ticket.inspectedAt ? thaiDate(data.ticket.inspectedAt) : '....................' }}</p>
           </div>
           <div class="khd-doc-signbox">
-            <p class="khd-doc-signline">ลงชื่อ ....................................................</p>
-            <p class="khd-doc-signdate">
-              @if (data.ticket.digitalHealthHeadApprovedBy) {
-                ({{ data.ticket.digitalHealthHeadApprovedBy.fullName }}) หัวหน้ากลุ่มงานสุขภาพดิจิทัล
-              } @else {
-                หัวหน้ากลุ่มงานสุขภาพดิจิทัล
-              }
-            </p>
+            <p class="khd-doc-signline">ลงชื่อ .................... หัวหน้ากลุ่มงานสุขภาพดิจิทัล</p>
+            <p class="khd-doc-signname">({{ digitalHealthHeadName() }})</p>
+            <p class="khd-doc-signdate">{{ digitalHealthHeadPosition }}</p>
           </div>
         </div>
+      </div>
+
+      <div class="khd-doc-footnote">
+        <p>
+          หมายเหตุ : 1) กรณีส่งซ่อมภายนอก กรุณากรอกแบบฟอร์มขออนุมัติจ้างซ่อมภายนอกพร้อมแนบสำเนาแบบฟอร์มนี้และนำเครื่องส่งให้พัสดุเป็นผู้จ้างซ่อมด้วยทุกครั้ง
+        </p>
+        <p>2) กรณีเห็นควรซื้อใหม่ทดแทน กลุ่มงาน (ผู้แจ้งซ่อม) กรอกแบบฟอร์มขอซื้อคืน พร้อมแนบสำเนาแบบฟอร์มนี้และนำเครื่องส่งคืนพัสดุด้วยทุกครั้ง</p>
       </div>
 
       @if (imageAttachments().length > 0 || videoAttachments.length > 0) {
@@ -208,14 +221,14 @@
 
         <div class="khd-doc-signrow">
           <div class="khd-doc-signbox">
-            <p class="khd-doc-signline">ลงชื่อ ....................................................</p>
+            <p class="khd-doc-signline">ลงชื่อ ....................</p>
             <p class="khd-doc-signdate">
               ({{ data.ticket.summaryByUser?.fullName ?? '-' }}) ช่างผู้ซ่อม
               @if (data.ticket.summaryAt) { · {{ data.ticket.summaryAt | date: 'd MMM yyyy' }} }
             </p>
           </div>
           <div class="khd-doc-signbox">
-            <p class="khd-doc-signline">ลงชื่อ ....................................................</p>
+            <p class="khd-doc-signline">ลงชื่อ ....................</p>
             <p class="khd-doc-signdate">ผู้ตรวจรับงาน</p>
           </div>
         </div>
