@@ -45,6 +45,11 @@ export const listTechnicians = asyncHandler(async (_req: Request, res: Response)
   sendSuccess(res, technicians);
 });
 
+export const listTechnicianWorkload = asyncHandler(async (_req: Request, res: Response) => {
+  const workload = await userService.listTechnicianWorkload();
+  sendSuccess(res, workload);
+});
+
 export const listUsers = asyncHandler(async (req: Request, res: Response) => {
   const result = await userService.list(req.query as unknown as ListUsersQueryDto);
   sendSuccess(res, result.items, 200, result.meta);

@@ -73,6 +73,22 @@ router.get('/technicians', requirePermission(PERMISSIONS.TICKET_ASSIGN), userCon
 
 /**
  * @openapi
+ * /users/technicians/workload:
+ *   get:
+ *     tags: [Users]
+ *     summary: >
+ *       ภาระงาน (จำนวนตั๋วที่ยังไม่ปิด) และสถานะว่าง/ไม่ว่างของช่างเทคนิค/เจ้าหน้าที่ไอทีทุกคน — ใช้เปรียบเทียบ
+ *       workload ก่อนมอบหมายงาน และหน้ารายงานภาระงาน
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/technicians/workload',
+  requirePermission(PERMISSIONS.TICKET_ASSIGN, PERMISSIONS.DASHBOARD_VIEW),
+  userController.listTechnicianWorkload,
+);
+
+/**
+ * @openapi
  * /users/{id}:
  *   get:
  *     tags: [Users]

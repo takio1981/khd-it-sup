@@ -14,6 +14,9 @@ const userListInclude = {
   position: { select: { id: true, nameTh: true } },
 } satisfies Prisma.UserInclude;
 
+/** สถานะที่ยังไม่ปิดงาน — ใช้เกณฑ์เดียวกับ dashboard.repository.ts's technicianWorkload() */
+const OPEN_TICKET_STATUSES = ['CLOSED', 'CANCELLED'];
+
 function buildWhere(filter: IUserListFilter): Prisma.UserWhereInput {
   return {
     deletedAt: null,
@@ -42,6 +45,28 @@ export class UserRepository {
       select: { id: true, fullName: true, username: true, role: { select: { code: true } } },
       orderBy: { fullName: 'asc' },
     });
+  }
+
+  /** ภาระงานปัจจุบันของช่าง/เจ้าหน้าที่ไอทีทุกคน (รวมคนที่ยังไม่มีงานเลย = activeTicketCount 0 ด้วย) — ต่างจาก
+   *  dashboard.repository.ts's technicianWorkload() ที่ group จากตั๋วที่มีอยู่แล้วเท่านั้น จึงไม่เห็นคนว่างที่ยังไม่มีตั๋ว */
+  async findTechniciansWithWorkload() {
+    const technicians = await prisma.user.findMany({
+      where: { deletedAt: null, isActive: true, role: { code: { in: ['TECHNICIAN', 'IT_OFFICER'] } } },
+      select: { id: true, fullName: true, username: true, role: { select: { code: true, nameTh: true } } },
+      orderBy: { fullName: 'asc' },
+    });
+
+    const counts = await prisma.repairTicket.groupBy({
+      by: ['assignedTechnicianId'],
+      _count: { _all: true },
+      where: {
+        assignedTechnicianId: { in: technicians.map((t) => t.id) },
+        status: { notIn: OPEN_TICKET_STATUSES },
+      },
+    });
+    const countByTechId = new Map(counts.map((c) => [c.assignedTechnicianId, c._count._all]));
+
+    return technicians.map((t) => ({ ...t, activeTicketCount: countByTechId.get(t.id) ?? 0 }));
   }
 
   async findMany(filter: IUserListFilter, pagination: INormalizedPagination) {

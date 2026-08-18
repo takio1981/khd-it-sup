@@ -6,7 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
-import { UserService, type ITechnician } from '../../../core/services/user.service';
+import { UserService, type ITechnicianWorkload } from '../../../core/services/user.service';
 import { INSPECTION_OUTCOME_LABEL_TH } from '../../../core/constants/status.const';
 import { SignaturePadComponent } from '../../../shared/components/signature-pad/signature-pad.component';
 import type { IRepairSummaryPayload } from '../../../core/services/repair-ticket.service';
@@ -37,7 +37,8 @@ export class CancelTicketDialogComponent {
   readonly reason = new FormControl('', { nonNullable: true, validators: Validators.required });
 }
 
-/** Dialog เล็ก ๆ สำหรับเลือกช่างเทคนิค/เจ้าหน้าที่ไอทีที่จะมอบหมายงานซ่อมให้ */
+/** Dialog เล็ก ๆ สำหรับเลือกช่างเทคนิค/เจ้าหน้าที่ไอทีที่จะมอบหมายงานซ่อมให้ — แสดงภาระงาน (จำนวนตั๋วที่ยังไม่ปิด) และ
+ *  ป้ายว่าง/ไม่ว่างของแต่ละคนไว้ในตัวเลือกเลย เรียงคนว่างที่สุดไว้บนสุด ช่วยให้เลือกมอบหมายงานได้อย่างสมดุลมากขึ้น */
 @Component({
   selector: 'khd-assign-technician-dialog',
   standalone: true,
@@ -50,7 +51,18 @@ export class CancelTicketDialogComponent {
         <mat-label>ช่างเทคนิค / เจ้าหน้าที่ไอที</mat-label>
         <mat-select [formControl]="technicianId">
           @for (t of technicians(); track t.id) {
-            <mat-option [value]="t.id">{{ t.fullName }}</mat-option>
+            <mat-option [value]="t.id">
+              <div class="flex items-center justify-between gap-2 w-full">
+                <span>{{ t.fullName }}</span>
+                <span
+                  class="khd-status-badge !py-0.5 !px-2 shrink-0"
+                  [style.background-color]="(t.availability === 'AVAILABLE' ? '#22C55E' : '#EF4444') + '1A'"
+                  [style.color]="t.availability === 'AVAILABLE' ? '#22C55E' : '#EF4444'"
+                >
+                  {{ t.availability === 'AVAILABLE' ? 'ว่าง' : 'ไม่ว่าง' }} · {{ t.activeTicketCount }} งาน
+                </span>
+              </div>
+            </mat-option>
           }
         </mat-select>
       </mat-form-field>
@@ -66,10 +78,10 @@ export class CancelTicketDialogComponent {
 export class AssignTechnicianDialogComponent {
   private readonly userService = inject(UserService);
   readonly technicianId = new FormControl('', { nonNullable: true, validators: Validators.required });
-  readonly technicians = signal<ITechnician[]>([]);
+  readonly technicians = signal<ITechnicianWorkload[]>([]);
 
   constructor() {
-    this.userService.listTechnicians().subscribe((list) => this.technicians.set(list));
+    this.userService.listTechnicianWorkload().subscribe((list) => this.technicians.set(list));
   }
 }
 

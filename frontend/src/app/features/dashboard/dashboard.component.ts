@@ -3,7 +3,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DashboardService } from '../../core/services/dashboard.service';
-import { UserService } from '../../core/services/user.service';
+import { UserService, type ITechnicianWorkload } from '../../core/services/user.service';
 import { DepartmentService } from '../../core/services/department.service';
 import { PositionService } from '../../core/services/position.service';
 import { DivisionService } from '../../core/services/division.service';
@@ -69,6 +69,18 @@ export class DashboardComponent {
   readonly technicianWorkload = signal<ITechnicianWorkloadItem[]>([]);
   readonly analytics = signal<IDashboardAnalytics | null>(null);
   readonly loading = signal(true);
+
+  // --- ภาระงานช่าง (เปรียบเทียบ workload + สถานะว่าง/ไม่ว่าง) ---
+  readonly technicianWorkloadDetail = signal<ITechnicianWorkload[]>([]);
+  readonly availableTechnicianCount = computed(
+    () => this.technicianWorkloadDetail().filter((t) => t.availability === 'AVAILABLE').length,
+  );
+  readonly busyTechnicianCount = computed(
+    () => this.technicianWorkloadDetail().filter((t) => t.availability === 'BUSY').length,
+  );
+  readonly technicianWorkloadSorted = computed(() =>
+    this.technicianWorkloadDetail().slice().sort((a, b) => b.activeTicketCount - a.activeTicketCount),
+  );
 
   // --- ผู้ใช้งาน ---
   readonly userStats = signal<IUserStats | null>(null);
@@ -189,6 +201,7 @@ export class DashboardComponent {
     this.dashboardService.getMonthlyChart(year).subscribe((data) => this.monthly.set(data));
     this.dashboardService.getDepartmentRanking(8).subscribe((data) => this.departmentRanking.set(data));
     this.dashboardService.getTechnicianWorkload().subscribe((data) => this.technicianWorkload.set(data));
+    this.userService.listTechnicianWorkload().subscribe((data) => this.technicianWorkloadDetail.set(data));
     this.dashboardService.getAnalytics().subscribe((data) => {
       this.analytics.set(data);
       this.loading.set(false);

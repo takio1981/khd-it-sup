@@ -13,6 +13,9 @@ import type { IRequestContext } from '@common/interfaces';
 
 const EXPORT_MAX_ROWS = 5000;
 
+/** จำนวนงานที่ยังไม่ปิดสูงสุดที่ยังถือว่า "ว่าง" — เกินกว่านี้ถือว่า "ไม่ว่าง" (เกณฑ์เริ่มต้นสำหรับทีมขนาดเล็ก ปรับได้ตามจริง) */
+const AVAILABILITY_THRESHOLD = 2;
+
 function generateTemporaryPassword(): string {
   // 12 ตัวอักษร base64url อ่านง่ายพอสมควร ปลอดภัยพอสำหรับรหัสผ่านชั่วคราวที่บังคับเปลี่ยนทันที
   return crypto.randomBytes(9).toString('base64url');
@@ -31,6 +34,17 @@ export class UserService {
 
   async listTechnicians() {
     return this.repo.findTechnicians();
+  }
+
+  /** ภาระงาน + สถานะว่าง/ไม่ว่างของช่าง/เจ้าหน้าที่ไอทีทุกคน — ใช้ทั้งตอนมอบหมายงาน (เลือกคนว่างก่อน) และหน้ารายงานเปรียบเทียบ */
+  async listTechnicianWorkload() {
+    const items = await this.repo.findTechniciansWithWorkload();
+    return items
+      .map((t) => ({
+        ...t,
+        availability: (t.activeTicketCount <= AVAILABILITY_THRESHOLD ? 'AVAILABLE' : 'BUSY') as 'AVAILABLE' | 'BUSY',
+      }))
+      .sort((a, b) => a.activeTicketCount - b.activeTicketCount);
   }
 
   async list(query: ListUsersQueryDto) {

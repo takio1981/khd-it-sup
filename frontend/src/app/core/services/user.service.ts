@@ -27,6 +27,15 @@ export interface ITechnician {
   role: { code: string };
 }
 
+export interface ITechnicianWorkload {
+  id: string;
+  fullName: string;
+  username: string;
+  role: { code: string; nameTh: string };
+  activeTicketCount: number;
+  availability: 'AVAILABLE' | 'BUSY';
+}
+
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly http = inject(HttpClient);
@@ -38,6 +47,13 @@ export class UserService {
 
   listTechnicians(): Observable<ITechnician[]> {
     return this.http.get<IApiSuccessResponse<ITechnician[]>>(`${this.base}/technicians`).pipe(map((res) => res.data));
+  }
+
+  /** ภาระงาน + สถานะว่าง/ไม่ว่างของช่าง/เจ้าหน้าที่ไอทีทุกคน — ใช้ตอนมอบหมายงานและหน้ารายงานเปรียบเทียบภาระงาน */
+  listTechnicianWorkload(): Observable<ITechnicianWorkload[]> {
+    return this.http
+      .get<IApiSuccessResponse<ITechnicianWorkload[]>>(`${this.base}/technicians/workload`)
+      .pipe(map((res) => res.data));
   }
 
   getStats(): Observable<IUserStats> {
