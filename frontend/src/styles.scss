@@ -88,6 +88,14 @@ html.dark-theme ::-webkit-scrollbar-thumb {
   max-width: 340px !important;
 }
 
+// --- กล่องค้นหาข้ามระบบ (global search dialog) — ให้ขอบมนนุ่มและเงานุ่มแบบเดียวกับ .khd-card ทั่วระบบ
+// แทนกรอบเหลี่ยม/เงาแข็งของ mat-dialog ค่า default ที่ไม่ตรงกับภาษาการออกแบบของแอป
+.khd-search-dialog-panel .mat-mdc-dialog-surface {
+  border-radius: 1.25rem !important;
+  box-shadow: 0 8px 24px 0 rgb(0 0 0 / 0.08) !important;
+  overflow: hidden;
+}
+
 // --- Table header — พื้นมิ้นต์อ่อนโทนแบรนด์ ใช้ร่วมกันทุกตาราง (mat-table) ในระบบ ---
 .mat-mdc-table .mat-mdc-header-row {
   background-color: rgb(0 108 69 / 0.06);

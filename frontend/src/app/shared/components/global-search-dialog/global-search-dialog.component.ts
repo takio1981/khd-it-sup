@@ -4,10 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { catchError, debounceTime, distinctUntilChanged, of, Subject, switchMap } from 'rxjs';
 import { SearchService, type IGlobalSearchResult } from '../../../core/services/search.service';
 import { IconComponent } from '../icon/icon.component';
-import { getStatusLabel } from '../../../core/constants/status.const';
+import { getStatusColor, getStatusLabel } from '../../../core/constants/status.const';
 
 const EMPTY_RESULT: IGlobalSearchResult = { tickets: [], assets: [], users: [], loans: [] };
 
@@ -17,12 +18,18 @@ const LOAN_STATUS_LABEL_TH: Record<string, string> = {
   RETURNED: 'คืนแล้ว',
 };
 
+const LOAN_STATUS_COLOR: Record<string, string> = {
+  BORROWED: '#3B82F6',
+  OVERDUE: '#EF4444',
+  RETURNED: '#22C55E',
+};
+
 /** ค้นหาข้ามระบบ (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้) — เปิดจากปุ่มแว่นขยายในแถบด้านบน */
 @Component({
   selector: 'khd-global-search-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, MatDialogModule, MatProgressSpinnerModule, IconComponent],
+  imports: [FormsModule, MatDialogModule, MatProgressSpinnerModule, MatTooltipModule, IconComponent],
   templateUrl: './global-search-dialog.component.html',
 })
 export class GlobalSearchDialogComponent {
@@ -33,7 +40,9 @@ export class GlobalSearchDialogComponent {
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
   readonly getStatusLabel = getStatusLabel;
+  readonly getStatusColor = getStatusColor;
   readonly getLoanStatusLabel = (status: string) => LOAN_STATUS_LABEL_TH[status] ?? status;
+  readonly getLoanStatusColor = (status: string) => LOAN_STATUS_COLOR[status] ?? '#9CA3AF';
 
   keyword = '';
   readonly loading = signal(false);
