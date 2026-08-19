@@ -1,25 +1,20 @@
-<div class="flex items-center gap-3 px-5 py-4">
-  <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-primary/10">
-    <khd-icon name="magnifying-glass" [size]="18" class="text-brand-primary" />
-  </div>
-  <input
-    #searchInput
-    type="text"
-    [(ngModel)]="keyword"
-    (ngModelChange)="onKeywordChange()"
-    placeholder="ค้นหาตั๋วซ่อม / ครุภัณฑ์ / ผู้ใช้งาน / ยืม-คืน..."
-    class="flex-1 min-w-0 bg-transparent outline-none text-base placeholder:text-neutral-400"
-  />
+<div class="flex items-start gap-2 px-4 pt-4">
+  <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
+    <mat-label>ค้นหาข้ามระบบ</mat-label>
+    <input
+      matInput
+      #searchInput
+      [(ngModel)]="keyword"
+      (ngModelChange)="onKeywordChange()"
+      placeholder="ตั๋วซ่อม / ครุภัณฑ์ / ผู้ใช้งาน / ยืม-คืน..."
+    />
+    <khd-icon matPrefix name="magnifying-glass" [size]="18" class="!mr-2 text-neutral-400" />
+  </mat-form-field>
   @if (loading()) {
-    <mat-spinner diameter="18" class="shrink-0" />
+    <mat-spinner diameter="20" class="shrink-0 !mt-2" />
   }
-  <button
-    type="button"
-    mat-dialog-close
-    matTooltip="ปิด (Esc)"
-    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-400 hover:bg-black/5 hover:text-neutral-600 dark:hover:bg-white/10 dark:hover:text-neutral-200 transition-colors"
-  >
-    <khd-icon name="x-mark" [size]="16" />
+  <button type="button" mat-icon-button mat-dialog-close matTooltip="ปิด (Esc)" class="shrink-0">
+    <khd-icon name="x-mark" [size]="18" />
   </button>
 </div>
 
