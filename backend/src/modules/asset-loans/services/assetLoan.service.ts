@@ -40,7 +40,13 @@ export class AssetLoanService {
 
   async list(query: ListAssetLoansQueryDto) {
     const pagination = normalizePagination(query);
-    const filter: IAssetLoanFilter = { status: query.status, keyword: query.keyword, dateFrom: query.dateFrom, dateTo: query.dateTo };
+    const filter: IAssetLoanFilter = {
+      status: query.status,
+      assetId: query.assetId,
+      keyword: query.keyword,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+    };
     const { items, total } = await this.repo.findMany(filter, pagination.skip, pagination.take);
     return buildPaginatedResult(items.map(withStatus), total, pagination);
   }

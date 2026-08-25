@@ -10,6 +10,7 @@ const loanInclude = {
 
 export interface IAssetLoanFilter {
   status?: 'BORROWED' | 'OVERDUE' | 'RETURNED';
+  assetId?: string;
   keyword?: string;
   dateFrom?: Date;
   dateTo?: Date;
@@ -17,6 +18,10 @@ export interface IAssetLoanFilter {
 
 function buildWhere(filter: IAssetLoanFilter): Prisma.AssetLoanWhereInput {
   const where: Prisma.AssetLoanWhereInput = {};
+
+  if (filter.assetId) {
+    where.assetId = filter.assetId;
+  }
 
   if (filter.status === 'RETURNED') {
     where.actualReturnDate = { not: null };

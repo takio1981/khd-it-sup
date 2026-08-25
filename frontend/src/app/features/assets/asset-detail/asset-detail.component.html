@@ -89,7 +89,23 @@
     </div>
 
     <div class="khd-card">
-      <h2 class="text-sm font-medium mb-3">ประวัติการซ่อม</h2>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-medium">ประวัติการซ่อม</h2>
+        <button
+          mat-button
+          class="!text-xs"
+          *khdHasPermission="['ticket:read', 'ticket:track']"
+          [matMenuTriggerFor]="historyExportMenu"
+          [disabled]="exportingHistory()"
+        >
+          <khd-icon name="arrow-down-tray" [size]="14" class="!mr-1" />
+          Export
+        </button>
+        <mat-menu #historyExportMenu="matMenu">
+          <button mat-menu-item (click)="exportHistoryExcel()">Excel (.xlsx)</button>
+          <button mat-menu-item (click)="exportHistoryCsv()">CSV</button>
+        </mat-menu>
+      </div>
       @if (history().length === 0) {
         <p class="text-sm text-neutral-400 py-4 text-center">ยังไม่มีประวัติการแจ้งซ่อม</p>
       } @else {

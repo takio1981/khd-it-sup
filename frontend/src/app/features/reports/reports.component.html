@@ -52,6 +52,27 @@
               }
             </mat-select>
           </mat-form-field>
+
+          <mat-form-field appearance="outline" class="sm:w-64 !mb-[-1.25em]">
+            <mat-label>ครุภัณฑ์/อุปกรณ์</mat-label>
+            <input
+              matInput
+              placeholder="ค้นหาเลขครุภัณฑ์ / ยี่ห้อ / รุ่น"
+              [(ngModel)]="ticketAssetKeyword"
+              (ngModelChange)="onTicketAssetKeywordChange($event)"
+              [matAutocomplete]="ticketAssetAuto"
+            />
+            @if (ticketAssetId) {
+              <button matSuffix mat-icon-button type="button" (click)="clearTicketAsset()">
+                <khd-icon name="x-mark" [size]="16" />
+              </button>
+            }
+            <mat-autocomplete #ticketAssetAuto="matAutocomplete" [displayWith]="assetDisplayFn" (optionSelected)="selectTicketAsset($event)">
+              @for (a of ticketAssetOptions(); track a.id) {
+                <mat-option [value]="a">{{ assetLabel(a) }}</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
         </div>
 
         <div class="khd-card !p-0 overflow-x-auto">
@@ -153,6 +174,27 @@
                 <mat-option [value]="s">{{ loanStatusLabel[s] }}</mat-option>
               }
             </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="sm:w-64 !mb-[-1.25em]">
+            <mat-label>ครุภัณฑ์/อุปกรณ์</mat-label>
+            <input
+              matInput
+              placeholder="ค้นหาเลขครุภัณฑ์ / ยี่ห้อ / รุ่น"
+              [(ngModel)]="loanAssetKeyword"
+              (ngModelChange)="onLoanAssetKeywordChange($event)"
+              [matAutocomplete]="loanAssetAuto"
+            />
+            @if (loanAssetId) {
+              <button matSuffix mat-icon-button type="button" (click)="clearLoanAsset()">
+                <khd-icon name="x-mark" [size]="16" />
+              </button>
+            }
+            <mat-autocomplete #loanAssetAuto="matAutocomplete" [displayWith]="assetDisplayFn" (optionSelected)="selectLoanAsset($event)">
+              @for (a of loanAssetOptions(); track a.id) {
+                <mat-option [value]="a">{{ assetLabel(a) }}</mat-option>
+              }
+            </mat-autocomplete>
           </mat-form-field>
         </div>
 

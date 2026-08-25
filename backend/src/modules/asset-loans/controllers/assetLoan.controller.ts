@@ -50,6 +50,7 @@ export const exportAssetLoans = asyncHandler(async (req: Request, res: Response)
   const query = req.query as unknown as ExportAssetLoansQueryDto;
   const items = await assetLoanService.listForExport({
     status: query.status,
+    assetId: query.assetId,
     keyword: query.keyword,
     dateFrom: query.dateFrom,
     dateTo: query.dateTo,
@@ -94,6 +95,7 @@ export const getAssetLoanDepartmentReport = asyncHandler(async (req: Request, re
   const query = req.query as unknown as AssetLoanDepartmentReportQueryDto;
   const report = await assetLoanService.getDepartmentBreakdown({
     status: query.status,
+    assetId: query.assetId,
     dateFrom: query.dateFrom,
     dateTo: query.dateTo,
   });

@@ -23,6 +23,7 @@ export const listAssetLoansQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().optional(),
   status: z.enum(['BORROWED', 'OVERDUE', 'RETURNED']).optional(),
+  assetId: z.string().uuid().optional(),
   keyword: z.string().optional(),
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),
@@ -31,6 +32,7 @@ export type ListAssetLoansQueryDto = z.infer<typeof listAssetLoansQuerySchema>;
 
 export const exportAssetLoansQuerySchema = z.object({
   status: z.enum(['BORROWED', 'OVERDUE', 'RETURNED']).optional(),
+  assetId: z.string().uuid().optional(),
   keyword: z.string().optional(),
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),
@@ -42,6 +44,7 @@ export const assetLoanDepartmentReportQuerySchema = z.object({
   dateFrom: z.coerce.date().optional(),
   dateTo: z.coerce.date().optional(),
   status: z.enum(['BORROWED', 'OVERDUE', 'RETURNED']).optional(),
+  assetId: z.string().uuid().optional(),
 });
 export type AssetLoanDepartmentReportQueryDto = z.infer<typeof assetLoanDepartmentReportQuerySchema>;
 

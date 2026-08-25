@@ -16,6 +16,7 @@ export interface IListAssetLoansParams {
   page?: number;
   limit?: number;
   status?: AssetLoanStatus;
+  assetId?: string;
   keyword?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -53,7 +54,7 @@ export class AssetLoanService {
   }
 
   getDepartmentBreakdown(
-    filter: Pick<IListAssetLoansParams, 'status' | 'dateFrom' | 'dateTo'>,
+    filter: Pick<IListAssetLoansParams, 'status' | 'assetId' | 'dateFrom' | 'dateTo'>,
   ): Observable<IAssetLoanDepartmentBreakdown[]> {
     let params = new HttpParams();
     for (const [key, value] of Object.entries(filter)) {

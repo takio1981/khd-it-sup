@@ -8,6 +8,7 @@ export interface ITicketListFilter {
   urgency?: string;
   departmentId?: string;
   assignedTechnicianId?: string;
+  assetId?: string;
   keyword?: string;
   /** จำกัดเฉพาะ ticket ของผู้ใช้คนนี้ — ใช้เมื่อผู้ใช้มีสิทธิ์แค่ ticket:track (เห็นเฉพาะของตน) */
   reportedByUserId?: string;
@@ -39,6 +40,7 @@ function buildWhere(filter: ITicketListFilter): Prisma.RepairTicketWhereInput {
     urgency: filter.urgency as Prisma.EnumTicketUrgencyFilter['equals'],
     departmentId: filter.departmentId,
     assignedTechnicianId: filter.assignedTechnicianId,
+    assetId: filter.assetId,
     reportedByUserId: filter.reportedByUserId,
     ...(filter.dateFrom || filter.dateTo
       ? { createdAt: { gte: filter.dateFrom, lte: filter.dateTo } }

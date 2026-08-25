@@ -25,6 +25,7 @@ export interface ITicketListFilter {
   urgency?: string;
   departmentId?: string;
   assignedTechnicianId?: string;
+  assetId?: string;
   keyword?: string;
   dateFrom?: string;
   dateTo?: string;

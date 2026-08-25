@@ -5,9 +5,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatMenuModule } from '@angular/material/menu';
 import { AuthService } from '../../../core/services/auth.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { QrCodeService } from '../../../core/services/qrcode.service';
+import { RepairTicketService } from '../../../core/services/repair-ticket.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
@@ -16,6 +18,7 @@ import { QrPrintPreviewComponent } from '../../../shared/components/qr-print-pre
 import { AssetPhotoThumbnailComponent } from '../../../shared/components/asset-photo-thumbnail/asset-photo-thumbnail.component';
 import type { IQrLabelData } from '../../../shared/components/qr-print-preview/qr-print-preview.model';
 import { AssetFormComponent } from '../asset-form/asset-form.component';
+import { downloadBlob } from '../../../core/utils/download.util';
 import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/models/asset.model';
 
 @Component({
@@ -26,6 +29,7 @@ import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/mo
     RouterLink,
     DatePipe,
     MatButtonModule,
+    MatMenuModule,
     MatProgressSpinnerModule,
     StatusBadgeComponent,
     IconComponent,
@@ -37,6 +41,7 @@ import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/mo
 export class AssetDetailComponent {
   private readonly assetService = inject(AssetService);
   private readonly qrCodeService = inject(QrCodeService);
+  private readonly repairTicketService = inject(RepairTicketService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
@@ -56,6 +61,7 @@ export class AssetDetailComponent {
   readonly printing = signal(false);
   readonly uploadingPhotos = signal(false);
   readonly categories = signal<IAssetCategory[]>([]);
+  readonly exportingHistory = signal(false);
 
   constructor() {
     this.assetService.getCategories().subscribe((cats) => this.categories.set(cats));
@@ -203,6 +209,32 @@ export class AssetDetailComponent {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) this.assetService.removePhoto(this.id(), photoId).subscribe(() => this.load());
+    });
+  }
+
+  exportHistoryExcel(): void {
+    this.exportHistory('xlsx');
+  }
+
+  exportHistoryCsv(): void {
+    this.exportHistory('csv');
+  }
+
+  private exportHistory(format: 'xlsx' | 'csv'): void {
+    if (this.exportingHistory()) return;
+    const asset = this.asset();
+    if (!asset) return;
+
+    this.exportingHistory.set(true);
+    this.repairTicketService.exportFile({ assetId: asset.id }, format).subscribe({
+      next: (blob) => {
+        downloadBlob(blob, `repair-history-${asset.assetNumber}-${Date.now()}.${format}`);
+        this.exportingHistory.set(false);
+      },
+      error: () => {
+        this.exportingHistory.set(false);
+        this.snackBar.open('Export ประวัติการซ่อมไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
     });
   }
 }
