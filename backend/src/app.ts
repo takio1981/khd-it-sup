@@ -8,6 +8,7 @@ import { env } from '@config/env';
 import { swaggerSpec } from '@config/swagger.config';
 import { authenticate, errorHandler, globalRateLimiter, notFoundHandler, requestLogger } from '@common/middleware';
 import { requestId } from '@common/middleware/requestLogger';
+import { corsOriginResolver } from '@common/utils/cors.util';
 
 import authRoutes from '@modules/auth/routes';
 import userRoutes from '@modules/users/routes';
@@ -50,7 +51,7 @@ export function createApp(): Express {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
-  app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+  app.use(cors({ origin: corsOriginResolver, credentials: true }));
   app.use(compression());
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true, limit: '2mb' }));
