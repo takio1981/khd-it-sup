@@ -1,0 +1,52 @@
+@echo off
+setlocal enabledelayedexpansion
+cd /d "%~dp0"
+
+echo ================================================================
+echo  KHD-IT-SUP — Dev environment
+echo  (แยกจาก production โดยสิ้นเชิง — ไม่กระทบระบบจริงที่ผู้ใช้ใช้งานอยู่)
+echo ================================================================
+echo.
+
+echo [1/3] กำลัง start dev database (docker)...
+docker compose -f docker-compose.dev.yml up -d
+if errorlevel 1 (
+  echo.
+  echo [ERROR] start dev database ไม่สำเร็จ — ตรวจสอบว่า Docker Desktop เปิดอยู่หรือไม่
+  pause
+  exit /b 1
+)
+
+echo.
+echo [2/3] กำลังรอ dev database พร้อมใช้งาน...
+set /a tries=0
+:waitdb
+docker inspect --format="{{.State.Health.Status}}" khd_it_sup_dev_db 2>nul | findstr /c:"healthy" >nul
+if not errorlevel 1 goto dbready
+set /a tries+=1
+if !tries! geq 30 (
+  echo [ERROR] dev database ยังไม่ healthy หลังจากรอ — ตรวจสอบด้วย: docker logs khd_it_sup_dev_db
+  pause
+  exit /b 1
+)
+timeout /t 2 /nobreak >nul
+goto waitdb
+:dbready
+echo       dev database พร้อมแล้ว (localhost:3308)
+
+echo.
+echo [3/3] กำลังเปิดหน้าต่าง backend + frontend dev server...
+start "KHD-IT-SUP Backend (dev :3500)" cmd /k "cd /d "%~dp0backend" && npm run dev"
+start "KHD-IT-SUP Frontend (dev :4500)" cmd /k "cd /d "%~dp0frontend" && npm start"
+
+echo.
+echo ================================================================
+echo  พร้อมใช้งาน:
+echo    Frontend : http://localhost:4500
+echo    Backend  : http://localhost:3500/api/v1
+echo    Swagger  : http://localhost:3500/api-docs
+echo.
+echo  ปิดการทำงาน: ปิดหน้าต่าง backend/frontend ที่เปิดขึ้นมา แล้วรัน stop-dev.bat
+echo ================================================================
+echo.
+pause

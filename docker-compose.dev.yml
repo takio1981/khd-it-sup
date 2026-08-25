@@ -1,0 +1,41 @@
+# =====================================================================================
+# KHD-IT-SUP — Dev database only (ใช้คู่กับ dev.bat)
+#
+# รัน MariaDB แยก container/volume/port จาก docker-compose.yml (production) โดยสิ้นเชิง —
+# เพื่อให้ผู้พัฒนาแก้โค้ด+ทดสอบได้อย่างอิสระ โดยไม่กระทบข้อมูลจริงที่ระบบ production ใช้งานอยู่
+# backend/frontend รันนอก Docker ตรง ๆ ผ่าน dev.bat (เร็วกว่า + hot-reload ได้)
+#
+# ใช้งาน: docker compose -f docker-compose.dev.yml up -d   (เรียกอัตโนมัติจาก dev.bat อยู่แล้ว)
+# =====================================================================================
+name: khd-it-sup-dev
+
+services:
+  mariadb-dev:
+    image: mariadb:11
+    container_name: khd_it_sup_dev_db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-khd_it_sup}
+      MARIADB_USER: ${MARIADB_USER:-khd_app}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-changeme}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-changeme_root}
+    ports:
+      - '${DEV_MARIADB_PORT:-3308}:3306'
+    volumes:
+      - mariadb-dev-data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [khd-dev-network]
+
+networks:
+  khd-dev-network:
+    driver: bridge
+
+volumes:
+  mariadb-dev-data:
