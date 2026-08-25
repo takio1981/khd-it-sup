@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as assetLoanController from '@modules/asset-loans/controllers/assetLoan.controller';
 import {
+  assetLoanDepartmentReportQuerySchema,
   assetLoanIdParamSchema,
   createAssetLoanSchema,
   exportAssetLoansQuerySchema,
@@ -48,6 +49,21 @@ router.get('/stats', requirePermission(FULL_PERM), assetLoanController.getAssetL
  *     security: [{ bearerAuth: [] }]
  */
 router.get('/chart', requirePermission(FULL_PERM), assetLoanController.getAssetLoanChartData);
+
+/**
+ * @openapi
+ * /asset-loans/report/by-department:
+ *   get:
+ *     tags: [AssetLoans]
+ *     summary: รายงานยืม-คืนแยกรายหน่วยงาน (ตามหน่วยงานของผู้ยืม) — ใช้หน้ารายงาน
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/report/by-department',
+  requirePermission(FULL_PERM),
+  validateRequest({ query: assetLoanDepartmentReportQuerySchema }),
+  assetLoanController.getAssetLoanDepartmentReport,
+);
 
 /**
  * @openapi

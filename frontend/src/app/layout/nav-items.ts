@@ -10,6 +10,7 @@ export interface INavItem {
 
 export const NAV_ITEMS: INavItem[] = [
   { label: 'แดชบอร์ด', route: '/dashboard', icon: 'home', permissions: ['dashboard:view'] },
+  { label: 'รายงาน', route: '/reports', icon: 'chart-bar', permissions: ['report:view'] },
   { label: 'งานแจ้งซ่อม', route: '/repair-tickets', icon: 'wrench-screwdriver', permissions: ['ticket:read', 'ticket:track'] },
   { label: 'ครุภัณฑ์', route: '/assets', icon: 'computer-desktop', permissions: ['asset:read'] },
   { label: 'ยืมครุภัณฑ์-อุปกรณ์', route: '/asset-loans', icon: 'arrow-path', permissions: ['asset:loan'] },

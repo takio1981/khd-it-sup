@@ -17,6 +17,14 @@ export interface IListAssetLoansParams {
   limit?: number;
   status?: AssetLoanStatus;
   keyword?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface IAssetLoanDepartmentBreakdown {
+  departmentId: string | null;
+  departmentName: string;
+  loanCount: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -42,6 +50,18 @@ export class AssetLoanService {
 
   getChartData(): Observable<IAssetLoanChartData> {
     return this.http.get<IApiSuccessResponse<IAssetLoanChartData>>(`${this.base}/chart`).pipe(map((res) => res.data));
+  }
+
+  getDepartmentBreakdown(
+    filter: Pick<IListAssetLoansParams, 'status' | 'dateFrom' | 'dateTo'>,
+  ): Observable<IAssetLoanDepartmentBreakdown[]> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(filter)) {
+      if (value !== undefined && value !== null && value !== '') params = params.set(key, String(value));
+    }
+    return this.http
+      .get<IApiSuccessResponse<IAssetLoanDepartmentBreakdown[]>>(`${this.base}/report/by-department`, { params })
+      .pipe(map((res) => res.data));
   }
 
   getById(id: string): Observable<IAssetLoan> {

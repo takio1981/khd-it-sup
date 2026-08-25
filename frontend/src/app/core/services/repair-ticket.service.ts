@@ -26,6 +26,8 @@ export interface ITicketListFilter {
   departmentId?: string;
   assignedTechnicianId?: string;
   keyword?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 @Injectable({ providedIn: 'root' })

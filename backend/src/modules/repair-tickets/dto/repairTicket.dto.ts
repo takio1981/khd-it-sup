@@ -96,6 +96,8 @@ export const listTicketsQuerySchema = z.object({
   departmentId: z.string().uuid().optional(),
   assignedTechnicianId: z.string().uuid().optional(),
   keyword: z.string().optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
 });
 export type ListTicketsQueryDto = z.infer<typeof listTicketsQuerySchema>;
 
@@ -105,6 +107,8 @@ export const exportTicketsQuerySchema = z.object({
   departmentId: z.string().uuid().optional(),
   assignedTechnicianId: z.string().uuid().optional(),
   keyword: z.string().optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
   format: z.enum(['xlsx', 'csv']).default('xlsx'),
 });
 export type ExportTicketsQueryDto = z.infer<typeof exportTicketsQuerySchema>;

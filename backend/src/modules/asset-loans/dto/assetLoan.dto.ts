@@ -24,14 +24,25 @@ export const listAssetLoansQuerySchema = z.object({
   limit: z.coerce.number().int().positive().optional(),
   status: z.enum(['BORROWED', 'OVERDUE', 'RETURNED']).optional(),
   keyword: z.string().optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
 });
 export type ListAssetLoansQueryDto = z.infer<typeof listAssetLoansQuerySchema>;
 
 export const exportAssetLoansQuerySchema = z.object({
   status: z.enum(['BORROWED', 'OVERDUE', 'RETURNED']).optional(),
   keyword: z.string().optional(),
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
   format: z.enum(['xlsx', 'csv']).default('xlsx'),
 });
 export type ExportAssetLoansQueryDto = z.infer<typeof exportAssetLoansQuerySchema>;
+
+export const assetLoanDepartmentReportQuerySchema = z.object({
+  dateFrom: z.coerce.date().optional(),
+  dateTo: z.coerce.date().optional(),
+  status: z.enum(['BORROWED', 'OVERDUE', 'RETURNED']).optional(),
+});
+export type AssetLoanDepartmentReportQueryDto = z.infer<typeof assetLoanDepartmentReportQuerySchema>;
 
 export const assetLoanIdParamSchema = z.object({ id: z.string().uuid('id ต้องเป็น UUID') });

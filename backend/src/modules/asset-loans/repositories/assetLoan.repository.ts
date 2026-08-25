@@ -11,6 +11,8 @@ const loanInclude = {
 export interface IAssetLoanFilter {
   status?: 'BORROWED' | 'OVERDUE' | 'RETURNED';
   keyword?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 function buildWhere(filter: IAssetLoanFilter): Prisma.AssetLoanWhereInput {
@@ -24,6 +26,10 @@ function buildWhere(filter: IAssetLoanFilter): Prisma.AssetLoanWhereInput {
   } else if (filter.status === 'BORROWED') {
     where.actualReturnDate = null;
     where.OR = [{ expectedReturnDate: null }, { expectedReturnDate: { gte: new Date() } }];
+  }
+
+  if (filter.dateFrom || filter.dateTo) {
+    where.borrowDate = { gte: filter.dateFrom, lte: filter.dateTo };
   }
 
   if (filter.keyword) {
@@ -100,6 +106,15 @@ export class AssetLoanRepository {
   async findAllForChart() {
     return prisma.assetLoan.findMany({
       select: { asset: { select: { assetNumber: true, brand: true, model: true } }, borrower: { select: { fullName: true } } },
+    });
+  }
+
+  /** ใช้สำหรับรายงานยืม-คืนแยกรายหน่วยงาน (หน่วยงานของผู้ยืม) — aggregate ใน service layer เหมือน getChartData() */
+  async findAllForDepartmentReport(filter: IAssetLoanFilter) {
+    const where = buildWhere(filter);
+    return prisma.assetLoan.findMany({
+      where,
+      select: { borrower: { select: { department: { select: { id: true, nameTh: true } } } } },
     });
   }
 }

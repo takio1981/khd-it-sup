@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { AssetLoanService } from '@modules/asset-loans/services/assetLoan.service';
 import type {
+  AssetLoanDepartmentReportQueryDto,
   CreateAssetLoanDto,
   ExportAssetLoansQueryDto,
   ListAssetLoansQueryDto,
@@ -47,7 +48,12 @@ export const listAssetLoans = asyncHandler(async (req: Request, res: Response) =
 
 export const exportAssetLoans = asyncHandler(async (req: Request, res: Response) => {
   const query = req.query as unknown as ExportAssetLoansQueryDto;
-  const items = await assetLoanService.listForExport({ status: query.status, keyword: query.keyword });
+  const items = await assetLoanService.listForExport({
+    status: query.status,
+    keyword: query.keyword,
+    dateFrom: query.dateFrom,
+    dateTo: query.dateTo,
+  });
 
   const rows = items.map((l) => ({
     assetNumber: l.asset.assetNumber,
@@ -82,6 +88,16 @@ export const getAssetLoanStats = asyncHandler(async (_req: Request, res: Respons
 
 export const getAssetLoanChartData = asyncHandler(async (_req: Request, res: Response) => {
   sendSuccess(res, await assetLoanService.getChartData());
+});
+
+export const getAssetLoanDepartmentReport = asyncHandler(async (req: Request, res: Response) => {
+  const query = req.query as unknown as AssetLoanDepartmentReportQueryDto;
+  const report = await assetLoanService.getDepartmentBreakdown({
+    status: query.status,
+    dateFrom: query.dateFrom,
+    dateTo: query.dateTo,
+  });
+  sendSuccess(res, report);
 });
 
 export const getAssetLoan = asyncHandler(async (req: Request, res: Response) => {

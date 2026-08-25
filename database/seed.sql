@@ -97,7 +97,7 @@ SELECT @role_it_officer, `id` FROM `permissions`
 WHERE `code` IN (
   'dashboard:view','asset:read','asset:loan','qrcode:generate',
   'ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment','ticket:approve','ticket:close',
-  'document:print','document:generate',
+  'document:print','document:generate','report:view','report:export',
   'spare_part:view','spare_part:issue',
   'vendor:view','vendor:manage'
 );

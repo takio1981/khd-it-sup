@@ -11,6 +11,8 @@ export interface ITicketListFilter {
   keyword?: string;
   /** จำกัดเฉพาะ ticket ของผู้ใช้คนนี้ — ใช้เมื่อผู้ใช้มีสิทธิ์แค่ ticket:track (เห็นเฉพาะของตน) */
   reportedByUserId?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 const ticketListInclude = {
@@ -38,6 +40,9 @@ function buildWhere(filter: ITicketListFilter): Prisma.RepairTicketWhereInput {
     departmentId: filter.departmentId,
     assignedTechnicianId: filter.assignedTechnicianId,
     reportedByUserId: filter.reportedByUserId,
+    ...(filter.dateFrom || filter.dateTo
+      ? { createdAt: { gte: filter.dateFrom, lte: filter.dateTo } }
+      : {}),
     ...(filter.keyword
       ? {
           OR: [

@@ -40,7 +40,7 @@ export class AssetLoanService {
 
   async list(query: ListAssetLoansQueryDto) {
     const pagination = normalizePagination(query);
-    const filter: IAssetLoanFilter = { status: query.status, keyword: query.keyword };
+    const filter: IAssetLoanFilter = { status: query.status, keyword: query.keyword, dateFrom: query.dateFrom, dateTo: query.dateTo };
     const { items, total } = await this.repo.findMany(filter, pagination.skip, pagination.take);
     return buildPaginatedResult(items.map(withStatus), total, pagination);
   }
@@ -78,6 +78,25 @@ export class AssetLoanService {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
     return { topAssets, topBorrowers };
+  }
+
+  /** รายงานยืม-คืนแยกรายหน่วยงาน (ตามหน่วยงานของผู้ยืม) — ใช้หน้ารายงาน */
+  async getDepartmentBreakdown(filter: IAssetLoanFilter) {
+    const loans = await this.repo.findAllForDepartmentReport(filter);
+    const counts = new Map<string, { departmentId: string | null; departmentName: string; count: number }>();
+    for (const loan of loans) {
+      const dept = loan.borrower.department;
+      const key = dept?.id ?? 'none';
+      const existing = counts.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        counts.set(key, { departmentId: dept?.id ?? null, departmentName: dept?.nameTh ?? 'ไม่ระบุหน่วยงาน', count: 1 });
+      }
+    }
+    return Array.from(counts.values())
+      .map((v) => ({ departmentId: v.departmentId, departmentName: v.departmentName, loanCount: v.count }))
+      .sort((a, b) => b.loanCount - a.loanCount);
   }
 
   async create(dto: CreateAssetLoanDto, ctx: IRequestContext) {
