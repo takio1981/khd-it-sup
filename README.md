@@ -68,9 +68,15 @@ khd-it-sup/
 ├── docker/         Nginx reverse proxy config
 ├── docs/           สถาปัตยกรรม, ER Diagram, API Design, คู่มือทุกประเภท
 ├── postman/        Postman Collection สำหรับทดสอบ API
-├── docker-compose.yml
+├── docker-compose.yml       Production stack (nginx + backend + frontend + mariadb)
+├── docker-compose.dev.yml   Dev database เท่านั้น (แยกจาก production โดยสิ้นเชิง — ดู dev.bat)
+├── dev.bat / stop-dev.bat   เริ่ม/หยุด local dev environment สำหรับนักพัฒนา
+├── deploy-prod.bat          Build + deploy ขึ้น production จริง
 └── .env.example
 ```
+
+รายละเอียดขั้นตอน setup ทั้งแบบ production (Docker) และแบบ dev (`dev.bat`) รวมถึงการสร้าง/เชื่อมต่อฐานข้อมูลแบบละเอียด:
+[docs/06-installation-guide.md](docs/06-installation-guide.md)
 
 รายละเอียดทุกโฟลเดอร์: [docs/02-folder-structure.md](docs/02-folder-structure.md)
 
@@ -91,7 +97,8 @@ khd-it-sup/
 | [10-developer-manual.md](docs/10-developer-manual.md) | คู่มือนักพัฒนา |
 | [11-api-manual.md](docs/11-api-manual.md) | คู่มือการใช้งาน API |
 
-Swagger UI (interactive API docs เมื่อรันระบบแล้ว): `http://localhost/api-docs`
+Swagger UI (interactive API docs เมื่อรันระบบแล้ว): `http://localhost/khd-it-sup/api-docs` (production) หรือ
+`http://localhost:3500/api-docs` (dev — ดู [docs/06-installation-guide.md § 6.3](docs/06-installation-guide.md#63-วิธีที่-2-รัน-local-dev-ผ่าน-devbat-แนะนำสำหรับนักพัฒนา-windows))
 
 ## License
 

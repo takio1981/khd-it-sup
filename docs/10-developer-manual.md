@@ -2,8 +2,10 @@
 
 ## 10.1 เริ่มต้นพัฒนา
 
-ดู [docs/06-installation-guide.md § 6.3](06-installation-guide.md#63-วิธีที่-2-รัน-local-dev-ไม่ผ่าน-docker--สำหรับนักพัฒนา)
-สำหรับการตั้งค่า local dev environment
+ดู [docs/06-installation-guide.md § 6.3](06-installation-guide.md#63-วิธีที่-2-รัน-local-dev-ผ่าน-devbat-แนะนำสำหรับนักพัฒนา-windows)
+สำหรับการตั้งค่า local dev environment — สรุปสั้น: `dev.bat` เปิด dev database แยกจาก production (container/พอร์ต/volume คนละชุด)
+แล้วรัน backend (`:3500`) + frontend (`:4500/khd-it-sup/`) ให้อัตโนมัติ ส่วนการ deploy ขึ้น production ใช้ `deploy-prod.bat`
+(ดู [docs/06-installation-guide.md § 6.5](06-installation-guide.md#65-การ-deploy-ขึ้น-production-จากเครื่อง-dev-deploy-probat))
 
 ## 10.2 สถาปัตยกรรมโดยสรุป
 
@@ -84,11 +86,14 @@ Integration test (`tests/integration/`) ยิง request ผ่าน `createAp
 
 | คำสั่ง | ตำแหน่ง | คำอธิบาย |
 |---|---|---|
-| `npm run dev` | backend/ | รัน dev server พร้อม hot-reload |
+| `dev.bat` | root | เริ่ม dev database (Docker, แยกจาก production) + เปิดหน้าต่าง backend/frontend dev server ให้ทั้งคู่ |
+| `stop-dev.bat` | root | หยุด dev database (เก็บข้อมูลในไว้ volume ไม่ลบ) |
+| `deploy-prod.bat` | root | typecheck+build ทั้งคู่ แล้ว build/up docker + restart nginx ขึ้น production จริง (มีถามยืนยันก่อน) |
+| `npm run dev` | backend/ | รัน dev server พร้อม hot-reload (พอร์ต 3500 ตาม `backend/.env`) |
 | `npm run build` | backend/ | Compile TypeScript + resolve path alias |
 | `npx prisma studio` | backend/ | เปิด GUI ดู/แก้ไขข้อมูลในฐานข้อมูล |
 | `npx prisma generate` | backend/ | สร้าง Prisma Client ใหม่หลังแก้ `schema.prisma` |
-| `npm start` / `npx ng serve` | frontend/ | รัน dev server |
+| `npm start` | frontend/ | รัน dev server ที่ `http://localhost:4500/khd-it-sup/` (`ng serve` พร้อม `--serve-path`+`--proxy-config`) |
 | `npx ng build --configuration production` | frontend/ | Build production |
 
 ## 10.8 ข้อควรระวังที่พบระหว่างพัฒนา (Gotchas)

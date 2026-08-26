@@ -4,7 +4,7 @@
 
 - [ ] เปลี่ยนค่า secret ทั้งหมดใน `.env` (JWT secrets, DB password, QR AES secret) จากค่า default/ตัวอย่าง
 - [ ] เปลี่ยนรหัสผ่าน admin ทันทีหลัง deploy (บังคับอยู่แล้วโดยระบบ)
-- [ ] ตั้งค่า Gmail SMTP จริง (ดู [docs/06-installation-guide.md](06-installation-guide.md#65-การตั้งค่า-gmail-smtp))
+- [ ] ตั้งค่า Gmail SMTP จริง (ดู [docs/06-installation-guide.md](06-installation-guide.md#67-การตั้งค่า-gmail-smtp-สำหรับแจ้งเตือนทางอีเมล))
 - [ ] เตรียมใบรับรอง TLS/SSL (Let's Encrypt หรือใบรับรองขององค์กร)
 - [ ] ตั้งค่า DNS ให้ชี้มายังเซิร์ฟเวอร์ที่รัน Docker
 - [ ] วางแผนสำรองข้อมูล (ดูหัวข้อ 7.4)
