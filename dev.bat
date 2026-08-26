@@ -41,9 +41,9 @@ start "KHD-IT-SUP Frontend (dev :4500)" cmd /k "cd /d "%~dp0frontend" && npm sta
 
 echo.
 echo ================================================================
-echo  พร้อมใช้งาน:
-echo    Frontend : http://localhost:4500
-echo    Backend  : http://localhost:3500/api/v1
+echo  พร้อมใช้งาน (URL รูปแบบเดียวกับ production — ใต้ path /khd-it-sup/):
+echo    เว็บแอป  : http://localhost:4500/khd-it-sup/
+echo    Backend  : http://localhost:3500/api/v1  (เข้าผ่าน frontend proxy ให้อัตโนมัติแล้ว)
 echo    Swagger  : http://localhost:3500/api-docs
 echo.
 echo  ปิดการทำงาน: ปิดหน้าต่าง backend/frontend ที่เปิดขึ้นมา แล้วรัน stop-dev.bat

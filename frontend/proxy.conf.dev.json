@@ -1,0 +1,21 @@
+{
+  "/khd-it-sup/api": {
+    "target": "http://localhost:3500",
+    "pathRewrite": { "^/khd-it-sup": "" },
+    "changeOrigin": true,
+    "secure": false
+  },
+  "/khd-it-sup/api-docs": {
+    "target": "http://localhost:3500",
+    "pathRewrite": { "^/khd-it-sup": "" },
+    "changeOrigin": true,
+    "secure": false
+  },
+  "/khd-it-sup/socket.io": {
+    "target": "http://localhost:3500",
+    "pathRewrite": { "^/khd-it-sup": "" },
+    "changeOrigin": true,
+    "secure": false,
+    "ws": true
+  }
+}
