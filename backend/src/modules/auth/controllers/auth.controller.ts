@@ -13,7 +13,7 @@ import type {
 import { asyncHandler } from '@common/utils/asyncHandler';
 import { sendSuccess } from '@common/utils/apiResponse';
 import { BadRequestError, UnauthorizedError } from '@common/errors';
-import { env, isProduction } from '@config/env';
+import { env } from '@config/env';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 
 const authService = new AuthService();
@@ -31,10 +31,16 @@ function externalPathPrefix(): string {
   }
 }
 
-function refreshCookieOptions(expiresAt: Date): CookieOptions {
+/**
+ * ใช้ `req.secure` (อ่านจาก X-Forwarded-Proto ผ่าน `app.set('trust proxy', 1)`) แทนการอิง
+ * isProduction ตรงๆ — deployment นี้เสิร์ฟผ่าน HTTP ล้วน (ไม่มี TLS ที่ Nginx) แม้ใน production ถ้าตั้ง
+ * secure:true ทื่อๆ ตาม NODE_ENV บราวเซอร์จะไม่ยอมเก็บ cookie เลยเวลาเข้าผ่าน IP เครื่อง (เช่นจากมือถือ) —
+ * มีแค่ localhost/127.0.0.1 ที่บราวเซอร์บางตัวยกเว้นให้ ถ้าวันไหนใส่ TLS จริงที่ Nginx ค่านี้จะเป็น true เองอัตโนมัติ
+ */
+function refreshCookieOptions(req: Request, expiresAt: Date): CookieOptions {
   return {
     httpOnly: true,
-    secure: isProduction,
+    secure: req.secure,
     sameSite: 'strict',
     path: `${externalPathPrefix()}${env.API_PREFIX}/auth`,
     expires: expiresAt,
@@ -45,10 +51,10 @@ function pinDeviceCookiePath(): string {
   return `${externalPathPrefix()}${env.API_PREFIX}/auth/pin`;
 }
 
-function pinDeviceCookieOptions(expiresAt: Date): CookieOptions {
+function pinDeviceCookieOptions(req: Request, expiresAt: Date): CookieOptions {
   return {
     httpOnly: true,
-    secure: isProduction,
+    secure: req.secure,
     sameSite: 'strict',
     path: pinDeviceCookiePath(),
     expires: expiresAt,
@@ -63,7 +69,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const { username, password } = req.body as LoginDto;
   const result = await authService.login(username, password, getContext(req));
 
-  res.cookie(env.REFRESH_TOKEN_COOKIE_NAME, result.refreshToken, refreshCookieOptions(result.refreshTokenExpiresAt));
+  res.cookie(env.REFRESH_TOKEN_COOKIE_NAME, result.refreshToken, refreshCookieOptions(req, result.refreshTokenExpiresAt));
   sendSuccess(res, { accessToken: result.accessToken, user: result.user });
 });
 
@@ -74,7 +80,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const result = await authService.refresh(token, getContext(req));
-  res.cookie(env.REFRESH_TOKEN_COOKIE_NAME, result.refreshToken, refreshCookieOptions(result.refreshTokenExpiresAt));
+  res.cookie(env.REFRESH_TOKEN_COOKIE_NAME, result.refreshToken, refreshCookieOptions(req, result.refreshTokenExpiresAt));
   sendSuccess(res, { accessToken: result.accessToken, user: result.user });
 });
 
@@ -152,7 +158,7 @@ export const setupPin = asyncHandler(async (req: Request, res: Response) => {
     existingDeviceSecret,
   );
 
-  res.cookie(env.PIN_DEVICE_COOKIE_NAME, result.deviceSecret, pinDeviceCookieOptions(result.expiresAt));
+  res.cookie(env.PIN_DEVICE_COOKIE_NAME, result.deviceSecret, pinDeviceCookieOptions(req, result.expiresAt));
   sendSuccess(res, { deviceLabel: result.deviceLabel, expiresAt: result.expiresAt });
 });
 
@@ -161,8 +167,8 @@ export const pinLogin = asyncHandler(async (req: Request, res: Response) => {
 
   try {
     const result = await authService.loginWithPin(deviceSecret, req.body as PinLoginDto, getContext(req));
-    res.cookie(env.REFRESH_TOKEN_COOKIE_NAME, result.refreshToken, refreshCookieOptions(result.refreshTokenExpiresAt));
-    res.cookie(env.PIN_DEVICE_COOKIE_NAME, result.deviceSecret, pinDeviceCookieOptions(result.deviceExpiresAt));
+    res.cookie(env.REFRESH_TOKEN_COOKIE_NAME, result.refreshToken, refreshCookieOptions(req, result.refreshTokenExpiresAt));
+    res.cookie(env.PIN_DEVICE_COOKIE_NAME, result.deviceSecret, pinDeviceCookieOptions(req, result.deviceExpiresAt));
     sendSuccess(res, { accessToken: result.accessToken, user: result.user });
   } catch (err) {
     // อุปกรณ์นี้ใช้ PIN ต่อไม่ได้แล้ว (ถูกยกเลิก/หมดอายุ/ไม่รู้จัก) — ล้าง cookie ทิ้งเพื่อไม่ให้ frontend ยังพยายามแสดงหน้า PIN ต่อ
