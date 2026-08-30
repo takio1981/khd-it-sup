@@ -87,6 +87,14 @@ export interface IPinSetupResponse {
   expiresAt: string;
 }
 
+/** ผลตรวจสอบว่าอุปกรณ์นี้มี PIN ที่ใช้งานได้อยู่หรือไม่ — แหล่งความจริงที่แท้จริง ไม่ใช่ localStorage marker */
+export interface IPinStatusResponse {
+  available: boolean;
+  username?: string;
+  fullName?: string;
+  gender?: Gender | null;
+}
+
 export interface IPinLoginRequest {
   pin: string;
 }

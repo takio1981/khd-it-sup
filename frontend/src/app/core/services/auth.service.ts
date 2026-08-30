@@ -14,6 +14,7 @@ import type {
   IPinLoginRequest,
   IPinSetupRequest,
   IPinSetupResponse,
+  IPinStatusResponse,
   IUpdateNotificationChannelsPayload,
   Permission,
 } from '../models/auth.model';
@@ -106,6 +107,17 @@ export class AuthService {
       );
   }
 
+  /**
+   * ตรวจสอบกับ server ว่าอุปกรณ์นี้มี PIN ใช้งานได้จริงหรือไม่ — เป็นแหล่งความจริงที่หน้า login ควรใช้ตัดสินใจ
+   * แสดงหน้ากรอก PIN หรือฟอร์มรหัสผ่าน แทนการเชื่อ localStorage marker เพียงอย่างเดียว (marker อาจไม่ตรงกับ
+   * ความจริงได้ เช่น cookie ถูกล้างไปแล้วแต่ marker ยังอยู่ หรือ PIN ถูกยกเลิกจากอุปกรณ์อื่น)
+   */
+  getPinStatus(): Observable<IPinStatusResponse> {
+    return this.http
+      .get<IApiSuccessResponse<IPinStatusResponse>>(`${environment.apiBaseUrl}/auth/pin/status`, { withCredentials: true })
+      .pipe(map((res) => res.data));
+  }
+
   /** เข้าสู่ระบบด้วย PIN — ใช้ได้เฉพาะอุปกรณ์ที่เคยตั้งค่า PIN ไว้แล้ว (ยืนยันผ่าน httpOnly cookie ไม่ใช่ token) */
   loginWithPin(payload: IPinLoginRequest): Observable<IAuthUser> {
     return this.http
@@ -136,14 +148,11 @@ export class AuthService {
   }
 
   /**
-   * Marker ฝั่ง client บอกว่าเบราว์เซอร์นี้ควรแสดงหน้า "กรอก PIN" แทนฟอร์ม user/password — เก็บแค่
-   * username/fullName/gender เพื่อทักทายผู้ใช้เท่านั้น ไม่มี PIN/token/secret ใดๆ ตัวยืนยันตัวตนจริง
-   * คือ httpOnly cookie ที่ JS อ่านไม่ได้ ต่อให้ localStorage ถูกอ่านก็ล็อกอินด้วย PIN ไม่ได้ถ้าไม่มี cookie คู่กัน
+   * Marker ฝั่ง client เก็บ username/fullName/gender ไว้ทักทายผู้ใช้บนหน้ากรอก PIN เท่านั้น ไม่มี
+   * PIN/token/secret ใดๆ — ตัวยืนยันตัวตนจริงคือ httpOnly cookie ที่ JS อ่านไม่ได้ ต่อให้ localStorage
+   * ถูกอ่านก็ล็อกอินด้วย PIN ไม่ได้ถ้าไม่มี cookie คู่กัน แหล่งความจริงว่าจะแสดงหน้า PIN หรือไม่คือ
+   * getPinStatus() (เช็คกับ server) ไม่ใช่การเช็คว่า marker นี้มีอยู่หรือเปล่า
    */
-  hasPinLoginMarker(): boolean {
-    return this.getPinLoginMarker() !== null;
-  }
-
   getPinLoginMarker(): IPinLoginMarker | null {
     try {
       const raw = localStorage.getItem(PIN_LOGIN_MARKER_KEY);

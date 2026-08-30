@@ -40,13 +40,38 @@ export class LoginComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly hidePassword = signal(true);
 
-  /** เครื่องนี้เคยตั้งค่า PIN ไว้แล้ว — เริ่มด้วยหน้ากรอก PIN แทนฟอร์ม user/password */
-  readonly mode = signal<'pin' | 'password'>(this.authService.hasPinLoginMarker() ? 'pin' : 'password');
+  /**
+   * ต้องรอผลจาก server ก่อนตัดสินใจว่าจะแสดงหน้ากรอก PIN หรือฟอร์ม user/password — localStorage marker
+   * เพียงอย่างเดียวไม่พอ เพราะอาจไม่ตรงกับความจริงได้ (cookie ถูกล้าง/PIN ถูกยกเลิกจากอุปกรณ์อื่น ฯลฯ)
+   * ระหว่างรอผลจะยังไม่แสดงฟอร์มไหนเลย กันไม่ให้กระพริบไปมาระหว่างฟอร์มผิด/ถูก
+   */
+  readonly checkingPinStatus = signal(true);
+  readonly mode = signal<'pin' | 'password'>('password');
 
   readonly form = this.fb.nonNullable.group({
     username: ['', Validators.required],
     password: ['', Validators.required],
   });
+
+  constructor() {
+    this.authService.getPinStatus().subscribe({
+      next: (status) => {
+        if (status.available && status.fullName) {
+          this.authService.setPinLoginMarker({ username: status.username ?? '', fullName: status.fullName, gender: status.gender ?? null });
+          this.mode.set('pin');
+        } else {
+          this.authService.clearPinLoginMarker();
+          this.mode.set('password');
+        }
+        this.checkingPinStatus.set(false);
+      },
+      error: () => {
+        // เช็คสถานะ PIN ไม่สำเร็จ (เช่น เน็ตหลุด) — fallback ไปฟอร์มรหัสผ่านซึ่งใช้งานได้แน่นอนที่สุด
+        this.mode.set('password');
+        this.checkingPinStatus.set(false);
+      },
+    });
+  }
 
   /** อุปกรณ์นี้ใช้ PIN ต่อไม่ได้แล้ว หรือผู้ใช้กด "เข้าสู่ระบบด้วยรหัสผ่าน" เอง */
   onUsePassword(message: string | null): void {

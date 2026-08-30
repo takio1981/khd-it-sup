@@ -162,6 +162,12 @@ export const setupPin = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, { deviceLabel: result.deviceLabel, expiresAt: result.expiresAt });
 });
 
+export const pinStatus = asyncHandler(async (req: Request, res: Response) => {
+  const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
+  const result = await authService.getPinDeviceStatus(deviceSecret);
+  sendSuccess(res, result);
+});
+
 export const pinLogin = asyncHandler(async (req: Request, res: Response) => {
   const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
 

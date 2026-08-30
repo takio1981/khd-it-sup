@@ -138,6 +138,17 @@ router.post('/pin/setup', authenticate, loginRateLimiter, validateRequest({ body
 
 /**
  * @openapi
+ * /auth/pin/status:
+ *   get:
+ *     tags: [Auth]
+ *     summary: ตรวจสอบว่าอุปกรณ์นี้มี PIN ที่ใช้งานได้อยู่หรือไม่ (ไม่ต้อง login) — frontend ใช้ตัดสินใจว่าจะแสดงหน้ากรอก PIN หรือฟอร์มรหัสผ่าน
+ *     responses:
+ *       200: { description: สำเร็จ }
+ */
+router.get('/pin/status', authController.pinStatus);
+
+/**
+ * @openapi
  * /auth/pin/login:
  *   post:
  *     tags: [Auth]

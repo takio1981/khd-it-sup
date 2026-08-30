@@ -39,6 +39,13 @@ export interface IPinLoginResult extends ILoginResult {
   deviceExpiresAt: Date;
 }
 
+export interface IPinDeviceStatus {
+  available: boolean;
+  username?: string;
+  fullName?: string;
+  gender?: UserWithRole['gender'];
+}
+
 export interface IPinDeviceSummary {
   id: string;
   deviceLabel: string | null;
@@ -355,6 +362,34 @@ export class AuthService {
     });
     logger.info(`[auth] PIN setup for user ${userId} on new device`);
     return { deviceSecret, deviceLabel, expiresAt };
+  }
+
+  /**
+   * ตรวจสอบว่าอุปกรณ์นี้ (deviceSecret cookie) มี PIN ที่ยังใช้งานได้อยู่หรือไม่ — ไม่ต้อง login และไม่แตะ
+   * failedAttempts/lockedUntil เลย (แค่เช็คว่าควรเสนอหน้ากรอก PIN หรือไม่ ไม่ใช่การพยายาม login จริง)
+   *
+   * นี่คือแหล่งความจริงที่ frontend ควรอิงในการตัดสินใจว่าจะแสดงหน้า PIN หรือฟอร์มรหัสผ่าน — ไม่ใช่ localStorage
+   * marker ฝั่ง client เพียงอย่างเดียว เพราะ marker อาจไม่ตรงกับความจริงได้หลายทาง เช่น cookie ถูกล้างแต่
+   * localStorage ยังอยู่ (หรือกลับกัน — บาง in-app browser ล้าง localStorage ไวกว่า cookie), PIN ถูกยกเลิกจาก
+   * อุปกรณ์อื่น (revokePinDevice/disablePin/changePassword) โดยที่อุปกรณ์นี้ยังไม่เคยลองใช้ PIN ซ้ำเพื่อ
+   * self-heal marker ของตัวเอง, หรือ PIN หมดอายุไปเฉยๆ ตามเวลา
+   */
+  async getPinDeviceStatus(deviceSecret: string | undefined): Promise<IPinDeviceStatus> {
+    if (!deviceSecret) {
+      return { available: false };
+    }
+
+    const row = await this.repo.findPinCredentialByDeviceSecretHash(hashToken(deviceSecret));
+    if (!row || row.revokedAt || row.expiresAt < new Date()) {
+      return { available: false };
+    }
+
+    const user = await this.repo.findUserById(row.userId);
+    if (!user || !user.isActive) {
+      return { available: false };
+    }
+
+    return { available: true, username: user.username, fullName: user.fullName, gender: user.gender };
   }
 
   /**
