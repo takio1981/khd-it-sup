@@ -61,6 +61,7 @@ export class SetupPinComponent {
   readonly showSetupForm = signal(false);
 
   readonly saving = signal(false);
+  readonly savedMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
 
   readonly devicesLoading = signal(true);
@@ -111,21 +112,33 @@ export class SetupPinComponent {
 
   private handleEnable(): void {
     this.errorMessage.set(null);
+    this.savedMessage.set(null);
     // เช็คสถานะจริงกับ server อีกครั้งตอนกดเปิด เผื่อข้อมูลที่โหลดไว้ตอนแรกเก่าไปแล้ว
     this.authService.getPinStatus().subscribe({
       next: (status) => {
         if (status.available) {
-          this.confirmAndLogout(
-            'ใช้งาน PIN บนเครื่องนี้',
-            'เครื่องนี้ตั้งค่า PIN ไว้แล้ว ยืนยันเพื่อออกจากระบบแล้วเข้าสู่ระบบด้วย PIN ในครั้งถัดไป',
-          );
+          const ref = this.dialog.open(ConfirmDialogComponent, {
+            width: '380px',
+            data: {
+              title: 'ใช้งาน PIN บนเครื่องนี้',
+              message: 'เครื่องนี้ตั้งค่า PIN ไว้แล้ว ยืนยันเพื่อใช้งาน PIN สำหรับเข้าสู่ระบบครั้งถัดไปบนเครื่องนี้',
+            },
+          });
+          ref.afterClosed().subscribe((confirmed) => {
+            if (confirmed) {
+              this.savedMessage.set('PIN พร้อมใช้งานบนเครื่องนี้แล้ว');
+              this.loadDevices();
+            } else {
+              this.pinEnabled.set(false);
+            }
+          });
         } else if (status.hasHistory) {
           // เคยตั้งค่า PIN บนเครื่องนี้มาก่อน (ปิดไว้/หมดอายุ) — เปิดใช้งาน PIN เดิมกลับมาได้เลย ไม่ต้องตั้งใหม่
           const ref = this.dialog.open(ConfirmDialogComponent, {
             width: '380px',
             data: {
               title: 'ใช้งาน PIN บนเครื่องนี้',
-              message: 'เครื่องนี้เคยตั้งค่า PIN ไว้ก่อนหน้านี้ ยืนยันเพื่อเปิดใช้งาน PIN เดิมอีกครั้งแล้วออกจากระบบเพื่อเข้าใช้งานด้วย PIN',
+              message: 'เครื่องนี้เคยตั้งค่า PIN ไว้ก่อนหน้านี้ ยืนยันเพื่อเปิดใช้งาน PIN เดิมอีกครั้ง',
             },
           });
           ref.afterClosed().subscribe((confirmed) => {
@@ -134,7 +147,10 @@ export class SetupPinComponent {
               return;
             }
             this.authService.reactivateCurrentDevicePin().subscribe({
-              next: () => this.authService.logout(),
+              next: () => {
+                this.savedMessage.set('เปิดใช้งาน PIN สำหรับเครื่องนี้เรียบร้อยแล้ว');
+                this.loadDevices();
+              },
               error: (err) => {
                 this.pinEnabled.set(false);
                 this.errorMessage.set(err?.error?.error?.message ?? 'เปิดใช้งาน PIN ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
@@ -150,18 +166,6 @@ export class SetupPinComponent {
     });
   }
 
-  /** เปิด confirm dialog แล้ว logout ทันทีถ้ายืนยัน หรือ revert สวิตช์กลับถ้ายกเลิก — ใช้ตอน PIN พร้อมใช้งานอยู่แล้ว */
-  private confirmAndLogout(title: string, message: string): void {
-    const ref = this.dialog.open(ConfirmDialogComponent, { width: '380px', data: { title, message } });
-    ref.afterClosed().subscribe((confirmed) => {
-      if (confirmed) {
-        this.authService.logout();
-      } else {
-        this.pinEnabled.set(false);
-      }
-    });
-  }
-
   private handleDisable(): void {
     const ref = this.dialog.open(ConfirmDialogComponent, {
       width: '380px',
@@ -173,7 +177,11 @@ export class SetupPinComponent {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        this.authService.disableCurrentDevicePin().subscribe(() => this.authService.logout());
+        this.errorMessage.set(null);
+        this.authService.disableCurrentDevicePin().subscribe(() => {
+          this.savedMessage.set('ปิดใช้งาน PIN สำหรับเครื่องนี้เรียบร้อยแล้ว');
+          this.loadDevices();
+        });
       } else {
         this.pinEnabled.set(true);
       }
@@ -192,12 +200,16 @@ export class SetupPinComponent {
 
     this.saving.set(true);
     this.errorMessage.set(null);
+    this.savedMessage.set(null);
 
     const { password, pin } = this.form.getRawValue();
     this.authService.setupPin({ password, pin }).subscribe({
       next: () => {
-        // ตั้งค่า PIN สำเร็จ — ออกจากระบบทันทีเพื่อให้ครั้งถัดไปเข้าสู่ระบบด้วย PIN ได้เลย
-        this.authService.logout();
+        this.saving.set(false);
+        this.showSetupForm.set(false);
+        this.form.reset();
+        this.savedMessage.set('ตั้งค่า PIN สำหรับเครื่องนี้เรียบร้อยแล้ว ครั้งต่อไปที่เข้าสู่ระบบบนเครื่องนี้จะกรอกแค่ PIN ได้เลย');
+        this.loadDevices();
       },
       error: (err) => {
         this.saving.set(false);

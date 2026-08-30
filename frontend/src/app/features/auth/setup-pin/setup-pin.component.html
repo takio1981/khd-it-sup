@@ -30,6 +30,11 @@
           <mat-slide-toggle [checked]="pinEnabled()" (change)="onToggleChange($event)" color="primary" />
         </div>
 
+        @if (savedMessage()) {
+          <div class="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-sm px-3 py-2">
+            {{ savedMessage() }}
+          </div>
+        }
         @if (errorMessage()) {
           <div class="rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm px-3 py-2">
             {{ errorMessage() }}
