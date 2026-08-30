@@ -56,7 +56,7 @@ if errorlevel 1 (
 
 echo.
 echo [4/5] กำลัง recreate container (backend + frontend)...
-docker compose up -d backend frontend
+docker compose up -d --force-recreate backend frontend
 if errorlevel 1 (
   echo [ERROR] docker up ไม่สำเร็จ
   pause
