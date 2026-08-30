@@ -3,50 +3,50 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ================================================================
-echo  KHD-IT-SUP ‚Äî Dev environment
-echo  (‡πÅ‡∏¢‡∏Å‡∏à‡∏≤‡∏Å production ‡πÇ‡∏î‡∏¢‡∏™‡∏¥‡πâ‡∏ô‡πÄ‡∏ä‡∏¥‡∏á ‚Äî ‡πÑ‡∏°‡πà‡∏Å‡∏£‡∏∞‡∏ó‡∏ö‡∏£‡∏∞‡∏ö‡∏ö‡∏à‡∏£‡∏¥‡∏á‡∏ó‡∏µ‡πà‡∏ú‡∏π‡πâ‡πÉ‡∏ä‡πâ‡πÉ‡∏ä‡πâ‡∏á‡∏≤‡∏ô‡∏≠‡∏¢‡∏π‡πà)
+echo  KHD-IT-SUP ó Dev environment
+echo  (·¬°®“° production ‚¥¬ ‘Èπ‡™‘ß ó ‰¡Ë°√–∑∫√–∫∫®√‘ß∑’ËºŸÈ„™È„™Èß“πÕ¬ŸË)
 echo ================================================================
 echo.
 
-echo [1/3] ‡∏Å‡∏≥‡∏•‡∏±‡∏á start dev database (docker)...
+echo [1/3] °”≈—ß start dev database (docker)...
 docker compose -f docker-compose.dev.yml up -d
 if errorlevel 1 (
   echo.
-  echo [ERROR] start dev database ‡πÑ‡∏°‡πà‡∏™‡∏≥‡πÄ‡∏£‡πá‡∏à ‚Äî ‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö‡∏ß‡πà‡∏≤ Docker Desktop ‡πÄ‡∏õ‡∏¥‡∏î‡∏≠‡∏¢‡∏π‡πà‡∏´‡∏£‡∏∑‡∏≠‡πÑ‡∏°‡πà
+  echo [ERROR] start dev database ‰¡Ë ”‡√Á® ó µ√«® Õ∫«Ë“ Docker Desktop ‡ª‘¥Õ¬ŸËÀ√◊Õ‰¡Ë
   pause
   exit /b 1
 )
 
 echo.
-echo [2/3] ‡∏Å‡∏≥‡∏•‡∏±‡∏á‡∏£‡∏≠ dev database ‡∏û‡∏£‡πâ‡∏≠‡∏°‡πÉ‡∏ä‡πâ‡∏á‡∏≤‡∏ô...
+echo [2/3] °”≈—ß√Õ dev database æ√ÈÕ¡„™Èß“π...
 set /a tries=0
 :waitdb
 docker inspect --format="{{.State.Health.Status}}" khd_it_sup_dev_db 2>nul | findstr /c:"healthy" >nul
 if not errorlevel 1 goto dbready
 set /a tries+=1
 if !tries! geq 30 (
-  echo [ERROR] dev database ‡∏¢‡∏±‡∏á‡πÑ‡∏°‡πà healthy ‡∏´‡∏•‡∏±‡∏á‡∏à‡∏≤‡∏Å‡∏£‡∏≠ ‚Äî ‡∏ï‡∏£‡∏ß‡∏à‡∏™‡∏≠‡∏ö‡∏î‡πâ‡∏ß‡∏¢: docker logs khd_it_sup_dev_db
+  echo [ERROR] dev database ¬—ß‰¡Ë healthy À≈—ß®“°√Õ ó µ√«® Õ∫¥È«¬: docker logs khd_it_sup_dev_db
   pause
   exit /b 1
 )
 timeout /t 2 /nobreak >nul
 goto waitdb
 :dbready
-echo       dev database ‡∏û‡∏£‡πâ‡∏≠‡∏°‡πÅ‡∏•‡πâ‡∏ß (localhost:3308)
+echo       dev database æ√ÈÕ¡·≈È« (localhost:3308)
 
 echo.
-echo [3/3] ‡∏Å‡∏≥‡∏•‡∏±‡∏á‡πÄ‡∏õ‡∏¥‡∏î‡∏´‡∏ô‡πâ‡∏≤‡∏ï‡πà‡∏≤‡∏á backend + frontend dev server...
+echo [3/3] °”≈—ß‡ª‘¥ÀπÈ“µË“ß backend + frontend dev server...
 start "KHD-IT-SUP Backend (dev :3500)" cmd /k "cd /d "%~dp0backend" && npm run dev"
 start "KHD-IT-SUP Frontend (dev :4500)" cmd /k "cd /d "%~dp0frontend" && npm start"
 
 echo.
 echo ================================================================
-echo  ‡∏û‡∏£‡πâ‡∏≠‡∏°‡πÉ‡∏ä‡πâ‡∏á‡∏≤‡∏ô (URL ‡∏£‡∏π‡∏õ‡πÅ‡∏ö‡∏ö‡πÄ‡∏î‡∏µ‡∏¢‡∏ß‡∏Å‡∏±‡∏ö production ‚Äî ‡πÉ‡∏ï‡πâ path /khd-it-sup/):
-echo    ‡πÄ‡∏ß‡πá‡∏ö‡πÅ‡∏≠‡∏õ  : http://localhost:4500/khd-it-sup/
-echo    Backend  : http://localhost:3500/api/v1  (‡πÄ‡∏Ç‡πâ‡∏≤‡∏ú‡πà‡∏≤‡∏ô frontend proxy ‡πÉ‡∏´‡πâ‡∏≠‡∏±‡∏ï‡πÇ‡∏ô‡∏°‡∏±‡∏ï‡∏¥‡πÅ‡∏•‡πâ‡∏ß)
+echo  æ√ÈÕ¡„™Èß“π (URL √Ÿª·∫∫‡¥’¬«°—∫ production ó „µÈ path /khd-it-sup/):
+echo    ‡«Á∫·Õª  : http://localhost:4500/khd-it-sup/
+echo    Backend  : http://localhost:3500/api/v1  (‡¢È“ºË“π frontend proxy „ÀÈÕ—µ‚π¡—µ‘·≈È«)
 echo    Swagger  : http://localhost:3500/api-docs
 echo.
-echo  ‡∏õ‡∏¥‡∏î‡∏Å‡∏≤‡∏£‡∏ó‡∏≥‡∏á‡∏≤‡∏ô: ‡∏õ‡∏¥‡∏î‡∏´‡∏ô‡πâ‡∏≤‡∏ï‡πà‡∏≤‡∏á backend/frontend ‡∏ó‡∏µ‡πà‡πÄ‡∏õ‡∏¥‡∏î‡∏Ç‡∏∂‡πâ‡∏ô‡∏°‡∏≤ ‡πÅ‡∏•‡πâ‡∏ß‡∏£‡∏±‡∏ô stop-dev.bat
+echo  ª‘¥°“√∑”ß“π: ª‘¥ÀπÈ“µË“ß backend/frontend ∑’Ë‡ª‘¥¢÷Èπ¡“ ·≈È«√—π stop-dev.bat
 echo ================================================================
 echo.
 pause
