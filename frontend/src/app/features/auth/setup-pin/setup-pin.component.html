@@ -35,7 +35,7 @@
 
       <div>
         <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">PIN ใหม่ (6 หลัก)</p>
-        <khd-pin-input formControlName="pin" />
+        <khd-pin-input formControlName="pin" (completed)="confirmPinInput.focusFirst()" />
         @if (form.get('pin')?.hasError('weak') && form.get('pin')?.touched) {
           <p class="text-xs text-red-500 text-center mt-2">PIN นี้คาดเดาง่ายเกินไป (เลขซ้ำหรือเรียงกัน) กรุณาเลือก PIN อื่น</p>
         }
@@ -43,7 +43,7 @@
 
       <div>
         <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">ยืนยัน PIN</p>
-        <khd-pin-input formControlName="confirmPin" />
+        <khd-pin-input #confirmPinInput formControlName="confirmPin" />
       </div>
       @if (form.errors?.['mismatch'] && form.get('confirmPin')?.touched) {
         <p class="text-xs text-red-500 text-center">PIN และการยืนยันไม่ตรงกัน</p>

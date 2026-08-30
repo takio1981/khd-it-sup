@@ -17,7 +17,7 @@ const PIN_LENGTH = 6;
       @for (i of indices; track i) {
         <input
           #digitInput
-          type="text"
+          type="password"
           inputmode="numeric"
           pattern="[0-9]*"
           autocomplete="one-time-code"
@@ -122,6 +122,11 @@ export class PinInputComponent implements ControlValueAccessor {
 
   onFocus(event: FocusEvent): void {
     (event.target as HTMLInputElement).select();
+  }
+
+  /** ให้ parent เรียกเพื่อย้ายโฟกัสมาช่องแรกของ pin-input นี้ได้ (เช่น ต่อจากอีกช่องที่กรอกครบ 6 หลักแล้ว) */
+  focusFirst(): void {
+    this.focusIndex(0);
   }
 
   private focusIndex(index: number): void {
