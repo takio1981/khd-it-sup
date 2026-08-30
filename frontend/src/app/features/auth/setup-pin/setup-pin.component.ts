@@ -20,6 +20,14 @@ function pinsMatchValidator(group: AbstractControl): ValidationErrors | null {
   return pin && confirmPin && pin !== confirmPin ? { mismatch: true } : null;
 }
 
+/** ต้องตรงกับ isWeakPin ฝั่ง backend เสมอ (auth.dto.ts) — เช็คซ้ำที่นี่เพื่อบอกผู้ใช้ทันทีแทนที่จะรอ 422 จาก server */
+function weakPinValidator(control: AbstractControl): ValidationErrors | null {
+  const pin = control.value as string;
+  if (!pin || pin.length !== 6) return null;
+  const isWeak = /^(\d)\1{5}$/.test(pin) || '0123456789'.includes(pin) || '9876543210'.includes(pin);
+  return isWeak ? { weak: true } : null;
+}
+
 @Component({
   selector: 'khd-setup-pin',
   standalone: true,
@@ -54,7 +62,7 @@ export class SetupPinComponent {
   readonly form = this.fb.nonNullable.group(
     {
       password: ['', Validators.required],
-      pin: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
+      pin: ['', [Validators.required, Validators.pattern(/^\d{6}$/), weakPinValidator]],
       confirmPin: ['', Validators.required],
     },
     { validators: pinsMatchValidator },
@@ -92,7 +100,9 @@ export class SetupPinComponent {
       },
       error: (err) => {
         this.saving.set(false);
-        this.errorMessage.set(err?.error?.error?.message ?? 'ตั้งค่า PIN ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+        const fieldErrors = err?.error?.error?.details?.fieldErrors as Record<string, string[]> | undefined;
+        const specific = fieldErrors?.['pin']?.[0] ?? fieldErrors?.['password']?.[0];
+        this.errorMessage.set(specific ?? err?.error?.error?.message ?? 'ตั้งค่า PIN ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
       },
     });
   }
