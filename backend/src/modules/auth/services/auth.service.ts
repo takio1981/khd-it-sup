@@ -476,6 +476,21 @@ export class AuthService {
     logger.info(`[auth] all PIN devices disabled for user ${userId}`);
   }
 
+  /**
+   * ปิดใช้งาน PIN เฉพาะ "อุปกรณ์นี้" (จาก deviceSecret cookie ของ request เอง) — ใช้กับสวิตช์เปิด/ปิด PIN
+   * ที่หน้าตั้งค่า PIN ไม่ต้องรู้ device id ล่วงหน้าเหมือน revokePinDevice เพราะ device ปัจจุบันระบุได้จาก
+   * cookie อยู่แล้ว เป็น idempotent — ถ้าไม่มี cookie/หา row ไม่เจอ/ไม่ใช่ของ user นี้ ก็แค่ไม่ทำอะไร (ไม่ throw)
+   */
+  async revokeCurrentPinDevice(userId: string, deviceSecret: string | undefined): Promise<void> {
+    if (!deviceSecret) return;
+
+    const row = await this.repo.findPinCredentialByDeviceSecretHash(hashToken(deviceSecret));
+    if (!row || row.userId !== userId || row.revokedAt) return;
+
+    await this.repo.revokePinCredential(row.id);
+    logger.info(`[auth] PIN device revoked (self-service, current device): ${row.id} (user ${userId})`);
+  }
+
   private pinDeviceExpiresAt(): Date {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ms() branded StringValue type ไม่รองรับ z.string() runtime value โดยตรง ค่าจริงถูก validate รูปแบบแล้วใน env.ts
     return new Date(Date.now() + (ms as (v: any) => number)(env.PIN_DEVICE_TTL));

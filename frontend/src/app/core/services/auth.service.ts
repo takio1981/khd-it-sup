@@ -147,6 +147,16 @@ export class AuthService {
     );
   }
 
+  /** ปิดใช้งาน PIN เฉพาะเครื่องนี้ — ใช้กับสวิตช์เปิด/ปิด PIN ที่หน้าตั้งค่า PIN ไม่ต้องรู้ device id ล่วงหน้า */
+  disableCurrentDevicePin(): Observable<void> {
+    return this.http
+      .post<IApiSuccessResponse<unknown>>(`${environment.apiBaseUrl}/auth/pin/revoke-current`, {}, { withCredentials: true })
+      .pipe(
+        map(() => undefined),
+        tap(() => this.clearPinLoginMarker()),
+      );
+  }
+
   /**
    * Marker ฝั่ง client เก็บ username/fullName/gender ไว้ทักทายผู้ใช้บนหน้ากรอก PIN เท่านั้น ไม่มี
    * PIN/token/secret ใดๆ — ตัวยืนยันตัวตนจริงคือ httpOnly cookie ที่ JS อ่านไม่ได้ ต่อให้ localStorage

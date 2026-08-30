@@ -209,3 +209,10 @@ export const disablePin = asyncHandler(async (req: Request, res: Response) => {
   res.clearCookie(env.PIN_DEVICE_COOKIE_NAME, { path: pinDeviceCookiePath() });
   sendSuccess(res, { message: 'ปิดใช้งาน PIN ทุกอุปกรณ์เรียบร้อยแล้ว' });
 });
+
+export const revokeCurrentPinDevice = asyncHandler(async (req: Request, res: Response) => {
+  const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
+  await authService.revokeCurrentPinDevice(req.user!.id, deviceSecret);
+  res.clearCookie(env.PIN_DEVICE_COOKIE_NAME, { path: pinDeviceCookiePath() });
+  sendSuccess(res, { message: 'ปิดใช้งาน PIN สำหรับเครื่องนี้เรียบร้อยแล้ว' });
+});

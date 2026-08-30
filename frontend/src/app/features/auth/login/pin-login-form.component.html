@@ -1,12 +1,24 @@
 <div class="relative min-h-screen overflow-hidden flex items-center justify-center bg-brand-background dark:bg-neutral-950 px-4">
+  <khd-page-watermark src="logo-khd-it-sup.png" />
+
   <div class="relative z-10 w-full max-w-md">
     <div class="text-center mb-6">
-      <khd-user-avatar [gender]="marker?.gender ?? null" [size]="72" class="mx-auto mb-3 block w-fit" />
-      <h1 class="text-lg font-semibold text-neutral-900 dark:text-white">สวัสดี {{ marker?.fullName }}</h1>
-      <p class="text-sm text-neutral-500 mt-1">กรอก PIN 6 หลักเพื่อเข้าสู่ระบบ</p>
+      <img
+        src="logo-khd-it-sup.png"
+        alt="โลโก้ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์"
+        class="block mx-auto mb-3 h-24 w-24 rounded-full bg-white shadow-softLg ring-1 ring-black/5 dark:ring-white/10"
+      />
+      <h1 class="text-lg font-semibold text-neutral-900 dark:text-white">ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์</h1>
+      <p class="text-sm text-neutral-500 mt-1">{{ orgName }}</p>
     </div>
 
     <form [formGroup]="form" (ngSubmit)="submit(form.getRawValue().pin)" class="khd-card !shadow-softLg space-y-5">
+      <div class="text-center -mt-1 mb-1">
+        <khd-user-avatar [gender]="marker?.gender ?? null" [size]="56" class="mx-auto mb-2 block w-fit" />
+        <p class="text-base font-medium text-neutral-800 dark:text-neutral-100">สวัสดี {{ marker?.fullName }}</p>
+        <p class="text-xs text-neutral-500 mt-0.5">กรอก PIN 6 หลักเพื่อเข้าสู่ระบบ</p>
+      </div>
+
       @if (errorMessage()) {
         <div class="rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm px-3 py-2 text-center">
           {{ errorMessage() }}

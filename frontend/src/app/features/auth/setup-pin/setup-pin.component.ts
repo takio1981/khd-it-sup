@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSlideToggleModule, type MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
@@ -38,6 +39,7 @@ function weakPinValidator(control: AbstractControl): ValidationErrors | null {
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    MatSlideToggleModule,
     MatProgressSpinnerModule,
     PageWatermarkComponent,
     IconComponent,
@@ -52,8 +54,13 @@ export class SetupPinComponent {
 
   readonly orgName = environment.orgNameTh;
 
+  /** สถานะสวิตช์หลัก — สะท้อนว่าเครื่องนี้ใช้ PIN เข้าสู่ระบบอยู่หรือไม่ (ตรวจกับ server จริงตอนโหลดหน้า) */
+  readonly checkingStatus = signal(true);
+  readonly pinEnabled = signal(false);
+  /** เปิดฟอร์มตั้ง PIN เมื่อสลับสวิตช์เป็นเปิดแต่เครื่องนี้ยังไม่เคยตั้ง PIN ไว้ */
+  readonly showSetupForm = signal(false);
+
   readonly saving = signal(false);
-  readonly savedMessage = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
 
   readonly devicesLoading = signal(true);
@@ -69,6 +76,13 @@ export class SetupPinComponent {
   );
 
   constructor() {
+    this.authService.getPinStatus().subscribe({
+      next: (status) => {
+        this.pinEnabled.set(status.available);
+        this.checkingStatus.set(false);
+      },
+      error: () => this.checkingStatus.set(false),
+    });
     this.loadDevices();
   }
 
@@ -83,20 +97,83 @@ export class SetupPinComponent {
     });
   }
 
+  onToggleChange(event: MatSlideToggleChange): void {
+    // mat-slide-toggle พลิกสถานะแสดงผลของตัวเองทันทีตอนคลิก (optimistic) โดยไม่รอ Angular — ต้องอัปเดต
+    // signal ให้ตรงตามนั้นทันทีด้วย ไม่งั้นตอนยกเลิก (set กลับเป็นค่าเดิม) จะไม่เกิดการเปลี่ยนแปลงของ signal
+    // เลย (ค่าเดิม == ค่าที่ set) ทำให้ template ไม่ re-render และสวิตช์ค้างอยู่ในสถานะที่คลิกไปแล้วผิดๆ
+    this.pinEnabled.set(event.checked);
+    if (event.checked) {
+      this.handleEnable();
+    } else {
+      this.handleDisable();
+    }
+  }
+
+  private handleEnable(): void {
+    this.errorMessage.set(null);
+    // เช็คสถานะจริงกับ server อีกครั้งตอนกดเปิด เผื่อข้อมูลที่โหลดไว้ตอนแรกเก่าไปแล้ว
+    this.authService.getPinStatus().subscribe({
+      next: (status) => {
+        if (status.available) {
+          const ref = this.dialog.open(ConfirmDialogComponent, {
+            width: '380px',
+            data: {
+              title: 'ใช้งาน PIN บนเครื่องนี้',
+              message: 'เครื่องนี้ตั้งค่า PIN ไว้แล้ว ยืนยันเพื่อออกจากระบบแล้วเข้าสู่ระบบด้วย PIN ในครั้งถัดไป',
+            },
+          });
+          ref.afterClosed().subscribe((confirmed) => {
+            if (confirmed) {
+              this.authService.logout();
+            } else {
+              this.pinEnabled.set(false);
+            }
+          });
+        } else {
+          this.pinEnabled.set(true);
+          this.showSetupForm.set(true);
+        }
+      },
+      error: () => this.pinEnabled.set(false),
+    });
+  }
+
+  private handleDisable(): void {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      width: '380px',
+      data: {
+        title: 'ปิดใช้งาน PIN',
+        message: 'ปิดใช้งาน PIN สำหรับเครื่องนี้ใช่หรือไม่? ครั้งต่อไปจะต้องเข้าสู่ระบบด้วยรหัสผ่านแทน',
+        danger: true,
+      },
+    });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.authService.disableCurrentDevicePin().subscribe(() => this.authService.logout());
+      } else {
+        this.pinEnabled.set(true);
+      }
+    });
+  }
+
+  cancelSetupForm(): void {
+    this.showSetupForm.set(false);
+    this.pinEnabled.set(false);
+    this.errorMessage.set(null);
+    this.form.reset();
+  }
+
   submit(): void {
     if (this.form.invalid || this.saving()) return;
 
     this.saving.set(true);
-    this.savedMessage.set(null);
     this.errorMessage.set(null);
 
     const { password, pin } = this.form.getRawValue();
     this.authService.setupPin({ password, pin }).subscribe({
       next: () => {
-        this.saving.set(false);
-        this.savedMessage.set('ตั้งค่า PIN สำหรับเครื่องนี้เรียบร้อยแล้ว ครั้งต่อไปที่เข้าสู่ระบบบนเครื่องนี้จะกรอกแค่ PIN ได้เลย');
-        this.form.reset();
-        this.loadDevices();
+        // ตั้งค่า PIN สำเร็จ — ออกจากระบบทันทีเพื่อให้ครั้งถัดไปเข้าสู่ระบบด้วย PIN ได้เลย
+        this.authService.logout();
       },
       error: (err) => {
         this.saving.set(false);
@@ -112,14 +189,17 @@ export class SetupPinComponent {
       width: '380px',
       data: {
         title: 'ลืมอุปกรณ์นี้',
-        message: `ยกเลิก PIN ของ "${device.deviceLabel ?? 'อุปกรณ์นี้'}" ใช่หรือไม่? เครื่องนี้จะต้องเข้าสู่ระบบด้วยรหัสผ่านอีกครั้ง`,
+        message: `ยกเลิก PIN ของ "${device.deviceLabel ?? 'อุปกรณ์นี้'}" ใช่หรือไม่? เครื่องนั้นจะต้องเข้าสู่ระบบด้วยรหัสผ่านอีกครั้ง`,
         danger: true,
       },
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
         this.authService.revokePinDevice(device.id).subscribe(() => {
-          if (device.isCurrentDevice) this.authService.clearPinLoginMarker();
+          if (device.isCurrentDevice) {
+            this.authService.clearPinLoginMarker();
+            this.pinEnabled.set(false);
+          }
           this.loadDevices();
         });
       }
@@ -137,7 +217,10 @@ export class SetupPinComponent {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        this.authService.disablePin().subscribe(() => this.loadDevices());
+        this.authService.disablePin().subscribe(() => {
+          this.pinEnabled.set(false);
+          this.loadDevices();
+        });
       }
     });
   }

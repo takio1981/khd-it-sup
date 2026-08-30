@@ -212,6 +212,18 @@ router.post('/pin/disable', authenticate, authController.disablePin);
 
 /**
  * @openapi
+ * /auth/pin/revoke-current:
+ *   post:
+ *     tags: [Auth]
+ *     summary: ปิดใช้งาน PIN เฉพาะอุปกรณ์นี้ (ใช้กับสวิตช์เปิด/ปิด PIN ที่หน้าตั้งค่า PIN) — idempotent
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: สำเร็จ }
+ */
+router.post('/pin/revoke-current', authenticate, authController.revokeCurrentPinDevice);
+
+/**
+ * @openapi
  * /auth/notification-channels:
  *   get:
  *     tags: [Auth]
