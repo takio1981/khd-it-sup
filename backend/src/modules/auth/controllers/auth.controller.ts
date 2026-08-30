@@ -213,6 +213,14 @@ export const disablePin = asyncHandler(async (req: Request, res: Response) => {
 export const revokeCurrentPinDevice = asyncHandler(async (req: Request, res: Response) => {
   const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
   await authService.revokeCurrentPinDevice(req.user!.id, deviceSecret);
-  res.clearCookie(env.PIN_DEVICE_COOKIE_NAME, { path: pinDeviceCookiePath() });
+  // ตั้งใจไม่ล้าง cookie ตรงนี้ (ต่างจาก disablePin/revokePinDevice) — เก็บไว้ให้สลับสวิตช์เปิดกลับมาใช้ PIN
+  // เดิมได้ทันทีผ่าน /pin/reactivate-current โดยไม่ต้องตั้ง PIN ใหม่ cookie ที่ค้างไว้นี้ใช้ login ไม่ได้อยู่แล้ว
+  // (แถวถูก revoke) จนกว่าเจ้าของบัญชีจะ login ด้วยรหัสผ่านแล้วกดเปิดใช้งาน PIN ซ้ำเองเท่านั้น
   sendSuccess(res, { message: 'ปิดใช้งาน PIN สำหรับเครื่องนี้เรียบร้อยแล้ว' });
+});
+
+export const reactivateCurrentPinDevice = asyncHandler(async (req: Request, res: Response) => {
+  const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
+  await authService.reactivateCurrentPinDevice(req.user!.id, deviceSecret);
+  sendSuccess(res, { message: 'เปิดใช้งาน PIN สำหรับเครื่องนี้อีกครั้งเรียบร้อยแล้ว' });
 });

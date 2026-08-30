@@ -168,6 +168,14 @@ export class AuthRepository {
     await prisma.pinCredential.update({ where: { id }, data: { revokedAt: new Date() } });
   }
 
+  /** เปิดใช้งาน PIN เดิมกลับมา (ไม่เปลี่ยน pinHash) — ยกเลิกการ revoke + รีเซ็ตตัวนับล็อก + ต่ออายุ */
+  async reactivatePinCredential(id: string, expiresAt: Date): Promise<void> {
+    await prisma.pinCredential.update({
+      where: { id },
+      data: { revokedAt: null, failedAttempts: 0, lockedUntil: null, expiresAt },
+    });
+  }
+
   async revokeAllUserPinCredentials(userId: string): Promise<void> {
     await prisma.pinCredential.updateMany({
       where: { userId, revokedAt: null },

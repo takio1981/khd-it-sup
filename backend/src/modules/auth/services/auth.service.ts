@@ -41,6 +41,8 @@ export interface IPinLoginResult extends ILoginResult {
 
 export interface IPinDeviceStatus {
   available: boolean;
+  /** เคยตั้งค่า PIN บนอุปกรณ์นี้มาก่อน (มีแถวอยู่ แม้ตอนนี้จะถูกยกเลิก/หมดอายุ) — reactivate ได้โดยไม่ต้องตั้ง PIN ใหม่ */
+  hasHistory: boolean;
   username?: string;
   fullName?: string;
   gender?: UserWithRole['gender'];
@@ -376,20 +378,40 @@ export class AuthService {
    */
   async getPinDeviceStatus(deviceSecret: string | undefined): Promise<IPinDeviceStatus> {
     if (!deviceSecret) {
-      return { available: false };
+      return { available: false, hasHistory: false };
     }
 
     const row = await this.repo.findPinCredentialByDeviceSecretHash(hashToken(deviceSecret));
-    if (!row || row.revokedAt || row.expiresAt < new Date()) {
-      return { available: false };
+    if (!row) {
+      return { available: false, hasHistory: false };
     }
 
     const user = await this.repo.findUserById(row.userId);
     if (!user || !user.isActive) {
-      return { available: false };
+      return { available: false, hasHistory: false };
     }
 
-    return { available: true, username: user.username, fullName: user.fullName, gender: user.gender };
+    const isActive = !row.revokedAt && row.expiresAt >= new Date();
+    return { available: isActive, hasHistory: true, username: user.username, fullName: user.fullName, gender: user.gender };
+  }
+
+  /**
+   * เปิดใช้งาน PIN ของอุปกรณ์นี้กลับมาอีกครั้งโดยไม่ต้องตั้ง PIN ใหม่ — ใช้กับสวิตช์เปิด/ปิด PIN เมื่อเครื่องนี้
+   * เคยตั้งค่า PIN ไว้ก่อนแล้ว (revoked/expired) เพียงแค่ยกเลิกการ revoke + ต่ออายุ PIN hash เดิมยังใช้ได้ตามปกติ
+   * ไม่มีความเสี่ยงเพิ่มขึ้น เพราะต้องผ่านการยืนยันตัวตนด้วย bearer token ที่ authenticate อยู่แล้วก่อนเรียก endpoint นี้
+   */
+  async reactivateCurrentPinDevice(userId: string, deviceSecret: string | undefined): Promise<void> {
+    if (!deviceSecret) {
+      throw new NotFoundError('ไม่พบประวัติการตั้งค่า PIN บนเครื่องนี้');
+    }
+
+    const row = await this.repo.findPinCredentialByDeviceSecretHash(hashToken(deviceSecret));
+    if (!row || row.userId !== userId) {
+      throw new NotFoundError('ไม่พบประวัติการตั้งค่า PIN บนเครื่องนี้');
+    }
+
+    await this.repo.reactivatePinCredential(row.id, this.pinDeviceExpiresAt());
+    logger.info(`[auth] PIN device reactivated (self-service, current device): ${row.id} (user ${userId})`);
   }
 
   /**

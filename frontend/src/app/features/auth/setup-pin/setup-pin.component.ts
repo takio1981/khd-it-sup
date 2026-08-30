@@ -115,19 +115,31 @@ export class SetupPinComponent {
     this.authService.getPinStatus().subscribe({
       next: (status) => {
         if (status.available) {
+          this.confirmAndLogout(
+            'ใช้งาน PIN บนเครื่องนี้',
+            'เครื่องนี้ตั้งค่า PIN ไว้แล้ว ยืนยันเพื่อออกจากระบบแล้วเข้าสู่ระบบด้วย PIN ในครั้งถัดไป',
+          );
+        } else if (status.hasHistory) {
+          // เคยตั้งค่า PIN บนเครื่องนี้มาก่อน (ปิดไว้/หมดอายุ) — เปิดใช้งาน PIN เดิมกลับมาได้เลย ไม่ต้องตั้งใหม่
           const ref = this.dialog.open(ConfirmDialogComponent, {
             width: '380px',
             data: {
               title: 'ใช้งาน PIN บนเครื่องนี้',
-              message: 'เครื่องนี้ตั้งค่า PIN ไว้แล้ว ยืนยันเพื่อออกจากระบบแล้วเข้าสู่ระบบด้วย PIN ในครั้งถัดไป',
+              message: 'เครื่องนี้เคยตั้งค่า PIN ไว้ก่อนหน้านี้ ยืนยันเพื่อเปิดใช้งาน PIN เดิมอีกครั้งแล้วออกจากระบบเพื่อเข้าใช้งานด้วย PIN',
             },
           });
           ref.afterClosed().subscribe((confirmed) => {
-            if (confirmed) {
-              this.authService.logout();
-            } else {
+            if (!confirmed) {
               this.pinEnabled.set(false);
+              return;
             }
+            this.authService.reactivateCurrentDevicePin().subscribe({
+              next: () => this.authService.logout(),
+              error: (err) => {
+                this.pinEnabled.set(false);
+                this.errorMessage.set(err?.error?.error?.message ?? 'เปิดใช้งาน PIN ไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+              },
+            });
           });
         } else {
           this.pinEnabled.set(true);
@@ -135,6 +147,18 @@ export class SetupPinComponent {
         }
       },
       error: () => this.pinEnabled.set(false),
+    });
+  }
+
+  /** เปิด confirm dialog แล้ว logout ทันทีถ้ายืนยัน หรือ revert สวิตช์กลับถ้ายกเลิก — ใช้ตอน PIN พร้อมใช้งานอยู่แล้ว */
+  private confirmAndLogout(title: string, message: string): void {
+    const ref = this.dialog.open(ConfirmDialogComponent, { width: '380px', data: { title, message } });
+    ref.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.authService.logout();
+      } else {
+        this.pinEnabled.set(false);
+      }
     });
   }
 

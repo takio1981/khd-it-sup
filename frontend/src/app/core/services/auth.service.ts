@@ -157,6 +157,13 @@ export class AuthService {
       );
   }
 
+  /** เปิดใช้งาน PIN เดิมของเครื่องนี้กลับมาอีกครั้ง โดยไม่ต้องตั้ง PIN ใหม่ — ใช้ได้เฉพาะเครื่องที่เคยตั้งค่า PIN ไว้ก่อนแล้ว */
+  reactivateCurrentDevicePin(): Observable<void> {
+    return this.http
+      .post<IApiSuccessResponse<unknown>>(`${environment.apiBaseUrl}/auth/pin/reactivate-current`, {}, { withCredentials: true })
+      .pipe(map(() => undefined));
+  }
+
   /**
    * Marker ฝั่ง client เก็บ username/fullName/gender ไว้ทักทายผู้ใช้บนหน้ากรอก PIN เท่านั้น ไม่มี
    * PIN/token/secret ใดๆ — ตัวยืนยันตัวตนจริงคือ httpOnly cookie ที่ JS อ่านไม่ได้ ต่อให้ localStorage

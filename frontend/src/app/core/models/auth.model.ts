@@ -90,6 +90,8 @@ export interface IPinSetupResponse {
 /** ผลตรวจสอบว่าอุปกรณ์นี้มี PIN ที่ใช้งานได้อยู่หรือไม่ — แหล่งความจริงที่แท้จริง ไม่ใช่ localStorage marker */
 export interface IPinStatusResponse {
   available: boolean;
+  /** เคยตั้งค่า PIN บนเครื่องนี้มาก่อน (แม้ตอนนี้จะถูกยกเลิก/หมดอายุ) — เปิดใช้งานใหม่ได้โดยไม่ต้องตั้ง PIN ใหม่ */
+  hasHistory: boolean;
   username?: string;
   fullName?: string;
   gender?: Gender | null;

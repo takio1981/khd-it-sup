@@ -224,6 +224,19 @@ router.post('/pin/revoke-current', authenticate, authController.revokeCurrentPin
 
 /**
  * @openapi
+ * /auth/pin/reactivate-current:
+ *   post:
+ *     tags: [Auth]
+ *     summary: เปิดใช้งาน PIN เดิมของอุปกรณ์นี้กลับมาอีกครั้ง (ไม่ต้องตั้ง PIN ใหม่) — ใช้ได้เฉพาะเครื่องที่เคยตั้งค่า PIN ไว้ก่อนแล้ว
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: สำเร็จ }
+ *       404: { description: ไม่พบประวัติการตั้งค่า PIN บนเครื่องนี้ }
+ */
+router.post('/pin/reactivate-current', authenticate, authController.reactivateCurrentPinDevice);
+
+/**
+ * @openapi
  * /auth/notification-channels:
  *   get:
  *     tags: [Auth]
