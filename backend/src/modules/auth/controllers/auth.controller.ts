@@ -168,6 +168,12 @@ export const pinStatus = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, result);
 });
 
+export const myPinStatus = asyncHandler(async (req: Request, res: Response) => {
+  const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
+  const result = await authService.getPinDeviceStatusForUser(req.user!.id, deviceSecret);
+  sendSuccess(res, result);
+});
+
 export const pinLogin = asyncHandler(async (req: Request, res: Response) => {
   const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
 

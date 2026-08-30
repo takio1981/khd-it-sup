@@ -118,6 +118,16 @@ export class AuthService {
       .pipe(map((res) => res.data));
   }
 
+  /**
+   * เหมือน getPinStatus() แต่ใช้ตอน login อยู่แล้ว (หน้าตั้งค่า PIN) — เช็คเทียบกับ "ผู้ใช้ปัจจุบัน" ด้วยเสมอ
+   * กันกรณีเครื่องนี้เคยมีอีกคนตั้ง PIN ไว้ก่อน (ใช้เครื่องร่วมกัน) จะได้ไม่ไปเจอ/แสดงชื่อของคนอื่นผิดคน
+   */
+  getMyPinStatus(): Observable<IPinStatusResponse> {
+    return this.http
+      .get<IApiSuccessResponse<IPinStatusResponse>>(`${environment.apiBaseUrl}/auth/pin/status/mine`, { withCredentials: true })
+      .pipe(map((res) => res.data));
+  }
+
   /** เข้าสู่ระบบด้วย PIN — ใช้ได้เฉพาะอุปกรณ์ที่เคยตั้งค่า PIN ไว้แล้ว (ยืนยันผ่าน httpOnly cookie ไม่ใช่ token) */
   loginWithPin(payload: IPinLoginRequest): Observable<IAuthUser> {
     return this.http

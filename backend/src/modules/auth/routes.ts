@@ -149,6 +149,19 @@ router.get('/pin/status', authController.pinStatus);
 
 /**
  * @openapi
+ * /auth/pin/status/mine:
+ *   get:
+ *     tags: [Auth]
+ *     summary: ตรวจสอบว่าอุปกรณ์นี้มี PIN ของ "ผู้ใช้ที่ login อยู่ตอนนี้" หรือไม่ (คนละความหมายกับ /pin/status
+ *       ที่เช็คแค่ cookie เฉยๆ — เผื่อเครื่องนี้เคยมีอีก user ตั้ง PIN ไว้ก่อน จะไม่ไปแสดงชื่อ/ประวัติของคนอื่น)
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: สำเร็จ }
+ */
+router.get('/pin/status/mine', authenticate, authController.myPinStatus);
+
+/**
+ * @openapi
  * /auth/pin/login:
  *   post:
  *     tags: [Auth]

@@ -77,7 +77,7 @@ export class SetupPinComponent {
   );
 
   constructor() {
-    this.authService.getPinStatus().subscribe({
+    this.authService.getMyPinStatus().subscribe({
       next: (status) => {
         this.pinEnabled.set(status.available);
         this.checkingStatus.set(false);
@@ -114,7 +114,7 @@ export class SetupPinComponent {
     this.errorMessage.set(null);
     this.savedMessage.set(null);
     // เช็คสถานะจริงกับ server อีกครั้งตอนกดเปิด เผื่อข้อมูลที่โหลดไว้ตอนแรกเก่าไปแล้ว
-    this.authService.getPinStatus().subscribe({
+    this.authService.getMyPinStatus().subscribe({
       next: (status) => {
         if (status.available) {
           const ref = this.dialog.open(ConfirmDialogComponent, {

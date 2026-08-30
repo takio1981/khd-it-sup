@@ -396,6 +396,32 @@ export class AuthService {
   }
 
   /**
+   * เหมือน getPinDeviceStatus แต่ใช้ตอน login อยู่แล้ว (หน้าตั้งค่า PIN) — ต้องเช็คด้วยว่า cookie ของอุปกรณ์นี้
+   * เป็นของ "ผู้ใช้ที่ login อยู่ตอนนี้" จริงหรือไม่ ไม่งั้นถ้าเครื่องเดียวกันเคยมีอีก user ตั้ง PIN ไว้ก่อน (เช่น
+   * เครื่องใช้งานร่วมกันหลายคน) แล้ว user คนปัจจุบัน login มาเปิดสวิตช์ PIN จะไปเจอ/แสดงชื่อของ user คนเดิมแทน
+   * ทั้งที่ตัวเองยังไม่เคยตั้ง PIN บนเครื่องนี้เลย — ถ้า cookie เป็นของคนอื่น ให้ตอบเหมือนไม่มีประวัติอะไรเลย
+   * (จะได้ไปเข้าฟอร์มตั้ง PIN ใหม่ตามจริง ซึ่ง setupPin() เองจัดการสร้าง device secret ใหม่ให้ user นี้ถูกต้องอยู่แล้ว)
+   */
+  async getPinDeviceStatusForUser(userId: string, deviceSecret: string | undefined): Promise<IPinDeviceStatus> {
+    if (!deviceSecret) {
+      return { available: false, hasHistory: false };
+    }
+
+    const row = await this.repo.findPinCredentialByDeviceSecretHash(hashToken(deviceSecret));
+    if (!row || row.userId !== userId) {
+      return { available: false, hasHistory: false };
+    }
+
+    const user = await this.repo.findUserById(userId);
+    if (!user || !user.isActive) {
+      return { available: false, hasHistory: false };
+    }
+
+    const isActive = !row.revokedAt && row.expiresAt >= new Date();
+    return { available: isActive, hasHistory: true, username: user.username, fullName: user.fullName, gender: user.gender };
+  }
+
+  /**
    * เปิดใช้งาน PIN ของอุปกรณ์นี้กลับมาอีกครั้งโดยไม่ต้องตั้ง PIN ใหม่ — ใช้กับสวิตช์เปิด/ปิด PIN เมื่อเครื่องนี้
    * เคยตั้งค่า PIN ไว้ก่อนแล้ว (revoked/expired) เพียงแค่ยกเลิกการ revoke + ต่ออายุ PIN hash เดิมยังใช้ได้ตามปกติ
    * ไม่มีความเสี่ยงเพิ่มขึ้น เพราะต้องผ่านการยืนยันตัวตนด้วย bearer token ที่ authenticate อยู่แล้วก่อนเรียก endpoint นี้
