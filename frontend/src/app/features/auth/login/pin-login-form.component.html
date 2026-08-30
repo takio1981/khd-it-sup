@@ -12,7 +12,7 @@
       <p class="text-sm text-neutral-500 mt-1">{{ orgName }}</p>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="submit(form.getRawValue().pin)" class="khd-card !shadow-softLg space-y-5">
+    <form [formGroup]="form" (ngSubmit)="submit(form.getRawValue().pin)" class="khd-card !bg-transparent !shadow-softLg space-y-5">
       <div class="text-center -mt-1 mb-1">
         <khd-user-avatar [gender]="marker?.gender ?? null" [size]="56" class="mx-auto mb-2 block w-fit" />
         <p class="text-base font-medium text-neutral-800 dark:text-neutral-100">สวัสดี {{ marker?.fullName }}</p>
