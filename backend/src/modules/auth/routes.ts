@@ -4,11 +4,13 @@ import {
   changePasswordSchema,
   forgotPasswordSchema,
   loginSchema,
+  pinLoginSchema,
+  pinSetupSchema,
   resetPasswordSchema,
   updateNotificationChannelsSchema,
   updateProfileSchema,
 } from '@modules/auth/dto/auth.dto';
-import { authenticate, loginRateLimiter, validateRequest } from '@common/middleware';
+import { authenticate, loginRateLimiter, pinLoginRateLimiter, validateRequest } from '@common/middleware';
 import { avatarUploader } from '@infrastructure/storage/multer.config';
 
 const router = Router();
@@ -110,6 +112,92 @@ router.post('/forgot-password', loginRateLimiter, validateRequest({ body: forgot
  *       400: { description: token ไม่ถูกต้องหรือหมดอายุ }
  */
 router.post('/reset-password', loginRateLimiter, validateRequest({ body: resetPasswordSchema }), authController.resetPassword);
+
+/**
+ * @openapi
+ * /auth/pin/setup:
+ *   post:
+ *     tags: [Auth]
+ *     summary: ตั้งค่า/ตั้งใหม่ PIN 6 หลักสำหรับอุปกรณ์นี้ (ต้องยืนยันรหัสผ่านปัจจุบัน)
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [password, pin]
+ *             properties:
+ *               password: { type: string, format: password }
+ *               pin: { type: string, example: '123456' }
+ *     responses:
+ *       200: { description: ตั้งค่า PIN สำเร็จ }
+ *       400: { description: รหัสผ่านไม่ถูกต้อง หรือ PIN คาดเดาง่ายเกินไป }
+ */
+router.post('/pin/setup', authenticate, loginRateLimiter, validateRequest({ body: pinSetupSchema }), authController.setupPin);
+
+/**
+ * @openapi
+ * /auth/pin/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: เข้าสู่ระบบด้วย PIN 6 หลัก (ใช้ได้เฉพาะอุปกรณ์ที่เคยตั้งค่า PIN ไว้แล้วผ่าน httpOnly cookie)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [pin]
+ *             properties:
+ *               pin: { type: string, example: '123456' }
+ *     responses:
+ *       200: { description: เข้าสู่ระบบสำเร็จ }
+ *       401: { description: PIN ไม่ถูกต้อง / อุปกรณ์นี้ไม่รู้จัก / PIN ถูกล็อกหรือยกเลิกแล้ว }
+ */
+router.post('/pin/login', pinLoginRateLimiter, validateRequest({ body: pinLoginSchema }), authController.pinLogin);
+
+/**
+ * @openapi
+ * /auth/pin/devices:
+ *   get:
+ *     tags: [Auth]
+ *     summary: รายการอุปกรณ์ที่ตั้งค่า PIN ไว้ของตนเอง
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: สำเร็จ }
+ */
+router.get('/pin/devices', authenticate, authController.listPinDevices);
+
+/**
+ * @openapi
+ * /auth/pin/devices/{id}:
+ *   delete:
+ *     tags: [Auth]
+ *     summary: ยกเลิก PIN ของอุปกรณ์หนึ่งเครื่อง ("ลืมอุปกรณ์นี้")
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: สำเร็จ }
+ *       404: { description: ไม่พบอุปกรณ์ }
+ */
+router.delete('/pin/devices/:id', authenticate, authController.revokePinDevice);
+
+/**
+ * @openapi
+ * /auth/pin/disable:
+ *   post:
+ *     tags: [Auth]
+ *     summary: ปิดใช้งาน PIN ทุกอุปกรณ์ของตนเอง
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: สำเร็จ }
+ */
+router.post('/pin/disable', authenticate, authController.disablePin);
 
 /**
  * @openapi

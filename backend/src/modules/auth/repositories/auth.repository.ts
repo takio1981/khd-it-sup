@@ -120,4 +120,58 @@ export class AuthRepository {
       data: { revokedAt: new Date() },
     });
   }
+
+  async createPinCredential(data: Prisma.PinCredentialUncheckedCreateInput) {
+    return prisma.pinCredential.create({ data });
+  }
+
+  async findPinCredentialByDeviceSecretHash(deviceSecretHash: string) {
+    return prisma.pinCredential.findUnique({ where: { deviceSecretHash } });
+  }
+
+  async findPinCredentialById(id: string) {
+    return prisma.pinCredential.findUnique({ where: { id } });
+  }
+
+  async findActivePinCredentialsByUser(userId: string) {
+    return prisma.pinCredential.findMany({
+      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { lastUsedAt: 'desc' },
+    });
+  }
+
+  async resetPinCredentialForReSetup(
+    id: string,
+    data: { pinHash: string; expiresAt: Date; deviceLabel: string | null },
+  ): Promise<void> {
+    await prisma.pinCredential.update({
+      where: { id },
+      data: { ...data, failedAttempts: 0, lockedUntil: null, revokedAt: null },
+    });
+  }
+
+  async updatePinCredentialOnSuccess(id: string, expiresAt: Date): Promise<void> {
+    await prisma.pinCredential.update({
+      where: { id },
+      data: { failedAttempts: 0, lockedUntil: null, lastUsedAt: new Date(), expiresAt },
+    });
+  }
+
+  async updatePinCredentialOnFailure(
+    id: string,
+    data: { failedAttempts: number; lockedUntil: Date | null; revokedAt: Date | null },
+  ): Promise<void> {
+    await prisma.pinCredential.update({ where: { id }, data });
+  }
+
+  async revokePinCredential(id: string): Promise<void> {
+    await prisma.pinCredential.update({ where: { id }, data: { revokedAt: new Date() } });
+  }
+
+  async revokeAllUserPinCredentials(userId: string): Promise<void> {
+    await prisma.pinCredential.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  }
 }

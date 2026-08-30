@@ -1,0 +1,36 @@
+<div class="relative min-h-screen overflow-hidden flex items-center justify-center bg-brand-background dark:bg-neutral-950 px-4">
+  <div class="relative z-10 w-full max-w-md">
+    <div class="text-center mb-6">
+      <khd-user-avatar [gender]="marker?.gender ?? null" [size]="72" class="mx-auto mb-3 block w-fit" />
+      <h1 class="text-lg font-semibold text-neutral-900 dark:text-white">สวัสดี {{ marker?.fullName }}</h1>
+      <p class="text-sm text-neutral-500 mt-1">กรอก PIN 6 หลักเพื่อเข้าสู่ระบบ</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit(form.getRawValue().pin)" class="khd-card !shadow-softLg space-y-5">
+      @if (errorMessage()) {
+        <div class="rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm px-3 py-2 text-center">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <khd-pin-input formControlName="pin" (completed)="submit($event)" />
+
+      <button mat-flat-button color="primary" type="submit" class="!w-full !h-11" [disabled]="loading()">
+        @if (loading()) {
+          <mat-spinner diameter="20" class="!inline-block !mr-2" />
+        }
+        เข้าสู่ระบบ
+      </button>
+
+      <p class="text-center text-sm">
+        <button type="button" class="text-brand-primary hover:underline" (click)="switchToPassword()">
+          ไม่ใช่ {{ marker?.fullName }}? เข้าสู่ระบบด้วยรหัสผ่าน
+        </button>
+      </p>
+    </form>
+
+    <p class="text-center text-xs text-neutral-400 mt-6">
+      © สำนักงานสาธารณสุขจังหวัดนครราชสีมา — IT Service Desk
+    </p>
+  </div>
+</div>

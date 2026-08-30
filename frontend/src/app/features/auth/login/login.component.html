@@ -1,3 +1,6 @@
+@if (mode() === 'pin') {
+  <khd-pin-login-form (usePassword)="onUsePassword($event)" />
+} @else {
 <div class="relative min-h-screen overflow-hidden flex items-center justify-center bg-brand-background dark:bg-neutral-950 px-4">
   <khd-page-watermark src="logo1.png" />
 
@@ -57,3 +60,4 @@
     </p>
   </div>
 </div>
+}

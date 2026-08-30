@@ -1,0 +1,107 @@
+<div class="relative min-h-screen overflow-hidden flex items-center justify-center bg-brand-background dark:bg-neutral-950 px-4 py-10">
+  <khd-page-watermark src="logo3.png" />
+
+  <div class="relative z-10 w-full max-w-md">
+    <div class="text-center mb-6">
+      <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-primary text-white text-2xl font-bold shadow-softLg">
+        IT
+      </div>
+      <h1 class="text-lg font-semibold text-neutral-900 dark:text-white">ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์</h1>
+      <p class="text-sm text-neutral-500 mt-1">{{ orgName }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card !shadow-softLg space-y-4">
+      <h2 class="text-base font-medium text-neutral-700 dark:text-neutral-200">ตั้งค่า PIN เข้าสู่ระบบ</h2>
+      <p class="text-sm text-neutral-500 -mt-2">
+        ตั้ง PIN 6 หลักสำหรับ<span class="font-medium">เครื่องนี้เท่านั้น</span> ครั้งต่อไปที่เข้าสู่ระบบบนเครื่องนี้จะกรอกแค่ PIN
+        ได้เลยโดยไม่ต้องพิมพ์รหัสผ่านซ้ำ — เครื่องอื่นจะยังต้องเข้าสู่ระบบด้วยรหัสผ่านตามปกติ
+      </p>
+
+      @if (savedMessage()) {
+        <div class="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-sm px-3 py-2">
+          {{ savedMessage() }}
+        </div>
+      }
+      @if (errorMessage()) {
+        <div class="rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm px-3 py-2">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+        <mat-label>รหัสผ่านปัจจุบัน</mat-label>
+        <input matInput type="password" formControlName="password" autocomplete="current-password" />
+      </mat-form-field>
+
+      <div>
+        <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">PIN ใหม่ (6 หลัก)</p>
+        <khd-pin-input formControlName="pin" />
+      </div>
+
+      <div>
+        <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">ยืนยัน PIN</p>
+        <khd-pin-input formControlName="confirmPin" />
+      </div>
+      @if (form.errors?.['mismatch'] && form.get('confirmPin')?.touched) {
+        <p class="text-xs text-red-500 text-center">PIN และการยืนยันไม่ตรงกัน</p>
+      }
+
+      <button mat-flat-button color="primary" type="submit" class="!w-full !h-11" [disabled]="form.invalid || saving()">
+        @if (saving()) {
+          <mat-spinner diameter="20" class="!inline-block !mr-2" />
+        }
+        บันทึก PIN
+      </button>
+    </form>
+
+    <div class="khd-card !shadow-softLg mt-4 space-y-3">
+      <h2 class="text-base font-medium text-neutral-700 dark:text-neutral-200">อุปกรณ์ที่ตั้งค่า PIN ไว้</h2>
+
+      @if (devicesLoading()) {
+        <div class="flex justify-center py-4">
+          <mat-spinner diameter="24" />
+        </div>
+      } @else if (devices().length === 0) {
+        <p class="text-sm text-neutral-400 text-center py-2">ยังไม่มีอุปกรณ์ที่ตั้งค่า PIN ไว้</p>
+      } @else {
+        <ul class="space-y-2">
+          @for (device of devices(); track device.id) {
+            <li class="flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2">
+              <khd-icon name="computer-desktop" [size]="20" class="text-neutral-400 shrink-0" />
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
+                  {{ device.deviceLabel ?? 'ไม่ทราบชนิดอุปกรณ์' }}
+                  @if (device.isCurrentDevice) {
+                    <span class="ml-1 rounded-full bg-brand-primary/10 text-brand-primary text-xs px-2 py-0.5 align-middle">อุปกรณ์นี้</span>
+                  }
+                </p>
+                <p class="text-xs text-neutral-400">ใช้ล่าสุด {{ formatDate(device.lastUsedAt) }}</p>
+              </div>
+              <button
+                mat-icon-button
+                type="button"
+                aria-label="ลืมอุปกรณ์นี้"
+                (click)="revokeDevice(device)"
+              >
+                <khd-icon name="trash" [size]="18" class="text-red-500" />
+              </button>
+            </li>
+          }
+        </ul>
+
+        <button mat-stroked-button color="warn" type="button" class="!w-full" (click)="disableAll()">
+          <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
+          ปิดใช้งาน PIN ทุกอุปกรณ์
+        </button>
+      }
+    </div>
+
+    <p class="text-center text-sm mt-4">
+      <a routerLink="/dashboard" class="text-brand-primary hover:underline">กลับไปแดชบอร์ด</a>
+    </p>
+
+    <p class="text-center text-xs text-neutral-400 mt-6">
+      © สำนักงานสาธารณสุขจังหวัดนครราชสีมา — IT Service Desk
+    </p>
+  </div>
+</div>

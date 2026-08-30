@@ -76,3 +76,33 @@ export interface IUpdateNotificationChannelsPayload {
   telegramChatId?: string | null;
   lineUserId?: string | null;
 }
+
+export interface IPinSetupRequest {
+  password: string;
+  pin: string;
+}
+
+export interface IPinSetupResponse {
+  deviceLabel: string | null;
+  expiresAt: string;
+}
+
+export interface IPinLoginRequest {
+  pin: string;
+}
+
+export interface IPinDevice {
+  id: string;
+  deviceLabel: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string;
+  isCurrentDevice: boolean;
+}
+
+/** เก็บใน localStorage เท่านั้น — ไม่มี PIN/token/secret ใดๆ ใช้แค่บอกว่าเบราว์เซอร์นี้ควรแสดงหน้า PIN หรือหน้ารหัสผ่าน */
+export interface IPinLoginMarker {
+  username: string;
+  fullName: string;
+  gender: Gender | null;
+}

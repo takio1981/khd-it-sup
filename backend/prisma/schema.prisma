@@ -153,6 +153,7 @@ model User {
   position            Position?                   @relation(fields: [positionId], references: [id], onDelete: SetNull)
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
+  pinCredentials      PinCredential[]
   ownedAssets         Asset[]                     @relation("AssetOwner")
   reportedTickets     RepairTicket[]               @relation("TicketReporter")
   assignedTickets     RepairTicket[]               @relation("TicketTechnician")
@@ -203,6 +204,28 @@ model PasswordResetToken {
 
   @@index([userId], name: "idx_prt_user")
   @@map("password_reset_tokens")
+}
+
+model PinCredential {
+  id               String    @id @db.Char(36)
+  userId           String    @map("user_id") @db.Char(36)
+  deviceSecretHash String    @unique @map("device_secret_hash") @db.VarChar(255)
+  pinHash          String    @map("pin_hash") @db.VarChar(255)
+  deviceLabel      String?   @map("device_label") @db.VarChar(150)
+  failedAttempts   Int       @default(0) @map("failed_attempts") @db.UnsignedTinyInt
+  lockedUntil      DateTime? @map("locked_until")
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  lastUsedAt       DateTime? @map("last_used_at")
+  createdByIp      String?   @map("created_by_ip") @db.VarChar(64)
+  userAgent        String?   @map("user_agent") @db.VarChar(255)
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "idx_pin_credentials_user")
+  @@index([expiresAt], name: "idx_pin_credentials_expires")
+  @@map("pin_credentials")
 }
 
 // =====================================================================================

@@ -4,9 +4,10 @@ import bcrypt from 'bcryptjs';
 import ms from 'ms';
 import { env } from '@config/env';
 import { AuthRepository, type UserWithRole } from '@modules/auth/repositories/auth.repository';
-import type { UpdateNotificationChannelsDto } from '@modules/auth/dto/auth.dto';
-import { BadRequestError, ForbiddenError, UnauthorizedError } from '@common/errors';
+import type { PinLoginDto, PinSetupDto, UpdateNotificationChannelsDto } from '@modules/auth/dto/auth.dto';
+import { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError } from '@common/errors';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '@common/utils/jwt.util';
+import { deriveDeviceLabel } from '@common/utils/deviceLabel.util';
 import type { IAuthUser } from '@common/interfaces';
 import type { Permission } from '@common/constants/permissions.const';
 import type { RoleCode } from '@common/constants/roles.const';
@@ -25,6 +26,26 @@ export interface ILoginResult {
 export interface ILoginContext {
   ipAddress: string;
   userAgent: string;
+}
+
+export interface IPinSetupResult {
+  deviceSecret: string;
+  deviceLabel: string | null;
+  expiresAt: Date;
+}
+
+export interface IPinLoginResult extends ILoginResult {
+  deviceSecret: string;
+  deviceExpiresAt: Date;
+}
+
+export interface IPinDeviceSummary {
+  id: string;
+  deviceLabel: string | null;
+  createdAt: Date;
+  lastUsedAt: Date | null;
+  expiresAt: Date;
+  isCurrentDevice: boolean;
 }
 
 function toAuthUser(user: UserWithRole): IAuthUser {
@@ -75,15 +96,26 @@ export class AuthService {
       throw new UnauthorizedError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
     }
 
+    return this.issueSession(user, ctx, 'PASSWORD');
+  }
+
+  /** ออก access/refresh token คู่ใหม่ ใช้ร่วมกันทั้ง login ด้วยรหัสผ่านและ login ด้วย PIN เพื่อให้ session ที่ได้เหมือนกันทุกจุด */
+  private async issueSession(user: UserWithRole, ctx: ILoginContext, method: 'PASSWORD' | 'PIN'): Promise<ILoginResult> {
     await this.repo.updateLastLogin(user.id);
 
     const authUser = toAuthUser(user);
     const accessToken = signAccessToken(authUser);
     const { refreshToken, expiresAt } = await this.issueRefreshToken(user.id, ctx);
 
-    logger.info(`[auth] login success: ${user.username} from ${ctx.ipAddress}`);
+    logger.info(`[auth] login success (${method}): ${user.username} from ${ctx.ipAddress}`);
     await auditLogService.record(
-      { action: 'LOGIN', module: 'auth', entityType: 'User', entityId: user.id, description: `${user.username} เข้าสู่ระบบ` },
+      {
+        action: 'LOGIN',
+        module: 'auth',
+        entityType: 'User',
+        entityId: user.id,
+        description: method === 'PIN' ? `${user.username} เข้าสู่ระบบด้วย PIN` : `${user.username} เข้าสู่ระบบ`,
+      },
       { user: authUser, ipAddress: ctx.ipAddress, userAgent: ctx.userAgent },
     );
 
@@ -187,6 +219,7 @@ export class AuthService {
     const newHash = await bcrypt.hash(newPassword, env.BCRYPT_SALT_ROUNDS);
     await this.repo.updatePassword(userId, newHash, false);
     await this.repo.revokeAllUserRefreshTokens(userId);
+    await this.repo.revokeAllUserPinCredentials(userId);
     logger.info(`[auth] password changed for user ${userId}`);
   }
 
@@ -268,7 +301,149 @@ export class AuthService {
     await this.repo.updatePassword(stored.userId, newHash, false);
     await this.repo.markPasswordResetTokenUsed(stored.id);
     await this.repo.revokeAllUserRefreshTokens(stored.userId);
+    await this.repo.revokeAllUserPinCredentials(stored.userId);
     logger.info(`[auth] password reset via self-service link for user ${stored.userId}`);
+  }
+
+  /**
+   * ตั้งค่า/ตั้งใหม่ PIN สำหรับอุปกรณ์นี้ — ต้องยืนยันรหัสผ่านปัจจุบันซ้ำก่อนเสมอ (เหมือน changePassword)
+   * เพราะเป็นการสร้าง credential อายุยาว (PIN_DEVICE_TTL) ให้อุปกรณ์นี้ใช้เข้าระบบแทนรหัสผ่านได้
+   *
+   * ถ้าอุปกรณ์นี้มี PIN cookie ของ user คนเดียวกันอยู่แล้ว (ลืม PIN แล้วมา login รหัสผ่านตั้งใหม่) จะอัปเดตแถวเดิม
+   * แทนการสร้างซ้ำ — ถ้าไม่มี หรือเป็นของ user คนอื่น (เครื่อง kiosk ที่เคยมีคนอื่นตั้ง PIN ไว้ก่อน) จะสร้างแถว+secret ใหม่
+   */
+  async setupPin(
+    userId: string,
+    dto: PinSetupDto,
+    ctx: ILoginContext,
+    userAgent: string,
+    existingDeviceSecret?: string,
+  ): Promise<IPinSetupResult> {
+    const user = await this.repo.findUserById(userId);
+    if (!user) {
+      throw new UnauthorizedError();
+    }
+
+    const passwordMatches = await bcrypt.compare(dto.password, user.passwordHash);
+    if (!passwordMatches) {
+      throw new BadRequestError('รหัสผ่านไม่ถูกต้อง', 'INVALID_CURRENT_PASSWORD');
+    }
+
+    const pinHash = await bcrypt.hash(dto.pin, env.BCRYPT_SALT_ROUNDS);
+    const deviceLabel = deriveDeviceLabel(userAgent);
+    const expiresAt = this.pinDeviceExpiresAt();
+
+    if (existingDeviceSecret) {
+      const existing = await this.repo.findPinCredentialByDeviceSecretHash(hashToken(existingDeviceSecret));
+      if (existing && existing.userId === userId) {
+        await this.repo.resetPinCredentialForReSetup(existing.id, { pinHash, expiresAt, deviceLabel });
+        logger.info(`[auth] PIN re-setup for user ${userId} on existing device`);
+        return { deviceSecret: existingDeviceSecret, deviceLabel, expiresAt };
+      }
+    }
+
+    const deviceSecret = crypto.randomBytes(32).toString('hex');
+    await this.repo.createPinCredential({
+      id: randomUUID(),
+      userId,
+      deviceSecretHash: hashToken(deviceSecret),
+      pinHash,
+      deviceLabel,
+      expiresAt,
+      createdByIp: ctx.ipAddress,
+      userAgent,
+    });
+    logger.info(`[auth] PIN setup for user ${userId} on new device`);
+    return { deviceSecret, deviceLabel, expiresAt };
+  }
+
+  /**
+   * เข้าสู่ระบบด้วย PIN — ยืนยันตัวตนด้วย "อุปกรณ์ที่เคยเชื่อถือแล้ว" (deviceSecret จาก httpOnly cookie)
+   * ร่วมกับ PIN 6 หลัก แทนที่จะเป็น PIN เปล่าๆ ที่ใช้ได้จากอุปกรณ์ไหนก็ได้
+   */
+  async loginWithPin(deviceSecret: string | undefined, dto: PinLoginDto, ctx: ILoginContext): Promise<IPinLoginResult> {
+    if (!deviceSecret) {
+      throw new UnauthorizedError('ไม่พบอุปกรณ์ที่ตั้งค่า PIN ไว้ กรุณาเข้าสู่ระบบด้วยรหัสผ่าน', 'PIN_DEVICE_MISSING');
+    }
+
+    const row = await this.repo.findPinCredentialByDeviceSecretHash(hashToken(deviceSecret));
+    if (!row) {
+      throw new UnauthorizedError('อุปกรณ์นี้ยังไม่ได้ตั้งค่า PIN กรุณาเข้าสู่ระบบด้วยรหัสผ่าน', 'PIN_DEVICE_UNKNOWN');
+    }
+    if (row.revokedAt) {
+      throw new UnauthorizedError('PIN ถูกยกเลิกแล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่าน', 'PIN_REVOKED');
+    }
+    if (row.expiresAt < new Date()) {
+      throw new UnauthorizedError('PIN หมดอายุแล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่าน', 'PIN_EXPIRED');
+    }
+    if (row.lockedUntil && row.lockedUntil > new Date()) {
+      throw new UnauthorizedError('ลองใส่ PIN ผิดหลายครั้งเกินไป กรุณาลองใหม่ภายหลังหรือเข้าสู่ระบบด้วยรหัสผ่าน', 'PIN_LOCKED');
+    }
+
+    const user = await this.repo.findUserById(row.userId);
+    if (!user || !user.isActive) {
+      throw new ForbiddenError('บัญชีผู้ใช้นี้ไม่สามารถใช้งานได้');
+    }
+
+    const pinMatches = await bcrypt.compare(dto.pin, row.pinHash);
+    if (!pinMatches) {
+      const failedAttempts = row.failedAttempts + 1;
+
+      if (failedAttempts >= env.PIN_REVOKE_AFTER_ATTEMPTS) {
+        await this.repo.updatePinCredentialOnFailure(row.id, { failedAttempts, lockedUntil: null, revokedAt: new Date() });
+        throw new UnauthorizedError('ใส่ PIN ผิดหลายครั้งเกินไป PIN ถูกยกเลิก กรุณาเข้าสู่ระบบด้วยรหัสผ่าน', 'PIN_REVOKED');
+      }
+      if (failedAttempts >= env.PIN_MAX_FAILED_ATTEMPTS) {
+        const lockedUntil = new Date(Date.now() + env.PIN_LOCKOUT_MINUTES * 60 * 1000);
+        await this.repo.updatePinCredentialOnFailure(row.id, { failedAttempts, lockedUntil, revokedAt: null });
+        throw new UnauthorizedError('ลองใส่ PIN ผิดหลายครั้งเกินไป กรุณาลองใหม่ภายหลังหรือเข้าสู่ระบบด้วยรหัสผ่าน', 'PIN_LOCKED');
+      }
+      await this.repo.updatePinCredentialOnFailure(row.id, { failedAttempts, lockedUntil: null, revokedAt: null });
+      throw new UnauthorizedError('PIN ไม่ถูกต้อง', 'PIN_INVALID');
+    }
+
+    const deviceExpiresAt = this.pinDeviceExpiresAt();
+    await this.repo.updatePinCredentialOnSuccess(row.id, deviceExpiresAt);
+
+    const session = await this.issueSession(user, ctx, 'PIN');
+    return { ...session, deviceSecret, deviceExpiresAt };
+  }
+
+  async listPinDevices(userId: string, currentDeviceSecret?: string): Promise<IPinDeviceSummary[]> {
+    const rows = await this.repo.findActivePinCredentialsByUser(userId);
+    const currentHash = currentDeviceSecret ? hashToken(currentDeviceSecret) : null;
+
+    return rows.map((row) => ({
+      id: row.id,
+      deviceLabel: row.deviceLabel,
+      createdAt: row.createdAt,
+      lastUsedAt: row.lastUsedAt,
+      expiresAt: row.expiresAt,
+      isCurrentDevice: currentHash !== null && row.deviceSecretHash === currentHash,
+    }));
+  }
+
+  /** คืน wasCurrentDevice เพื่อให้ controller รู้ว่าต้องล้าง PIN cookie ของ request นี้ด้วยหรือไม่ */
+  async revokePinDevice(userId: string, id: string, currentDeviceSecret?: string): Promise<{ wasCurrentDevice: boolean }> {
+    const row = await this.repo.findPinCredentialById(id);
+    if (!row || row.userId !== userId) {
+      throw new NotFoundError('ไม่พบอุปกรณ์ที่ต้องการยกเลิก');
+    }
+    await this.repo.revokePinCredential(id);
+    logger.info(`[auth] PIN device revoked: ${id} (user ${userId})`);
+
+    const wasCurrentDevice = !!currentDeviceSecret && row.deviceSecretHash === hashToken(currentDeviceSecret);
+    return { wasCurrentDevice };
+  }
+
+  async disablePin(userId: string): Promise<void> {
+    await this.repo.revokeAllUserPinCredentials(userId);
+    logger.info(`[auth] all PIN devices disabled for user ${userId}`);
+  }
+
+  private pinDeviceExpiresAt(): Date {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ms() branded StringValue type ไม่รองรับ z.string() runtime value โดยตรง ค่าจริงถูก validate รูปแบบแล้วใน env.ts
+    return new Date(Date.now() + (ms as (v: any) => number)(env.PIN_DEVICE_TTL));
   }
 
   toAuthUser = toAuthUser;

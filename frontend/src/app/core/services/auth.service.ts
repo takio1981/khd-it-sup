@@ -9,9 +9,16 @@ import type {
   ILoginRequest,
   ILoginResponse,
   INotificationChannels,
+  IPinDevice,
+  IPinLoginMarker,
+  IPinLoginRequest,
+  IPinSetupRequest,
+  IPinSetupResponse,
   IUpdateNotificationChannelsPayload,
   Permission,
 } from '../models/auth.model';
+
+const PIN_LOGIN_MARKER_KEY = 'khd_pin_login_marker';
 
 /**
  * AuthService — เก็บ Access Token ใน memory เท่านั้น (ไม่ใช้ localStorage) เพื่อลดความเสี่ยง XSS
@@ -84,6 +91,82 @@ export class AuthService {
     return this.http
       .post<IApiSuccessResponse<{ message: string }>>(`${environment.apiBaseUrl}/auth/reset-password`, payload)
       .pipe(map((res) => res.data));
+  }
+
+  /** ตั้งค่า/ตั้งใหม่ PIN สำหรับอุปกรณ์นี้ — ต้องเข้าสู่ระบบอยู่แล้ว (ยืนยันรหัสผ่านซ้ำในตัว payload) */
+  setupPin(payload: IPinSetupRequest): Observable<IPinSetupResponse> {
+    return this.http
+      .post<IApiSuccessResponse<IPinSetupResponse>>(`${environment.apiBaseUrl}/auth/pin/setup`, payload, { withCredentials: true })
+      .pipe(
+        map((res) => res.data),
+        tap(() => {
+          const user = this._currentUser();
+          if (user) this.setPinLoginMarker({ username: user.username, fullName: user.fullName, gender: user.gender });
+        }),
+      );
+  }
+
+  /** เข้าสู่ระบบด้วย PIN — ใช้ได้เฉพาะอุปกรณ์ที่เคยตั้งค่า PIN ไว้แล้ว (ยืนยันผ่าน httpOnly cookie ไม่ใช่ token) */
+  loginWithPin(payload: IPinLoginRequest): Observable<IAuthUser> {
+    return this.http
+      .post<IApiSuccessResponse<ILoginResponse>>(`${environment.apiBaseUrl}/auth/pin/login`, payload, { withCredentials: true })
+      .pipe(
+        tap((res) => this.setSession(res.data)),
+        map((res) => res.data.user),
+      );
+  }
+
+  listPinDevices(): Observable<IPinDevice[]> {
+    return this.http
+      .get<IApiSuccessResponse<IPinDevice[]>>(`${environment.apiBaseUrl}/auth/pin/devices`, { withCredentials: true })
+      .pipe(map((res) => res.data));
+  }
+
+  revokePinDevice(id: string): Observable<void> {
+    return this.http
+      .delete<IApiSuccessResponse<unknown>>(`${environment.apiBaseUrl}/auth/pin/devices/${id}`, { withCredentials: true })
+      .pipe(map(() => undefined));
+  }
+
+  disablePin(): Observable<void> {
+    return this.http.post<IApiSuccessResponse<unknown>>(`${environment.apiBaseUrl}/auth/pin/disable`, {}, { withCredentials: true }).pipe(
+      map(() => undefined),
+      tap(() => this.clearPinLoginMarker()),
+    );
+  }
+
+  /**
+   * Marker ฝั่ง client บอกว่าเบราว์เซอร์นี้ควรแสดงหน้า "กรอก PIN" แทนฟอร์ม user/password — เก็บแค่
+   * username/fullName/gender เพื่อทักทายผู้ใช้เท่านั้น ไม่มี PIN/token/secret ใดๆ ตัวยืนยันตัวตนจริง
+   * คือ httpOnly cookie ที่ JS อ่านไม่ได้ ต่อให้ localStorage ถูกอ่านก็ล็อกอินด้วย PIN ไม่ได้ถ้าไม่มี cookie คู่กัน
+   */
+  hasPinLoginMarker(): boolean {
+    return this.getPinLoginMarker() !== null;
+  }
+
+  getPinLoginMarker(): IPinLoginMarker | null {
+    try {
+      const raw = localStorage.getItem(PIN_LOGIN_MARKER_KEY);
+      return raw ? (JSON.parse(raw) as IPinLoginMarker) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  setPinLoginMarker(marker: IPinLoginMarker): void {
+    try {
+      localStorage.setItem(PIN_LOGIN_MARKER_KEY, JSON.stringify(marker));
+    } catch {
+      // localStorage ไม่พร้อมใช้งาน (private mode ฯลฯ) — ข้ามไป ผู้ใช้จะเห็นฟอร์มรหัสผ่านแทน
+    }
+  }
+
+  clearPinLoginMarker(): void {
+    try {
+      localStorage.removeItem(PIN_LOGIN_MARKER_KEY);
+    } catch {
+      // เพิกเฉย
+    }
   }
 
   getNotificationChannels(): Observable<INotificationChannels> {

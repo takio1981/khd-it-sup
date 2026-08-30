@@ -141,6 +141,27 @@ CREATE TABLE `password_reset_tokens` (
   CONSTRAINT `fk_prt_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `pin_credentials` (
+  `id`                 CHAR(36)     NOT NULL,
+  `user_id`            CHAR(36)     NOT NULL,
+  `device_secret_hash` VARCHAR(255) NOT NULL COMMENT 'sha256(device secret) — ค่าดิบเก็บเป็น httpOnly cookie เฉพาะเครื่องนั้น ไม่เก็บใน DB',
+  `pin_hash`           VARCHAR(255) NOT NULL COMMENT 'bcrypt hash ของ PIN 6 หลัก',
+  `device_label`       VARCHAR(150) NULL COMMENT 'ชื่ออุปกรณ์อ่านง่าย แปลงจาก User-Agent เช่น "Chrome บน Windows"',
+  `failed_attempts`    TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `locked_until`       DATETIME(3)  NULL COMMENT 'ล็อกชั่วคราวหลังใส่ PIN ผิดติดกันเกิน PIN_MAX_FAILED_ATTEMPTS',
+  `expires_at`         DATETIME(3)  NOT NULL COMMENT 'อายุแบบ sliding — เลื่อนออกไปทุกครั้งที่ login ด้วย PIN สำเร็จ',
+  `revoked_at`         DATETIME(3)  NULL,
+  `last_used_at`       DATETIME(3)  NULL,
+  `created_by_ip`      VARCHAR(64)  NULL,
+  `user_agent`         VARCHAR(255) NULL,
+  `created_at`         DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_pin_credentials_device_secret_hash` (`device_secret_hash`),
+  KEY `idx_pin_credentials_user` (`user_id`),
+  KEY `idx_pin_credentials_expires` (`expires_at`),
+  CONSTRAINT `fk_pin_credentials_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- =====================================================================================
 -- SECTION 2: LOCATION (BUILDING / FLOOR / ROOM) & VENDOR
 -- =====================================================================================

@@ -55,3 +55,23 @@ export const resetPasswordSchema = z
     path: ['confirmPassword'],
   });
 export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;
+
+/** PIN ที่เดาง่ายเกินไป — เลขซ้ำล้วน (000000, 111111, ...) หรือเรียงขึ้น/ลงต่อเนื่องทั้ง 6 หลัก */
+function isWeakPin(pin: string): boolean {
+  if (/^(\d)\1{5}$/.test(pin)) return true;
+  return '0123456789'.includes(pin) || '9876543210'.includes(pin);
+}
+
+export const pinSetupSchema = z.object({
+  password: z.string().min(1, 'กรุณากรอกรหัสผ่านปัจจุบัน'),
+  pin: z
+    .string()
+    .regex(/^\d{6}$/, 'PIN ต้องเป็นตัวเลข 6 หลัก')
+    .refine((p) => !isWeakPin(p), 'PIN นี้คาดเดาง่ายเกินไป กรุณาเลือก PIN อื่น'),
+});
+export type PinSetupDto = z.infer<typeof pinSetupSchema>;
+
+export const pinLoginSchema = z.object({
+  pin: z.string().regex(/^\d{6}$/, 'PIN ต้องเป็นตัวเลข 6 หลัก'),
+});
+export type PinLoginDto = z.infer<typeof pinLoginSchema>;

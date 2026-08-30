@@ -32,6 +32,11 @@ export const routes: Routes = [
       import('./features/auth/change-password/change-password.component').then((m) => m.ChangePasswordComponent),
   },
   {
+    path: 'auth/setup-pin',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/auth/setup-pin/setup-pin.component').then((m) => m.SetupPinComponent),
+  },
+  {
     path: 'auth/notification-channels',
     canActivate: [authGuard],
     loadComponent: () =>

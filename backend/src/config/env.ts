@@ -25,6 +25,13 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
 
+  PIN_DEVICE_COOKIE_NAME: z.string().default('khd_pin_device'),
+  PIN_DEVICE_TTL: z.string().default('90d'),
+  PIN_MAX_FAILED_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  PIN_LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
+  PIN_REVOKE_AFTER_ATTEMPTS: z.coerce.number().int().positive().default(10),
+  PIN_LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(30),
+
   UPLOAD_DIR: z.string().default('./uploads'),
   UPLOAD_MAX_FILE_SIZE_MB: z.coerce.number().int().positive().default(10),
 

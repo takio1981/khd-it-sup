@@ -4,6 +4,8 @@ import type {
   ChangePasswordDto,
   ForgotPasswordDto,
   LoginDto,
+  PinLoginDto,
+  PinSetupDto,
   ResetPasswordDto,
   UpdateNotificationChannelsDto,
   UpdateProfileDto,
@@ -35,6 +37,20 @@ function refreshCookieOptions(expiresAt: Date): CookieOptions {
     secure: isProduction,
     sameSite: 'strict',
     path: `${externalPathPrefix()}${env.API_PREFIX}/auth`,
+    expires: expiresAt,
+  };
+}
+
+function pinDeviceCookiePath(): string {
+  return `${externalPathPrefix()}${env.API_PREFIX}/auth/pin`;
+}
+
+function pinDeviceCookieOptions(expiresAt: Date): CookieOptions {
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'strict',
+    path: pinDeviceCookiePath(),
     expires: expiresAt,
   };
 }
@@ -124,4 +140,60 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
   const { token, newPassword } = req.body as ResetPasswordDto;
   await authService.resetPassword(token, newPassword);
   sendSuccess(res, { message: 'ตั้งรหัสผ่านใหม่สำเร็จ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่' });
+});
+
+export const setupPin = asyncHandler(async (req: Request, res: Response) => {
+  const existingDeviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
+  const result = await authService.setupPin(
+    req.user!.id,
+    req.body as PinSetupDto,
+    getContext(req),
+    req.headers['user-agent'] ?? '',
+    existingDeviceSecret,
+  );
+
+  res.cookie(env.PIN_DEVICE_COOKIE_NAME, result.deviceSecret, pinDeviceCookieOptions(result.expiresAt));
+  sendSuccess(res, { deviceLabel: result.deviceLabel, expiresAt: result.expiresAt });
+});
+
+export const pinLogin = asyncHandler(async (req: Request, res: Response) => {
+  const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
+
+  try {
+    const result = await authService.loginWithPin(deviceSecret, req.body as PinLoginDto, getContext(req));
+    res.cookie(env.REFRESH_TOKEN_COOKIE_NAME, result.refreshToken, refreshCookieOptions(result.refreshTokenExpiresAt));
+    res.cookie(env.PIN_DEVICE_COOKIE_NAME, result.deviceSecret, pinDeviceCookieOptions(result.deviceExpiresAt));
+    sendSuccess(res, { accessToken: result.accessToken, user: result.user });
+  } catch (err) {
+    // อุปกรณ์นี้ใช้ PIN ต่อไม่ได้แล้ว (ถูกยกเลิก/หมดอายุ/ไม่รู้จัก) — ล้าง cookie ทิ้งเพื่อไม่ให้ frontend ยังพยายามแสดงหน้า PIN ต่อ
+    if (
+      err instanceof UnauthorizedError &&
+      ['PIN_REVOKED', 'PIN_EXPIRED', 'PIN_DEVICE_UNKNOWN'].includes(err.code)
+    ) {
+      res.clearCookie(env.PIN_DEVICE_COOKIE_NAME, { path: pinDeviceCookiePath() });
+    }
+    throw err;
+  }
+});
+
+export const listPinDevices = asyncHandler(async (req: Request, res: Response) => {
+  const currentDeviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
+  const devices = await authService.listPinDevices(req.user!.id, currentDeviceSecret);
+  sendSuccess(res, devices);
+});
+
+export const revokePinDevice = asyncHandler(async (req: Request, res: Response) => {
+  const currentDeviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
+  const { wasCurrentDevice } = await authService.revokePinDevice(req.user!.id, req.params.id, currentDeviceSecret);
+
+  if (wasCurrentDevice) {
+    res.clearCookie(env.PIN_DEVICE_COOKIE_NAME, { path: pinDeviceCookiePath() });
+  }
+  sendSuccess(res, { message: 'ยกเลิกอุปกรณ์นี้เรียบร้อยแล้ว' });
+});
+
+export const disablePin = asyncHandler(async (req: Request, res: Response) => {
+  await authService.disablePin(req.user!.id);
+  res.clearCookie(env.PIN_DEVICE_COOKIE_NAME, { path: pinDeviceCookiePath() });
+  sendSuccess(res, { message: 'ปิดใช้งาน PIN ทุกอุปกรณ์เรียบร้อยแล้ว' });
 });

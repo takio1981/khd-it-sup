@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { PinLoginFormComponent } from './pin-login-form.component';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -23,6 +24,7 @@ import { environment } from '../../../../environments/environment';
     MatProgressSpinnerModule,
     PageWatermarkComponent,
     IconComponent,
+    PinLoginFormComponent,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
@@ -38,10 +40,19 @@ export class LoginComponent {
   readonly errorMessage = signal<string | null>(null);
   readonly hidePassword = signal(true);
 
+  /** เครื่องนี้เคยตั้งค่า PIN ไว้แล้ว — เริ่มด้วยหน้ากรอก PIN แทนฟอร์ม user/password */
+  readonly mode = signal<'pin' | 'password'>(this.authService.hasPinLoginMarker() ? 'pin' : 'password');
+
   readonly form = this.fb.nonNullable.group({
     username: ['', Validators.required],
     password: ['', Validators.required],
   });
+
+  /** อุปกรณ์นี้ใช้ PIN ต่อไม่ได้แล้ว หรือผู้ใช้กด "เข้าสู่ระบบด้วยรหัสผ่าน" เอง */
+  onUsePassword(message: string | null): void {
+    this.mode.set('password');
+    if (message) this.errorMessage.set(message);
+  }
 
   submit(): void {
     if (this.form.invalid || this.loading()) return;
