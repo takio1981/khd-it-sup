@@ -1,0 +1,39 @@
+<div class="relative min-h-screen overflow-hidden flex items-center justify-center bg-black px-4">
+  <div class="relative z-10 w-full max-w-md">
+    <div class="text-center mb-4">
+      <h1 class="text-lg font-semibold text-white">สแกน QR Code ครุภัณฑ์</h1>
+      <p class="text-sm text-neutral-300 mt-1">สำหรับแจ้งซ่อม หรือ ยืม-คืนอุปกรณ์</p>
+    </div>
+
+    <div class="relative rounded-2xl overflow-hidden bg-neutral-900 aspect-square shadow-softLg ring-1 ring-white/10">
+      <video #video class="absolute inset-0 w-full h-full object-cover" muted playsinline></video>
+      <canvas #canvas class="hidden"></canvas>
+
+      @if (!fatalError()) {
+        <div class="absolute inset-8 border-2 border-white/70 rounded-xl pointer-events-none"></div>
+      }
+
+      @if (starting()) {
+        <div class="absolute inset-0 flex items-center justify-center bg-black/60">
+          <mat-spinner diameter="32" />
+        </div>
+      }
+
+      @if (fatalError()) {
+        <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/85 px-6 text-center">
+          <khd-icon name="exclamation-triangle" [size]="32" class="text-amber-400" />
+          <p class="text-sm text-white">{{ errorMessage() }}</p>
+          <button mat-flat-button color="primary" (click)="retry()">ลองใหม่</button>
+        </div>
+      }
+    </div>
+
+    @if (!fatalError() && errorMessage()) {
+      <p class="text-center text-sm text-amber-300 mt-3">{{ errorMessage() }}</p>
+    }
+
+    <div class="text-center mt-6">
+      <a routerLink="/auth/login" class="text-sm text-white/80 hover:underline">ยกเลิก กลับไปหน้าเข้าสู่ระบบ</a>
+    </div>
+  </div>
+</div>

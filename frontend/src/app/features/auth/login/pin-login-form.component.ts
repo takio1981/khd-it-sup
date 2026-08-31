@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserAvatarComponent } from '../../../shared/components/user-avatar/user-avatar.component';
 import { PinInputComponent } from '../../../shared/components/pin-input/pin-input.component';
 import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { environment } from '../../../../environments/environment';
 
 /** อุปกรณ์นี้ใช้ PIN ต่อไม่ได้แล้ว — เคลียร์ marker แล้วสลับกลับฟอร์มรหัสผ่านให้ผู้ใช้เอง */
@@ -18,11 +19,13 @@ const FALLBACK_ERROR_CODES = new Set(['PIN_REVOKED', 'PIN_EXPIRED', 'PIN_DEVICE_
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     MatButtonModule,
     MatProgressSpinnerModule,
     UserAvatarComponent,
     PinInputComponent,
     PageWatermarkComponent,
+    IconComponent,
   ],
   templateUrl: './pin-login-form.component.html',
 })

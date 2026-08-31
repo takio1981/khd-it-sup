@@ -47,6 +47,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/qr/qr-scan/qr-scan.component').then((m) => m.QrScanComponent),
   },
   {
+    path: 'qr/scanner',
+    loadComponent: () => import('./features/qr/qr-scanner/qr-scanner.component').then((m) => m.QrScannerComponent),
+  },
+  {
     path: 'forbidden',
     loadComponent: () => import('./features/misc/forbidden.component').then((m) => m.ForbiddenComponent),
   },
