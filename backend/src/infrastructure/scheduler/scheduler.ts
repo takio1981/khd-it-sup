@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { checkOverdueLoansAndNotify } from '@modules/asset-loans/services/assetLoanReminder.job';
+import { runScheduledEquipmentSync } from '@modules/equipment-sync/services/equipmentSync.job';
 import { logger } from '@infrastructure/logger/logger';
 
 /**
@@ -18,4 +19,19 @@ export function startScheduledJobs(): void {
   );
 
   logger.info('[scheduler] ตั้งเวลาแจ้งเตือนยืมเกินกำหนดคืนทุกวัน 08:00 (Asia/Bangkok) เรียบร้อย');
+
+  // เวลานอกช่วง 08:00 ของ job แจ้งเตือนยืมเกินกำหนด — ซิงค์ครุภัณฑ์จาก MOPH AssetTracker ทุกคืนเวลา 02:00
+  cron.schedule(
+    '0 2 * * *',
+    () => {
+      try {
+        runScheduledEquipmentSync();
+      } catch (err) {
+        logger.error(`[scheduler] เริ่มซิงค์ครุภัณฑ์จาก MOPH ล้มเหลว: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    },
+    { timezone: 'Asia/Bangkok' },
+  );
+
+  logger.info('[scheduler] ตั้งเวลาซิงค์ครุภัณฑ์จาก MOPH AssetTracker ทุกวัน 02:00 (Asia/Bangkok) เรียบร้อย');
 }

@@ -325,7 +325,7 @@ enum AssetStatus {
 model Asset {
   id                  String       @id @db.Char(36)
   assetNumber         String       @unique @map("asset_number") @db.VarChar(50)
-  govAssetNumber      String?      @map("gov_asset_number") @db.VarChar(100)
+  govAssetNumber      String?      @unique(map: "uq_assets_gov_asset_number") @map("gov_asset_number") @db.VarChar(100)
   serialNumber        String?      @map("serial_number") @db.VarChar(150)
   model               String?      @db.VarChar(150)
   brand               String?      @db.VarChar(150)
@@ -343,6 +343,8 @@ model Asset {
   status              AssetStatus  @default(ACTIVE)
   ownerUserId         String?      @map("owner_user_id") @db.Char(36)
   remark              String?      @db.Text
+  externalSource      String?      @map("external_source") @db.VarChar(50)
+  externalSyncedAt    DateTime?    @map("external_synced_at")
   createdAt           DateTime     @default(now()) @map("created_at")
   updatedAt           DateTime     @updatedAt @map("updated_at")
   createdBy           String?      @map("created_by") @db.Char(36)
@@ -365,7 +367,6 @@ model Asset {
   @@index([departmentId], name: "idx_assets_department")
   @@index([status], name: "idx_assets_status")
   @@index([serialNumber], name: "idx_assets_serial")
-  @@index([govAssetNumber], name: "idx_assets_gov_number")
   loans          AssetLoan[]
   @@map("assets")
 }

@@ -73,6 +73,22 @@ export class AssetRepository {
     return prisma.asset.create({ data, include: assetDetailInclude });
   }
 
+  /** ใช้เฉพาะ equipment-sync — โหลด map ทุก asset ที่มี gov_asset_number ครั้งเดียวก่อนเริ่ม sync แทน query ทีละแถว */
+  async findAllWithGovAssetNumber() {
+    return prisma.asset.findMany({
+      where: { govAssetNumber: { not: null } },
+      select: { id: true, govAssetNumber: true, deletedAt: true, externalSource: true },
+    });
+  }
+
+  async createMinimal(data: Prisma.AssetUncheckedCreateInput) {
+    return prisma.asset.create({ data, select: { id: true } });
+  }
+
+  async updateMinimal(id: string, data: Prisma.AssetUncheckedUpdateInput) {
+    return prisma.asset.update({ where: { id }, data, select: { id: true } });
+  }
+
   async update(id: string, data: Prisma.AssetUncheckedUpdateInput) {
     return prisma.asset.update({ where: { id }, data, include: assetDetailInclude });
   }

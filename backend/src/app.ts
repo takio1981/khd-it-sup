@@ -30,6 +30,7 @@ import vendorRoutes from '@modules/vendors/routes';
 import vendorRepairOrderRoutes from '@modules/vendor-repair-orders/routes';
 import documentRoutes from '@modules/documents/routes';
 import searchRoutes from '@modules/search/routes';
+import equipmentSyncRoutes from '@modules/equipment-sync/routes';
 import { serveFile } from '@infrastructure/storage/serveFile.controller';
 
 export function createApp(): Express {
@@ -86,6 +87,7 @@ export function createApp(): Express {
   api.use('/vendors', vendorRoutes);
   api.use('/vendor-repair-orders', vendorRepairOrderRoutes);
   api.use('/search', searchRoutes);
+  api.use('/equipment-sync', equipmentSyncRoutes);
   // locationRoutes/documentRoutes mount ที่ root ('/') ต้องอยู่ท้ายสุดเสมอ — เพราะ Express จับคู่ prefix '/' กับทุก
   // request ที่ผ่าน api router จึงต้องให้ router ที่ระบุ path เจาะจง (เช่น /qrcodes) ถูกลองจับคู่ก่อนเสมอ ไม่งั้น
   // blanket `router.use(authenticate)` ภายใน locationRoutes จะดัก request ที่ยังไม่ login ทุกตัวไปก่อนถึง route

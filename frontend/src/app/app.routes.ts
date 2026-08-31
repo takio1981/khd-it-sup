@@ -91,6 +91,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/locations/location-list.component').then((m) => m.LocationListComponent),
       },
       {
+        path: 'assets/import',
+        canActivate: [permissionGuard],
+        data: { permissions: ['asset:create'], watermark: 'logo3.png' },
+        loadComponent: () =>
+          import('./features/assets/equipment-sync/equipment-sync.component').then((m) => m.EquipmentSyncComponent),
+      },
+      {
         path: 'asset-loans',
         canActivate: [permissionGuard],
         data: { permissions: ['asset:loan'], watermark: 'logo2.png' },

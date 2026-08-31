@@ -15,6 +15,10 @@
         <khd-icon name="adjustments-horizontal" [size]="18" class="!mr-1" />
         จัดการประเภทครุภัณฑ์
       </button>
+      <button mat-stroked-button *khdHasPermission="'asset:create'" routerLink="/assets/import">
+        <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
+        นำเข้าครุภัณฑ์จาก MOPH
+      </button>
       <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
         <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
         Export

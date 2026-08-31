@@ -1,0 +1,115 @@
+<div class="space-y-4">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+      <a routerLink="/assets" class="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-brand-primary mb-1">
+        <khd-icon name="chevron-left" [size]="16" />
+        กลับไปรายการครุภัณฑ์
+      </a>
+      <h1 class="text-xl font-semibold">นำเข้าครุภัณฑ์จาก MOPH AssetTracker</h1>
+      <p class="text-sm text-neutral-500">
+        ซิงค์ข้อมูลครุภัณฑ์จากระบบ MOPH AssetTracker เข้าสู่ระบบนี้อัตโนมัติทุกวันเวลา 02:00 น. หรือกดนำเข้าทันทีได้จากปุ่มด้านล่าง
+      </p>
+    </div>
+    <button mat-flat-button color="primary" [disabled]="running()" (click)="startImport()">
+      @if (running()) {
+        <mat-spinner diameter="18" class="!inline-block !mr-2" />
+        กำลังซิงค์...
+      } @else {
+        <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
+        นำเข้าครุภัณฑ์จาก MOPH ตอนนี้
+      }
+    </button>
+  </div>
+
+  @if (!loadingStatus() && lastRun(); as run) {
+    <div class="khd-card space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h2 class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+          ผลการซิงค์{{ running() ? 'ล่าสุด (กำลังทำงานอยู่)' : 'ล่าสุด' }}
+        </h2>
+        <span class="text-xs text-neutral-500">
+          {{ run.trigger === 'MANUAL' ? 'สั่งด้วยตนเอง' : 'ซิงค์อัตโนมัติ' }} ·
+          เริ่ม {{ formatDateTime(run.startedAt) }} · เสร็จ {{ formatDateTime(run.finishedAt) }}
+        </span>
+      </div>
+
+      @if (run.aborted) {
+        <div class="rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300 text-sm px-3 py-2">
+          หยุดก่อนกำหนด: {{ run.abortReason }}
+        </div>
+      }
+
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div class="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3 text-center">
+          <div class="text-lg font-semibold">{{ run.totalFetched }}</div>
+          <div class="text-xs text-neutral-500">พบทั้งหมด</div>
+        </div>
+        <div class="rounded-lg border border-emerald-200 dark:border-emerald-800 p-3 text-center">
+          <div class="text-lg font-semibold text-emerald-700 dark:text-emerald-400">{{ run.created }}</div>
+          <div class="text-xs text-neutral-500">สร้างใหม่</div>
+        </div>
+        <div class="rounded-lg border border-sky-200 dark:border-sky-800 p-3 text-center">
+          <div class="text-lg font-semibold text-sky-700 dark:text-sky-400">{{ run.updated }}</div>
+          <div class="text-xs text-neutral-500">อัปเดต</div>
+        </div>
+        <div class="rounded-lg border border-neutral-200 dark:border-neutral-700 p-3 text-center">
+          <div class="text-lg font-semibold">{{ run.skipped }}</div>
+          <div class="text-xs text-neutral-500">ข้าม</div>
+        </div>
+        <div class="rounded-lg border border-rose-200 dark:border-rose-800 p-3 text-center">
+          <div class="text-lg font-semibold text-rose-700 dark:text-rose-400">{{ run.failed }}</div>
+          <div class="text-xs text-neutral-500">ล้มเหลว</div>
+        </div>
+      </div>
+
+      @if (run.unmatchedDepartments.length || run.sampleErrors.length || run.failedPages.length) {
+        <mat-accordion class="block">
+          @if (run.unmatchedDepartments.length) {
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>หน่วยงานที่ไม่พบชื่อตรงกันในระบบ ({{ run.unmatchedDepartments.length }})</mat-panel-title>
+              </mat-expansion-panel-header>
+              <ul class="text-sm space-y-1">
+                @for (item of run.unmatchedDepartments; track item.locationName) {
+                  <li class="flex justify-between gap-2">
+                    <span>{{ item.locationName }}</span>
+                    <span class="text-neutral-500">{{ item.count }} รายการ</span>
+                  </li>
+                }
+              </ul>
+            </mat-expansion-panel>
+          }
+          @if (run.sampleErrors.length) {
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>รายการที่ล้มเหลว (ตัวอย่าง {{ run.sampleErrors.length }} รายการ)</mat-panel-title>
+              </mat-expansion-panel-header>
+              <ul class="text-sm space-y-1">
+                @for (item of run.sampleErrors; track item.govAssetNumber) {
+                  <li>
+                    <span class="font-medium">{{ item.govAssetNumber }}</span> — {{ item.message }}
+                  </li>
+                }
+              </ul>
+            </mat-expansion-panel>
+          }
+          @if (run.failedPages.length) {
+            <mat-expansion-panel>
+              <mat-expansion-panel-header>
+                <mat-panel-title>หน้าที่ดึงข้อมูลไม่สำเร็จ ({{ run.failedPages.length }})</mat-panel-title>
+              </mat-expansion-panel-header>
+              <p class="text-sm">{{ run.failedPages.join(', ') }}</p>
+            </mat-expansion-panel>
+          }
+        </mat-accordion>
+      }
+    </div>
+  } @else if (!loadingStatus()) {
+    <div class="khd-card text-sm text-neutral-500">ยังไม่เคยมีการซิงค์ข้อมูลครุภัณฑ์จาก MOPH บนระบบนี้</div>
+  }
+
+  <a routerLink="/settings/audit-log" class="inline-flex items-center gap-1 text-sm text-brand-primary hover:underline">
+    <khd-icon name="clock" [size]="16" />
+    ดูประวัติการซิงค์ทั้งหมดใน Audit Log
+  </a>
+</div>

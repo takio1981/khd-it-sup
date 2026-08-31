@@ -8,7 +8,7 @@ import { normalizePagination, buildPaginatedResult } from '@common/utils/paginat
 const EXPORT_MAX_ROWS = 5000;
 
 export interface IRecordAuditInput {
-  action: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'PRINT' | 'EXPORT' | 'APPROVE' | 'CONFIG_CHANGE';
+  action: 'LOGIN' | 'LOGOUT' | 'CREATE' | 'UPDATE' | 'DELETE' | 'PRINT' | 'EXPORT' | 'IMPORT' | 'APPROVE' | 'CONFIG_CHANGE';
   module: string;
   entityType?: string;
   entityId?: string;
