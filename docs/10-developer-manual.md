@@ -4,7 +4,7 @@
 
 ดู [docs/06-installation-guide.md § 6.3](06-installation-guide.md#63-วิธีที่-2-รัน-local-dev-ผ่าน-devbat-แนะนำสำหรับนักพัฒนา-windows)
 สำหรับการตั้งค่า local dev environment — สรุปสั้น: `dev.bat` เปิด dev database แยกจาก production (container/พอร์ต/volume คนละชุด)
-แล้วรัน backend (`:3500`) + frontend (`:4500/khd-it-sup/`) ให้อัตโนมัติ ส่วนการ deploy ขึ้น production ใช้ `deploy-prod.bat`
+แล้วรัน backend (`:3500`) + frontend (`:4600/khd-it-sup/`) ให้อัตโนมัติ ส่วนการ deploy ขึ้น production ใช้ `deploy-prod.bat`
 (ดู [docs/06-installation-guide.md § 6.5](06-installation-guide.md#65-การ-deploy-ขึ้น-production-จากเครื่อง-dev-deploy-probat))
 
 ## 10.2 สถาปัตยกรรมโดยสรุป
@@ -93,7 +93,7 @@ Integration test (`tests/integration/`) ยิง request ผ่าน `createAp
 | `npm run build` | backend/ | Compile TypeScript + resolve path alias |
 | `npx prisma studio` | backend/ | เปิด GUI ดู/แก้ไขข้อมูลในฐานข้อมูล |
 | `npx prisma generate` | backend/ | สร้าง Prisma Client ใหม่หลังแก้ `schema.prisma` |
-| `npm start` | frontend/ | รัน dev server ที่ `http://localhost:4500/khd-it-sup/` (`ng serve` พร้อม `--serve-path`+`--proxy-config`) |
+| `npm start` | frontend/ | รัน dev server ที่ `http://localhost:4600/khd-it-sup/` (`ng serve` พร้อม `--serve-path`+`--proxy-config`) |
 | `npx ng build --configuration production` | frontend/ | Build production |
 
 ## 10.8 ข้อควรระวังที่พบระหว่างพัฒนา (Gotchas)

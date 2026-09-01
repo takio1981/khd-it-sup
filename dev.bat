@@ -58,12 +58,12 @@ echo       backend พร้อมแล้ว (localhost:3500)
 :openfrontend
 echo.
 echo [4/4] กำลังเปิดหน้าต่าง frontend dev server...
-start "KHD-IT-SUP Frontend (dev :4500)" cmd /k "cd /d "%~dp0frontend" && npm start"
+start "KHD-IT-SUP Frontend (dev :4600)" cmd /k "cd /d "%~dp0frontend" && npm start"
 
 echo.
 echo ================================================================
 echo  พร้อมใช้งาน (URL รูปแบบเดียวกับ production — ใต้ path /khd-it-sup/):
-echo    เว็บแอป  : http://localhost:4500/khd-it-sup/
+echo    เว็บแอป  : http://localhost:4600/khd-it-sup/
 echo    Backend  : http://localhost:3500/api/v1  (เข้าผ่าน frontend proxy ให้อัตโนมัติแล้ว)
 echo    Swagger  : http://localhost:3500/api-docs
 echo.

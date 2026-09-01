@@ -94,7 +94,7 @@ docker compose down -v              # หยุดและลบข้อมู
 
 | | Production (`docker-compose.yml`) | Dev (`docker-compose.dev.yml` + `dev.bat`) |
 |---|---|---|
-| เว็บแอป | `http://localhost/khd-it-sup/` (nginx, พอร์ต 80) | `http://localhost:4500/khd-it-sup/` (`ng serve` โดยตรง) |
+| เว็บแอป | `http://localhost/khd-it-sup/` (nginx, พอร์ต 80) | `http://localhost:4600/khd-it-sup/` (`ng serve` โดยตรง) |
 | Backend API | ผ่าน nginx เท่านั้น (ไม่ expose พอร์ตตรง) | `http://localhost:3500/api/v1` (`tsx watch`, hot-reload) |
 | ฐานข้อมูล | container `khd_it_sup_db` พอร์ต `3309` | container **แยกต่างหาก** `khd_it_sup_dev_db` พอร์ต `3308` |
 | ข้อมูล | ข้อมูลจริงที่ผู้ใช้งานใช้อยู่ | seed data สด ๆ จาก `database/seed.sql` — ลบ/แก้ทดลองได้อิสระ |
@@ -116,8 +116,8 @@ cp backend/.env.example backend/.env
 
 ```env
 PORT=3500                                                    # พอร์ต backend dev
-CORS_ORIGIN=http://localhost:4500                            # origin ของ frontend dev
-FRONTEND_BASE_URL=http://localhost:4500/khd-it-sup           # ใช้สร้างลิงก์ QR/อีเมลตอน dev
+CORS_ORIGIN=http://localhost:4600                            # origin ของ frontend dev
+FRONTEND_BASE_URL=http://localhost:4600/khd-it-sup           # ใช้สร้างลิงก์ QR/อีเมลตอน dev
 DATABASE_URL="mysql://khd_app:change-this-strong-password@localhost:3308/khd_it_sup"  # ชี้ไปที่ dev database (พอร์ต 3308)
 ```
 
@@ -142,9 +142,9 @@ dev.bat
 2. รอจน container ฐานข้อมูล**พร้อมใช้งานจริง** (`healthy`) ก่อนเปิดขั้นตอนถัดไป
 3. เปิดหน้าต่าง terminal ใหม่ 2 หน้าต่างแยกกัน:
    - **Backend (dev :3500)** — `npm run dev` ใน `backend/` (`tsx watch` — แก้โค้ดแล้ว restart ให้อัตโนมัติ)
-   - **Frontend (dev :4500)** — `npm start` ใน `frontend/` (`ng serve` พร้อม hot-reload/live-reload)
+   - **Frontend (dev :4600)** — `npm start` ใน `frontend/` (`ng serve` พร้อม hot-reload/live-reload)
 
-เมื่อพร้อมแล้วเปิดเบราว์เซอร์ที่ **`http://localhost:4500/khd-it-sup/`** (ต้องมี `/khd-it-sup/` เหมือน production — ดูเหตุผลที่
+เมื่อพร้อมแล้วเปิดเบราว์เซอร์ที่ **`http://localhost:4600/khd-it-sup/`** (ต้องมี `/khd-it-sup/` เหมือน production — ดูเหตุผลที่
 §6.3.1 ด้านล่าง) แล้ว login ด้วย `admin` / `Admin@12345` เช่นเดียวกับ production (คนละฐานข้อมูลกัน แต่ seed ข้อมูลตั้งต้นเหมือนกัน)
 
 **หยุดการทำงาน**: ปิดหน้าต่าง backend/frontend ทั้งสองที่เปิดขึ้นมา แล้วรัน `stop-dev.bat` (หยุด/ลบ container ฐานข้อมูล dev —
@@ -161,8 +161,8 @@ dev.bat
   `/khd-it-sup/api-docs`, และ `/khd-it-sup/socket.io` (รวม WebSocket) ไปที่ backend dev (`localhost:3500`) โดยตัด prefix
   ออกก่อนเสมอ — พฤติกรรมเดียวกับที่ `docker/nginx/nginx.conf` ทำใน production ทุกประการ
 
-ผลคือ request ทุกตัวจาก browser ไปที่ origin เดียวกัน (`localhost:4500`) ไม่ต้องพึ่ง CORS ข้าม origin เลย — ถ้าเข้า
-`http://localhost:4500/` เฉย ๆ (ไม่มี prefix) จะไม่เจอ route ที่ถูกต้อง เข้าผ่าน `/khd-it-sup/` เท่านั้น
+ผลคือ request ทุกตัวจาก browser ไปที่ origin เดียวกัน (`localhost:4600`) ไม่ต้องพึ่ง CORS ข้าม origin เลย — ถ้าเข้า
+`http://localhost:4600/` เฉย ๆ (ไม่มี prefix) จะไม่เจอ route ที่ถูกต้อง เข้าผ่าน `/khd-it-sup/` เท่านั้น
 
 ### 6.3.2 รันแบบ manual โดยไม่ผ่าน `dev.bat` (ทำเองทีละขั้นตอน)
 
@@ -182,7 +182,7 @@ npm run dev              # http://localhost:3500
 
 # 4) เทอร์มินัลที่ 2 — frontend
 cd frontend
-npm start                 # http://localhost:4500/khd-it-sup/ (เทียบเท่า dev.bat)
+npm start                 # http://localhost:4600/khd-it-sup/ (เทียบเท่า dev.bat)
 ```
 
 หยุด dev database: `docker compose -f docker-compose.dev.yml down` (เทียบเท่า `stop-dev.bat`)
@@ -363,7 +363,7 @@ LINE_CHANNEL_SECRET=<channel secret>
 
 | อาการ | สาเหตุที่เป็นไปได้ | วิธีแก้ |
 |---|---|---|
-| เข้า `http://localhost` แล้วได้ 404 | ปกติ — ระบบตั้งใจให้ต้องเข้าผ่าน path prefix `/khd-it-sup/` เสมอ | เข้า `http://localhost/khd-it-sup/` (production) หรือ `http://localhost:4500/khd-it-sup/` (dev) แทน |
+| เข้า `http://localhost` แล้วได้ 404 | ปกติ — ระบบตั้งใจให้ต้องเข้าผ่าน path prefix `/khd-it-sup/` เสมอ | เข้า `http://localhost/khd-it-sup/` (production) หรือ `http://localhost:4600/khd-it-sup/` (dev) แทน |
 | `docker compose up` ค้างที่ mariadb / พอร์ตชนกัน | พอร์ตถูกใช้งานอยู่แล้วบนเครื่อง (โดย container โปรเจกต์อื่น หรือโปรแกรมอื่น เช่น Laragon/XAMPP) | เช็คด้วย `docker ps` (ดู PORTS ของทุก container) แล้วเปลี่ยน `MARIADB_PORT`/`NGINX_PORT` (production) หรือ `DEV_MARIADB_PORT` (dev, ใน `.env` root) เป็นพอร์ตว่าง |
 | `dev.bat` ค้าง/error ตอนรอ dev database healthy | Docker Desktop ยังไม่เปิด หรือ container เก่าค้างอยู่ในสถานะผิดปกติ | เปิด Docker Desktop ก่อน แล้วลองใหม่ — หรือ `docker compose -f docker-compose.dev.yml down` แล้วรัน `dev.bat` อีกครั้ง |
 | `npm start`/`npm run dev` ขึ้น `EADDRINUSE: address already in use` | มี process ค้างจาก session ก่อนหน้าที่ไม่ได้ปิดสะอาด (พบบ่อยเมื่อปิดหน้าต่าง terminal โดยไม่กด Ctrl+C ให้ process ลูกตายก่อน) | หา process ที่ถือพอร์ตนั้นแล้วปิด — Windows: `netstat -ano \| findstr :3500` ดู PID แล้ว `taskkill /PID <pid> /F` |
