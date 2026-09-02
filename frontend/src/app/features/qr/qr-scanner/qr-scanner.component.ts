@@ -4,9 +4,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import jsQR from 'jsqr';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { environment } from '../../../../environments/environment';
 
-/** QR ครุภัณฑ์ที่ backend สร้างเข้ารหัสเป็น URL เต็มเสมอ {FRONTEND_BASE_URL}/qr/scan/{token} (ดู backend qrcode.service.ts buildScanUrl) — ดึงเฉพาะ token ออกมา ไม่สนใจ origin เผื่อสแกนข้าม environment (dev/prod) */
-const SCAN_URL_TOKEN_PATTERN = /\/qr\/scan\/([^/?#]+)/;
+/** QR ที่พิมพ์ก่อนฟีเจอร์ short URL ยังฝัง URL เต็มแบบเดิมอยู่ {FRONTEND_BASE_URL}/qr/scan/{token} — เข้า route ในแอปได้ตรงๆ */
+const LEGACY_SCAN_URL_TOKEN_PATTERN = /\/qr\/scan\/([^/?#]+)/;
+/** QR ที่พิมพ์ใหม่ฝัง short URL {apiBaseUrl}/s/{shortCode} — backend เท่านั้นที่แปลง shortCode เป็น token ได้ (ดู qrcode.service.ts resolveShortUrl) จึงต้อง hard navigate ให้ browser ยิงไปจริงๆ ให้ /s/:shortCode ทำ 302 redirect เอง ไม่ resolve ฝั่ง client */
+const SHORT_URL_PATTERN = new RegExp(`${environment.apiBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/s/([^/?#]+)`);
 const INVALID_QR_MESSAGE_MS = 2500;
 
 @Component({
@@ -102,7 +105,13 @@ export class QrScannerComponent implements AfterViewInit, OnDestroy {
   }
 
   private onDecoded(text: string): void {
-    const match = text.match(SCAN_URL_TOKEN_PATTERN);
+    if (SHORT_URL_PATTERN.test(text)) {
+      this.stopScanning();
+      window.location.href = text;
+      return;
+    }
+
+    const match = text.match(LEGACY_SCAN_URL_TOKEN_PATTERN);
     if (match) {
       this.stopScanning();
       void this.router.navigate(['/qr/scan', decodeURIComponent(match[1])]);

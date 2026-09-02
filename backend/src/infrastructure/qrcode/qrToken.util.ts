@@ -3,6 +3,7 @@ import { env } from '@config/env';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // recommended for GCM
+const SHORT_CODE_BYTES = 6; // 6 ไบต์ = 8 ตัวอักษร base64url — สั้นพอให้ QR โปร่งขึ้นชัดเจน แต่ยังชนกันยากมาก (2^48)
 
 /**
  * เข้ารหัส asset id เป็น token ที่ฝังใน QR Code (AES-256-GCM)
@@ -36,4 +37,9 @@ export function decryptAssetId(token: string): string {
 
   const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
   return decrypted.toString('utf8');
+}
+
+/** รหัสสั้นแบบสุ่ม ใช้แทน qr_token ตอนพิมพ์ QR จริง (ผ่าน /s/:shortCode redirect) เพื่อให้ QR หนาแน่นน้อยลง */
+export function generateShortCode(): string {
+  return crypto.randomBytes(SHORT_CODE_BYTES).toString('base64url');
 }

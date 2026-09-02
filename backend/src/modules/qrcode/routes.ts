@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as qrcodeController from '@modules/qrcode/controllers/qrcode.controller';
-import { assetIdParamSchema, bulkPrintSchema, qrTokenParamSchema } from '@modules/qrcode/dto/qrcode.dto';
+import { assetIdParamSchema, bulkPrintSchema, qrTokenParamSchema, shortCodeParamSchema } from '@modules/qrcode/dto/qrcode.dto';
 import { authenticate, optionalAuthenticate, requirePermission, validateRequest } from '@common/middleware';
 import { PERMISSIONS } from '@common/constants/permissions.const';
 
@@ -64,3 +64,20 @@ router.post(
 router.get('/resolve/:token', optionalAuthenticate, validateRequest({ params: qrTokenParamSchema }), qrcodeController.resolveQrCode);
 
 export default router;
+
+/**
+ * Router แยกต่างหาก mount ที่ /s (ไม่ใช่ /qrcodes) เพื่อให้ URL สั้นที่สุดตอนเอนโค้ดลง QR — /s/:shortCode
+ * (Public endpoint — ไม่ต้อง login, redirect ต่อไปหน้าสแกนเต็มที่ /qrcodes/resolve/:token ยืนยันจริงอีกครั้ง)
+ */
+const shortUrlRouter = Router();
+
+/**
+ * @openapi
+ * /s/{shortCode}:
+ *   get:
+ *     tags: [QR Code]
+ *     summary: URL สั้นที่เอนโค้ดลง QR จริง — redirect ไปหน้าสแกนเต็ม (Public endpoint)
+ */
+shortUrlRouter.get('/:shortCode', validateRequest({ params: shortCodeParamSchema }), qrcodeController.redirectShortUrl);
+
+export { shortUrlRouter as shortUrlRoutes };

@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { prisma } from '@infrastructure/database/prisma';
+import { generateShortCode } from '@infrastructure/qrcode/qrToken.util';
+
+const MAX_SHORT_CODE_RETRIES = 5;
 
 export class QrCodeRepository {
   async findAssetById(assetId: string) {
@@ -17,12 +20,40 @@ export class QrCodeRepository {
     return prisma.assetQrcode.findUnique({ where: { qrToken: token } });
   }
 
+  async findQrByShortCode(shortCode: string) {
+    return prisma.assetQrcode.findUnique({ where: { shortCode } });
+  }
+
+  /** สร้าง/แทนที่ QR token — ออก short_code คู่กันใหม่เสมอ (ผูก 1:1 กับ token ปัจจุบัน) โอกาสชนกันแทบเป็นศูนย์ แต่กันไว้ด้วย retry สุ่มใหม่ */
   async upsertQrToken(assetId: string, qrToken: string, generatedBy: string) {
-    return prisma.assetQrcode.upsert({
-      where: { assetId },
-      update: { qrToken, isActive: true, generatedBy, generatedAt: new Date() },
-      create: { id: randomUUID(), assetId, qrToken, generatedBy },
-    });
+    let lastError: unknown;
+    for (let attempt = 0; attempt < MAX_SHORT_CODE_RETRIES; attempt++) {
+      const shortCode = generateShortCode();
+      try {
+        return await prisma.assetQrcode.upsert({
+          where: { assetId },
+          update: { qrToken, shortCode, isActive: true, generatedBy, generatedAt: new Date() },
+          create: { id: randomUUID(), assetId, qrToken, shortCode, generatedBy },
+        });
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError;
+  }
+
+  /** เติม short_code ให้แถวเดิมที่สร้างก่อนฟีเจอร์นี้ (short_code เป็น NULL) โดยไม่แตะ qr_token เดิม — ป้ายที่พิมพ์ไปแล้วยังใช้งานได้ปกติ */
+  async backfillShortCode(id: string) {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < MAX_SHORT_CODE_RETRIES; attempt++) {
+      const shortCode = generateShortCode();
+      try {
+        return await prisma.assetQrcode.update({ where: { id }, data: { shortCode } });
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError;
   }
 
   async logScan(assetId: string, scannedBy: string | null, ipAddress: string, userAgent: string) {

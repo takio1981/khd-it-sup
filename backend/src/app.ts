@@ -18,7 +18,7 @@ import divisionRoutes from '@modules/divisions/routes';
 import locationRoutes from '@modules/locations/routes';
 import assetRoutes from '@modules/assets/routes';
 import assetLoanRoutes from '@modules/asset-loans/routes';
-import qrcodeRoutes from '@modules/qrcode/routes';
+import qrcodeRoutes, { shortUrlRoutes } from '@modules/qrcode/routes';
 import repairTicketRoutes from '@modules/repair-tickets/routes';
 import workflowRoutes from '@modules/workflow/routes';
 import notificationRoutes from '@modules/notifications/routes';
@@ -77,6 +77,7 @@ export function createApp(): Express {
   api.use('/assets', assetRoutes);
   api.use('/asset-loans', assetLoanRoutes);
   api.use('/qrcodes', qrcodeRoutes);
+  api.use('/s', shortUrlRoutes);
   api.use('/repair-tickets', repairTicketRoutes);
   api.use('/workflow-templates', workflowRoutes);
   api.use('/notifications', notificationRoutes);

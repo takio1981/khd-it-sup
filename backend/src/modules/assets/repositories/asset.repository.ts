@@ -19,7 +19,7 @@ const assetListInclude = {
   floor: { select: { id: true, name: true } },
   room: { select: { id: true, name: true } },
   owner: { select: { id: true, fullName: true, username: true } },
-  qrcode: { select: { id: true, qrToken: true, isActive: true } },
+  qrcode: { select: { id: true, qrToken: true, shortCode: true, isActive: true } },
 } satisfies Prisma.AssetInclude;
 
 const assetDetailInclude = {

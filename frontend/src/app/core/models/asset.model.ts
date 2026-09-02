@@ -54,7 +54,7 @@ export interface IAsset {
   externalId: string | null;
   remark: string | null;
   createdAt: string;
-  qrcode: { id: string; qrToken: string; isActive: boolean } | null;
+  qrcode: { id: string; qrToken: string; shortCode: string | null; isActive: boolean } | null;
   photos?: IAssetPhoto[];
 }
 

@@ -38,3 +38,8 @@ export const resolveQrCode = asyncHandler(async (req: Request, res: Response) =>
   );
   sendSuccess(res, asset);
 });
+
+export const redirectShortUrl = asyncHandler(async (req: Request, res: Response) => {
+  const scanUrl = await qrCodeService.resolveShortUrl(req.params.shortCode);
+  res.redirect(302, scanUrl);
+});

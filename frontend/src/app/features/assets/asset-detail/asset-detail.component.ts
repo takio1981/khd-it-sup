@@ -142,7 +142,7 @@ export class AssetDetailComponent implements OnDestroy {
           this.printing.set(false);
           this.asset.set(fresh);
           const imageSrc = URL.createObjectURL(blob);
-          const scanUrl = fresh.qrcode ? this.qrCodeService.buildScanUrl(fresh.qrcode.qrToken) : '';
+          const scanUrl = fresh.qrcode?.shortCode ? this.qrCodeService.buildScanUrl(fresh.qrcode.shortCode) : '';
           const item: IQrLabelData = {
             assetId: fresh.id,
             assetNumber: fresh.assetNumber,

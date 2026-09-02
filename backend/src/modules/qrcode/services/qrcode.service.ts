@@ -12,6 +12,11 @@ function buildScanUrl(token: string): string {
   return `${env.FRONTEND_BASE_URL}/qr/scan/${encodeURIComponent(token)}`;
 }
 
+/** URL สั้นที่เอนโค้ดลง QR จริง — ชี้ไป endpoint /s/:shortCode (public, no auth) ที่ redirect ต่อไปหน้าสแกนเต็มข้างบน */
+function buildShortScanUrl(shortCode: string): string {
+  return `${env.FRONTEND_BASE_URL}${env.API_PREFIX}/s/${encodeURIComponent(shortCode)}`;
+}
+
 const IMAGE_MIME_BY_EXT: Record<string, string> = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
@@ -54,12 +59,13 @@ export class QrCodeService {
       ctx,
     );
 
+    const shortScanUrl = buildShortScanUrl(record.shortCode as string);
     return {
       assetId,
       assetNumber: asset.assetNumber,
       qrToken: record.qrToken,
-      scanUrl: buildScanUrl(record.qrToken),
-      dataUrl: await generateQrDataUrl(buildScanUrl(record.qrToken)),
+      scanUrl: shortScanUrl,
+      dataUrl: await generateQrDataUrl(shortScanUrl),
     };
   }
 
@@ -72,9 +78,12 @@ export class QrCodeService {
       // ยังไม่เคยสร้าง QR มาก่อน — สร้างให้อัตโนมัติด้วย system เพื่อไม่ให้ผู้ใช้ต้องเรียก generate ก่อนเสมอ
       const token = encryptAssetId(assetId);
       qr = await this.repo.upsertQrToken(assetId, token, 'system');
+    } else if (!qr.shortCode) {
+      // แถวเดิมก่อนมีฟีเจอร์ short URL — เติม short_code ให้อัตโนมัติ
+      qr = await this.repo.backfillShortCode(qr.id);
     }
 
-    const buffer = await generateQrPngBuffer(buildScanUrl(qr.qrToken));
+    const buffer = await generateQrPngBuffer(buildShortScanUrl(qr.shortCode as string));
     return { buffer, assetNumber: asset.assetNumber };
   }
 
@@ -88,17 +97,26 @@ export class QrCodeService {
         if (!qr) {
           const token = encryptAssetId(assetId);
           qr = await this.repo.upsertQrToken(assetId, token, 'system');
+        } else if (!qr.shortCode) {
+          qr = await this.repo.backfillShortCode(qr.id);
         }
 
         return {
           assetId,
           assetNumber: asset.assetNumber,
-          dataUrl: await generateQrDataUrl(buildScanUrl(qr.qrToken)),
+          dataUrl: await generateQrDataUrl(buildShortScanUrl(qr.shortCode as string)),
         };
       }),
     );
 
     return results.filter((r): r is { assetId: string; assetNumber: string; dataUrl: string } => r !== null);
+  }
+
+  /** Public endpoint (ไม่ต้อง login) — /s/:shortCode redirect ไปหน้าสแกนเต็ม ยืนยันตัวจริงอีกครั้งผ่าน resolve() เสมอ */
+  async resolveShortUrl(shortCode: string): Promise<string> {
+    const qr = await this.repo.findQrByShortCode(shortCode);
+    if (!qr || !qr.isActive) throw new NotFoundError('QR Code นี้ไม่ได้ใช้งานแล้วหรือไม่ถูกต้อง');
+    return buildScanUrl(qr.qrToken);
   }
 
   /** Public endpoint (ไม่ต้อง login) — ใช้ตอนสแกน QR จริง ถอดรหัส token แล้วคืนข้อมูลครุภัณฑ์แบบย่อ */

@@ -334,7 +334,8 @@ CREATE TABLE `asset_photos` (
 CREATE TABLE `asset_qrcodes` (
   `id`            CHAR(36)     NOT NULL,
   `asset_id`      CHAR(36)     NOT NULL,
-  `qr_token`      VARCHAR(255) NOT NULL COMMENT 'AES-encrypted asset reference, embedded in QR URL',
+  `qr_token`      VARCHAR(255) NOT NULL COMMENT 'AES-encrypted asset reference, ใช้ยืนยันตัวจริงตอน resolve เสมอ',
+  `short_code`    VARCHAR(20)  NULL COMMENT 'รหัสสั้นแบบสุ่ม ใช้แทน qr_token ตอนพิมพ์ QR จริง (ผ่าน /s/:shortCode redirect ไป qr_token) เพื่อให้ QR หนาแน่นน้อยลง สแกนง่ายขึ้น',
   `qr_image_url`  VARCHAR(500) NULL,
   `is_active`     TINYINT(1)   NOT NULL DEFAULT 1,
   `generated_by`  CHAR(36)     NULL,
@@ -342,6 +343,7 @@ CREATE TABLE `asset_qrcodes` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_asset_qrcodes_asset` (`asset_id`),
   UNIQUE KEY `uq_asset_qrcodes_token` (`qr_token`),
+  UNIQUE KEY `uq_asset_qrcodes_short_code` (`short_code`),
   CONSTRAINT `fk_asset_qrcodes_asset` FOREIGN KEY (`asset_id`) REFERENCES `assets` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

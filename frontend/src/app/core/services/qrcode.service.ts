@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Location } from '@angular/common';
 import { map, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { IApiSuccessResponse } from '../models/api-response.model';
@@ -52,7 +51,6 @@ export interface IQrScanResult {
 @Injectable({ providedIn: 'root' })
 export class QrCodeService {
   private readonly http = inject(HttpClient);
-  private readonly location = inject(Location);
   private readonly base = `${environment.apiBaseUrl}/qrcodes`;
 
   /** สร้าง/สร้างใหม่ QR (regenerate) — ทำให้ QR/สติกเกอร์เดิมใช้งานไม่ได้ทันที ใช้เฉพาะตอนต้องการ token ใหม่จริง ๆ */
@@ -77,9 +75,9 @@ export class QrCodeService {
       .pipe(map((res) => res.data));
   }
 
-  /** สร้าง URL สแกน QR จาก token — ใช้ origin ปัจจุบันของ SPA เสมอ + เคารพ base href (ถูกต้องไม่ว่าจะ deploy ที่ domain/path ไหน) */
-  buildScanUrl(qrToken: string): string {
-    return `${window.location.origin}${this.location.prepareExternalUrl(`/qr/scan/${encodeURIComponent(qrToken)}`)}`;
+  /** สร้าง URL สั้นจาก short_code สำหรับแสดงคู่กับ QR ที่พิมพ์ — ต้องตรงกับ URL ที่ backend ฝังลงรูป QR จริงเป๊ะ (backend สร้างรูปด้วย URL นี้อยู่แล้ว) */
+  buildScanUrl(shortCode: string): string {
+    return `${window.location.origin}${environment.apiBaseUrl}/s/${encodeURIComponent(shortCode)}`;
   }
 
   resolve(token: string): Observable<IQrScanResult> {

@@ -429,6 +429,7 @@ model AssetQrcode {
   id           String   @id @db.Char(36)
   assetId      String   @unique @map("asset_id") @db.Char(36)
   qrToken      String   @unique @map("qr_token") @db.VarChar(255)
+  shortCode    String?  @unique @map("short_code") @db.VarChar(20)
   qrImageUrl   String?  @map("qr_image_url") @db.VarChar(500)
   isActive     Boolean  @default(true) @map("is_active")
   generatedBy  String?  @map("generated_by") @db.Char(36)

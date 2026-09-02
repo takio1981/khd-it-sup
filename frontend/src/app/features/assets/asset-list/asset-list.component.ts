@@ -272,7 +272,7 @@ export class AssetListComponent implements OnDestroy {
         this.assetService.getById(asset.id).subscribe((fresh) => {
           this.printing.set(false);
           const imageSrc = URL.createObjectURL(blob);
-          const scanUrl = fresh.qrcode ? this.qrCodeService.buildScanUrl(fresh.qrcode.qrToken) : '';
+          const scanUrl = fresh.qrcode?.shortCode ? this.qrCodeService.buildScanUrl(fresh.qrcode.shortCode) : '';
           this.openPreview([
             {
               assetId: fresh.id,
@@ -315,7 +315,7 @@ export class AssetListComponent implements OnDestroy {
                 govAssetNumber: asset.govAssetNumber,
                 departmentNameTh: asset.department?.nameTh ?? null,
                 imageSrc: r.dataUrl,
-                scanUrl: asset.qrcode ? this.qrCodeService.buildScanUrl(asset.qrcode.qrToken) : '',
+                scanUrl: asset.qrcode?.shortCode ? this.qrCodeService.buildScanUrl(asset.qrcode.shortCode) : '',
               } satisfies IQrLabelData;
             })
             .filter((x): x is IQrLabelData => x !== null);

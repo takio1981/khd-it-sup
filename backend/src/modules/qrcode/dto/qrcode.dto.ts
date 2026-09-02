@@ -8,3 +8,5 @@ export const bulkPrintSchema = z.object({
 export type BulkPrintDto = z.infer<typeof bulkPrintSchema>;
 
 export const qrTokenParamSchema = z.object({ token: z.string().min(1) });
+
+export const shortCodeParamSchema = z.object({ shortCode: z.string().min(1).max(20) });
