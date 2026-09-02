@@ -80,6 +80,26 @@ export class RepairTicketRepository {
     return prisma.repairTicket.count({ where: { firstViewedByUserId: null } });
   }
 
+  /** ใบแจ้งซ่อมที่ "ยังไม่ปิดงาน" (ไม่ใช่ CLOSED/CANCELLED) ล่าสุดของครุภัณฑ์นี้ — ใช้กันแจ้งซ่อมซ้ำซ้อนตอนสร้างใหม่
+   * และแสดงสถานะให้ผู้สแกน QR เห็นก่อนแจ้งซ้ำ (ดู qrcode.service.ts resolve()) */
+  async findActiveByAssetId(assetId: string) {
+    return prisma.repairTicket.findFirst({
+      where: { assetId, status: { notIn: ['CLOSED', 'CANCELLED'] } },
+      select: {
+        id: true,
+        ticketNumber: true,
+        status: true,
+        description: true,
+        urgency: true,
+        createdAt: true,
+        reportedBy: { select: { fullName: true } },
+        assignedTechnician: { select: { fullName: true } },
+        workflowInstance: { select: { currentStep: { select: { stepNameTh: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findById(id: string, db: PrismaClientOrTx = prisma) {
     return db.repairTicket.findUnique({
       where: { id },

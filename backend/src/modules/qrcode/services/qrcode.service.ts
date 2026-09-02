@@ -149,12 +149,26 @@ export class QrCodeService {
         }
       : null;
 
+    // ใบแจ้งซ่อมล่าสุดที่ยังไม่ปิดงาน (ไม่ใช่ CLOSED/CANCELLED) — repairTickets เรียง createdAt desc มาแล้ว จึงเป็นใบล่าสุดจริง
+    // ใช้เตือนผู้สแกนก่อนแจ้งซ่อมซ้ำ (ดู repairTicket.service.ts create() ที่บล็อกการสร้างซ้ำจริงฝั่ง backend อีกชั้น)
+    const activeTicketRow = asset.repairTickets.find((t) => t.status !== 'CLOSED' && t.status !== 'CANCELLED') ?? null;
+    const activeTicket = activeTicketRow
+      ? {
+          id: activeTicketRow.id,
+          ticketNumber: activeTicketRow.ticketNumber,
+          description: activeTicketRow.description,
+          urgency: activeTicketRow.urgency,
+          statusNameTh: activeTicketRow.workflowInstance?.currentStep.stepNameTh ?? activeTicketRow.status,
+          createdAt: activeTicketRow.createdAt,
+        }
+      : null;
+
     const resolvedPhotos = (
       await Promise.all(
         photos.map(async (p) => ({ id: p.id, caption: p.caption, dataUrl: await toPhotoDataUrl(p.fileUrl) })),
       )
     ).filter((p): p is { id: string; caption: string | null; dataUrl: string } => p.dataUrl !== null);
 
-    return { ...rest, activeLoan, photos: resolvedPhotos };
+    return { ...rest, activeLoan, activeTicket, photos: resolvedPhotos };
   }
 }

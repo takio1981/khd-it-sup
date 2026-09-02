@@ -113,11 +113,12 @@ WHERE `code` IN (
 
 -- User: create ticket, track ticket, print QR, view history, self-service borrow/return via QR scan,
 -- self-accept-close own ticket, approve-as-unit-head own department's tickets (requires is_unit_head=1)
+-- ตั้งใจไม่ให้ ticket:read (เห็นใบแจ้งซ่อมทุกใบ) — ใช้ ticket:track เท่านั้น เพื่อให้เห็นเฉพาะใบที่ตัวเองแจ้ง
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_user, `id` FROM `permissions`
 WHERE `code` IN (
   'asset:read','asset:view_history','qrcode:print','asset:loan_self',
-  'ticket:create','ticket:read','ticket:track','ticket:accept','ticket:approve_unit_head'
+  'ticket:create','ticket:track','ticket:accept','ticket:approve_unit_head'
 );
 
 -- =====================================================================================

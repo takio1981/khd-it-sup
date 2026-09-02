@@ -87,7 +87,16 @@ export class QrCodeRepository {
         floor: { select: { name: true } },
         building: { select: { name: true } },
         repairTickets: {
-          select: { id: true, ticketNumber: true, status: true, createdAt: true, closedAt: true },
+          select: {
+            id: true,
+            ticketNumber: true,
+            status: true,
+            description: true,
+            urgency: true,
+            createdAt: true,
+            closedAt: true,
+            workflowInstance: { select: { currentStep: { select: { stepNameTh: true } } } },
+          },
           orderBy: { createdAt: 'desc' },
           take: 10,
         },

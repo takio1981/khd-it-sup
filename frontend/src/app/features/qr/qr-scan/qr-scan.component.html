@@ -110,6 +110,21 @@
         </div>
       }
 
+      @if (a.activeTicket; as ticket) {
+        <div class="khd-card !bg-rose-50 dark:!bg-rose-950/30 border border-rose-200 dark:border-rose-900">
+          <div class="flex items-start gap-2">
+            <khd-icon name="exclamation-triangle" [size]="18" class="text-rose-600 dark:text-rose-400 mt-0.5" />
+            <div class="text-sm text-rose-800 dark:text-rose-300">
+              <p>
+                ครุภัณฑ์นี้มีใบแจ้งซ่อม <span class="font-medium">{{ ticket.ticketNumber }}</span> ที่ยังไม่ปิดงาน
+                (สถานะปัจจุบัน: <span class="font-medium">{{ ticket.statusNameTh }}</span>) จึงยังแจ้งซ่อมซ้ำไม่ได้
+              </p>
+              <p class="text-xs text-rose-700/80 dark:text-rose-400/80 mt-1">{{ ticket.description }}</p>
+            </div>
+          </div>
+        </div>
+      }
+
       @if (a.activeLoan; as loan) {
         <div class="khd-card !bg-amber-50 dark:!bg-amber-950/30 border border-amber-200 dark:border-amber-900">
           <div class="flex items-center gap-2">
@@ -275,10 +290,12 @@
         </form>
       } @else {
         <div class="space-y-2">
-          <button mat-flat-button color="primary" class="!w-full !h-11" (click)="openTicketForm()">
-            <khd-icon name="wrench-screwdriver" [size]="18" class="!mr-2" />
-            แจ้งซ่อมครุภัณฑ์นี้
-          </button>
+          @if (!a.activeTicket) {
+            <button mat-flat-button color="primary" class="!w-full !h-11" (click)="openTicketForm()">
+              <khd-icon name="wrench-screwdriver" [size]="18" class="!mr-2" />
+              แจ้งซ่อมครุภัณฑ์นี้
+            </button>
+          }
           <button mat-stroked-button class="!w-full !h-11" (click)="openLoanForm()">
             <khd-icon name="arrow-path" [size]="18" class="!mr-2" />
             {{ isBorrowMode(a) ? 'ยืมอุปกรณ์นี้' : 'คืนอุปกรณ์นี้' }}

@@ -20,6 +20,16 @@ export interface IQrScanActiveLoan {
   expectedReturnDate: string | null;
 }
 
+/** ใบแจ้งซ่อมล่าสุดที่ยังไม่ปิดงาน (ไม่ใช่ CLOSED/CANCELLED) ของครุภัณฑ์นี้ — null = ไม่มีงานค้างอยู่ แจ้งซ่อมใหม่ได้ */
+export interface IQrScanActiveTicket {
+  id: string;
+  ticketNumber: string;
+  description: string;
+  urgency: string;
+  statusNameTh: string;
+  createdAt: string;
+}
+
 export interface IQrScanPhoto {
   id: string;
   caption: string | null;
@@ -46,6 +56,7 @@ export interface IQrScanResult {
   building: { name: string } | null;
   repairTickets: { id: string; ticketNumber: string; status: string; createdAt: string; closedAt: string | null }[];
   activeLoan: IQrScanActiveLoan | null;
+  activeTicket: IQrScanActiveTicket | null;
 }
 
 @Injectable({ providedIn: 'root' })

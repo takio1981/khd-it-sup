@@ -72,8 +72,9 @@ const ROLE_PERMISSION_MAP: Record<string, string[] | '*'> = {
     'document:print', 'document:generate', 'report:view', 'report:export',
   ],
   TECHNICIAN: ['asset:read', 'ticket:create', 'ticket:read', 'ticket:update_status', 'ticket:upload_attachment', 'ticket:close'],
+  // ตั้งใจไม่ให้ ticket:read (เห็นใบแจ้งซ่อมทุกใบ) — ใช้ ticket:track เท่านั้น เพื่อให้เห็นเฉพาะใบที่ตัวเองแจ้ง
   USER: [
-    'asset:read', 'asset:view_history', 'qrcode:print', 'ticket:create', 'ticket:read', 'ticket:track',
+    'asset:read', 'asset:view_history', 'qrcode:print', 'ticket:create', 'ticket:track',
     'ticket:accept', 'ticket:approve_unit_head',
   ],
 };

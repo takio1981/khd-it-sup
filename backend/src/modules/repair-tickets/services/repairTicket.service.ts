@@ -14,18 +14,21 @@ import type {
   RepairSummaryDto,
   TransitionTicketDto,
 } from '@modules/repair-tickets/dto/repairTicket.dto';
-import { BadRequestError, ForbiddenError, NotFoundError } from '@common/errors';
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '@common/errors';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import { notificationService } from '@modules/notifications/services/notification.service';
 import type { IRequestContext } from '@common/interfaces';
 import { PERMISSIONS } from '@common/constants/permissions.const';
-import { STAFF_ROLES } from '@common/constants/roles.const';
+import { ROLES, STAFF_ROLES, type RoleCode } from '@common/constants/roles.const';
 import { prisma } from '@infrastructure/database/prisma';
 import { logger } from '@infrastructure/logger/logger';
 
 const WORKFLOW_TEMPLATE_CODE = 'REPAIR_INTERNAL';
 const PROTECTED_TERMINAL_STEPS = new Set(['CLOSED', 'CANCELLED']);
+/** role ที่ยกเว้นข้อจำกัด "แก้ไขได้เฉพาะงานของตัวเอง/ที่ได้รับมอบหมาย" — Admin/Super Admin จัดการ/แก้ไขได้ทุกใบเหมือนเดิม
+ * ส่วนช่าง (TECHNICIAN) และไอที (IT_OFFICER) แก้ไขได้เฉพาะใบที่ตัวเองแจ้งเอง หรือใบที่ตัวเองถูกมอบหมายเท่านั้น */
+const TICKET_EDIT_OVERRIDE_ROLES: readonly RoleCode[] = [ROLES.SUPER_ADMIN, ROLES.ADMIN];
 /** จำกัดจำนวนแถวสูงสุดต่อไฟล์ export กันรายงานโตเกินควบคุมไม่ได้ (ใบแจ้งซ่อมของหน่วยงานเดียวไม่ควรเกินนี้ในทางปฏิบัติ) */
 const EXPORT_MAX_ROWS = 5000;
 
@@ -121,6 +124,21 @@ export class RepairTicketService {
     }
   }
 
+  /** ช่าง/ไอที (ไม่รวม Admin/Super Admin) แก้ไขได้เฉพาะใบแจ้งซ่อมที่ตัวเองแจ้งเอง หรือใบที่ตัวเองถูกมอบหมายเท่านั้น —
+   * ใช้กับ transition/บันทึกผลตรวจสอบเบื้องต้น/สรุปผลการซ่อมเท่านั้น (ไม่รวม รับเรื่อง/มอบหมายช่าง/ยกเลิก/ปิดงาน/คอมเมนต์/แนบไฟล์
+   * ซึ่งยังเปิดให้เจ้าหน้าที่ที่มีสิทธิ์ทำได้กับทุกใบเหมือนเดิม ตามที่ตกลงไว้) */
+  private assertCanEditAsAssigneeOrReporter(
+    ticket: { reportedByUserId: string; assignedTechnicianId: string | null },
+    ctx: IRequestContext,
+  ): void {
+    if (TICKET_EDIT_OVERRIDE_ROLES.includes(ctx.user.role)) return;
+    const isOwnTicket = ticket.reportedByUserId === ctx.user.id;
+    const isAssignedTechnician = ticket.assignedTechnicianId === ctx.user.id;
+    if (!isOwnTicket && !isAssignedTechnician) {
+      throw new ForbiddenError('คุณไม่มีสิทธิ์แก้ไขใบแจ้งซ่อมนี้ — แก้ไขได้เฉพาะงานของตัวเองหรืองานที่ได้รับมอบหมายเท่านั้น');
+    }
+  }
+
   private computeProgress(ticket: {
     workflowInstance: { currentStep: { stepOrder: number; stepCode: string; stepNameTh: string }; template: { steps: { stepOrder: number; isTerminal: boolean }[] } } | null;
   }): { currentStepCode: string | null; currentStepNameTh: string | null; progressPercent: number } {
@@ -143,6 +161,16 @@ export class RepairTicketService {
   }
 
   async create(dto: CreateTicketDto, ctx: IRequestContext) {
+    if (dto.assetId) {
+      const activeTicket = await this.repo.findActiveByAssetId(dto.assetId);
+      if (activeTicket) {
+        const statusLabel = activeTicket.workflowInstance?.currentStep.stepNameTh ?? activeTicket.status;
+        throw new ConflictError(
+          `ครุภัณฑ์นี้มีใบแจ้งซ่อม ${activeTicket.ticketNumber} ที่ยังไม่ปิดงานอยู่แล้ว (สถานะปัจจุบัน: ${statusLabel}) ไม่สามารถแจ้งซ่อมซ้ำได้ กรุณารอให้งานเดิมเสร็จสิ้นก่อน หรือติดต่อเจ้าหน้าที่หากต้องการแจ้งปัญหาเพิ่มเติม`,
+        );
+      }
+    }
+
     const ticketNumber = await runningNumberService.getNextNumber('TICKET');
     const departmentId = dto.departmentId ?? ctx.user.departmentId ?? undefined;
 
@@ -315,6 +343,10 @@ export class RepairTicketService {
       throw new BadRequestError('กรุณาใช้ endpoint /cancel หรือ /close สำหรับการยกเลิก/ปิดงาน แทนการ transition ทั่วไป');
     }
 
+    const existing = await this.repo.findById(id);
+    if (!existing) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
+    this.assertCanEditAsAssigneeOrReporter(existing, ctx);
+
     const extraTicketData: Record<string, unknown> = {};
     if (dto.toStepCode === 'COMPLETED' && dto.repairSummary) {
       const { rootCause, repairAction, partsUsed, recommendation, summarySignature } = dto.repairSummary;
@@ -361,6 +393,7 @@ export class RepairTicketService {
   async updateRepairSummary(id: string, dto: RepairSummaryDto, ctx: IRequestContext) {
     const existing = await this.repo.findById(id);
     if (!existing) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
+    this.assertCanEditAsAssigneeOrReporter(existing, ctx);
 
     const ticket = await this.repo.update(id, {
       rootCause: dto.rootCause,
@@ -412,6 +445,7 @@ export class RepairTicketService {
   async recordInspection(id: string, dto: InspectionDto, ctx: IRequestContext) {
     const existing = await this.repo.findById(id);
     if (!existing) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
+    this.assertCanEditAsAssigneeOrReporter(existing, ctx);
 
     const isInHouse = dto.inspectionOutcome === 'IN_HOUSE';
     const isSendExternal = dto.inspectionOutcome === 'SEND_EXTERNAL';
