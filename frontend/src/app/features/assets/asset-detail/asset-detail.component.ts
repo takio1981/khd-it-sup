@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, ViewChild, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, effect, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -39,7 +39,7 @@ import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/mo
   ],
   templateUrl: './asset-detail.component.html',
 })
-export class AssetDetailComponent {
+export class AssetDetailComponent implements OnDestroy {
   private readonly assetService = inject(AssetService);
   private readonly qrCodeService = inject(QrCodeService);
   private readonly repairTicketService = inject(RepairTicketService);
@@ -108,35 +108,19 @@ export class AssetDetailComponent {
       this.loading.set(false);
     });
     this.assetService.getHistory(id).subscribe((history) => this.history.set(history));
+    this.loadQrImage(id);
   }
 
-  /** สร้าง QR ใหม่ (regenerate) — เตือนก่อนเสมอถ้ามี QR อยู่แล้ว เพราะสติกเกอร์เดิมจะใช้ไม่ได้ทันที */
-  generateQr(): void {
-    const asset = this.asset();
-    if (!asset) return;
-
-    if (asset.qrcode) {
-      const ref = this.dialog.open(ConfirmDialogComponent, {
-        width: '420px',
-        data: {
-          title: 'สร้าง QR Code ใหม่',
-          message: `ครุภัณฑ์นี้มี QR Code อยู่แล้ว การสร้างใหม่จะทำให้สติกเกอร์เดิมที่เคยพิมพ์ไปแล้วสแกนไม่ได้อีกต่อไป ยืนยันหรือไม่?`,
-          danger: true,
-          confirmLabel: 'สร้างใหม่',
-        },
-      });
-      ref.afterClosed().subscribe((confirmed) => {
-        if (confirmed) this.doGenerate();
-      });
-    } else {
-      this.doGenerate();
-    }
-  }
-
-  private doGenerate(): void {
-    this.qrCodeService.generate(this.id()).subscribe((result) => {
-      this.qrDataUrl.set(result.dataUrl);
-      this.load();
+  /** โหลด QR มาแสดงอัตโนมัติเสมอ — ไม่ต้องกด "สร้าง QR" อีกต่อไป endpoint นี้สร้างให้เองถ้ายังไม่เคยมี และไม่ regenerate ทับของเดิม */
+  private loadQrImage(assetId: string): void {
+    if (!this.authService.hasAnyPermission(['qrcode:print'])) return;
+    this.qrCodeService.printPng(assetId).subscribe({
+      next: (blob) => {
+        const previous = this.qrDataUrl();
+        if (previous) URL.revokeObjectURL(previous);
+        this.qrDataUrl.set(URL.createObjectURL(blob));
+      },
+      error: () => this.qrDataUrl.set(null),
     });
   }
 
@@ -169,6 +153,11 @@ export class AssetDetailComponent {
       },
       error: () => this.printing.set(false),
     });
+  }
+
+  ngOnDestroy(): void {
+    const url = this.qrDataUrl();
+    if (url) URL.revokeObjectURL(url);
   }
 
   canEditPhotos(): boolean {

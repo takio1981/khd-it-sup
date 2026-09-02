@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconButton } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
@@ -61,13 +62,14 @@ const EXPORT_PDF_MAX_ROWS = 500;
     MatIconButton,
     MatMenuModule,
     MatCheckboxModule,
+    MatProgressSpinnerModule,
     IconComponent,
     StatusBadgeComponent,
     HasPermissionDirective,
   ],
   templateUrl: './asset-list.component.html',
 })
-export class AssetListComponent {
+export class AssetListComponent implements OnDestroy {
   private readonly assetService = inject(AssetService);
   private readonly qrCodeService = inject(QrCodeService);
   private readonly departmentService = inject(DepartmentService);
@@ -91,6 +93,8 @@ export class AssetListComponent {
   /** แถวรายละเอียดที่ขยายลงมา (multiTemplateDataRows) — ใช้ colspan คลุมทั้งแถว จึงไม่ต้องมีชื่อคอลัมน์ตรงกับ displayedColumns */
   readonly detailColumns = ['expandedDetail'];
   readonly expandedId = signal<string | null>(null);
+  readonly qrThumbnails = signal<Record<string, string>>({});
+  readonly loadingQrIds = signal<Set<string>>(new Set());
   readonly assets = signal<IAsset[]>([]);
   readonly categories = signal<IAssetCategory[]>([]);
   readonly departments = signal<IDepartment[]>([]);
@@ -182,13 +186,54 @@ export class AssetListComponent {
     return getAcquisitionTypeLabel(code);
   }
 
-  /** คลิกที่แถว (หรือปุ่ม dropdown) เพื่อขยาย/ยุบแถวรายละเอียดในหน้าเดิม — ไม่เปลี่ยนหน้า ต่างจาก viewAsset ที่ไปหน้ารายละเอียดเต็ม */
+  /** คลิกที่แถวเพื่อขยาย/ยุบแถวรายละเอียดในหน้าเดิม — ไม่เปลี่ยนหน้า ต่างจาก viewAsset ที่ไปหน้ารายละเอียดเต็ม */
   toggleExpand(asset: IAsset): void {
-    this.expandedId.set(this.expandedId() === asset.id ? null : asset.id);
+    const nextId = this.expandedId() === asset.id ? null : asset.id;
+    this.expandedId.set(nextId);
+    if (nextId) this.ensureQrThumbnail(asset.id);
   }
 
   isExpanded(asset: IAsset): boolean {
     return this.expandedId() === asset.id;
+  }
+
+  qrThumbnail(assetId: string): string | undefined {
+    return this.qrThumbnails()[assetId];
+  }
+
+  isQrLoading(assetId: string): boolean {
+    return this.loadingQrIds().has(assetId);
+  }
+
+  /** โหลด QR แบบ lazy ตอนขยายแถวเท่านั้น (ไม่โหลดล่วงหน้าทั้งหน้าให้เปลือง) — ใช้ endpoint พิมพ์ QR เดิมซึ่งสร้าง QR
+   * ให้อัตโนมัติถ้ายังไม่เคยมี (ไม่ต้องกด "สร้าง QR" เองแล้ว) และไม่ regenerate ทับของเดิมถ้ามีอยู่แล้ว จึงเรียกซ้ำได้อย่างปลอดภัย */
+  private ensureQrThumbnail(assetId: string): void {
+    if (this.qrThumbnails()[assetId] || this.loadingQrIds().has(assetId)) return;
+    if (!this.authService.hasAnyPermission(['qrcode:print'])) return;
+
+    this.loadingQrIds.update((set) => new Set(set).add(assetId));
+    this.qrCodeService.printPng(assetId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        this.qrThumbnails.update((map) => ({ ...map, [assetId]: url }));
+        this.loadingQrIds.update((set) => {
+          const next = new Set(set);
+          next.delete(assetId);
+          return next;
+        });
+      },
+      error: () => {
+        this.loadingQrIds.update((set) => {
+          const next = new Set(set);
+          next.delete(assetId);
+          return next;
+        });
+      },
+    });
+  }
+
+  ngOnDestroy(): void {
+    for (const url of Object.values(this.qrThumbnails())) URL.revokeObjectURL(url);
   }
 
   locationLabel(asset: IAsset): string {
@@ -218,49 +263,7 @@ export class AssetListComponent {
     void this.router.navigate(['/assets', asset.id]);
   }
 
-  /** สร้าง QR ใหม่ (regenerate) — เตือนก่อนเสมอถ้ามี QR อยู่แล้ว เพราะสติกเกอร์เดิมจะใช้ไม่ได้ทันที */
-  generateQr(asset: IAsset): void {
-    if (asset.qrcode) {
-      const ref = this.dialog.open(ConfirmDialogComponent, {
-        width: '420px',
-        data: {
-          title: 'สร้าง QR Code ใหม่',
-          message: `ครุภัณฑ์ ${asset.assetNumber} มี QR Code อยู่แล้ว การสร้างใหม่จะทำให้สติกเกอร์เดิมที่เคยพิมพ์ไปแล้วสแกนไม่ได้อีกต่อไป ยืนยันหรือไม่?`,
-          danger: true,
-          confirmLabel: 'สร้างใหม่',
-        },
-      });
-      ref.afterClosed().subscribe((confirmed) => {
-        if (confirmed) this.doGenerateAndPreview(asset);
-      });
-    } else {
-      this.doGenerateAndPreview(asset);
-    }
-  }
-
-  private doGenerateAndPreview(asset: IAsset): void {
-    this.qrCodeService.generate(asset.id).subscribe((result) => {
-      this.fetch();
-      this.openPreview(
-        [
-          {
-            assetId: asset.id,
-            assetNumber: result.assetNumber,
-            categoryNameTh: asset.category.nameTh,
-            brand: asset.brand,
-            model: asset.model,
-            govAssetNumber: asset.govAssetNumber,
-            departmentNameTh: asset.department?.nameTh ?? null,
-            imageSrc: result.dataUrl,
-            scanUrl: result.scanUrl,
-          },
-        ],
-        true,
-      );
-    });
-  }
-
-  /** แสดงตัวอย่างก่อนพิมพ์ — ใช้ QR เดิมถ้ามีอยู่แล้ว (ไม่ regenerate) */
+  /** แสดงตัวอย่างก่อนพิมพ์ — QR ถูกสร้างให้อัตโนมัติตั้งแต่ตอนนี้แล้วถ้ายังไม่เคยมี (ไม่ regenerate ถ้ามีอยู่แล้ว) */
   printQr(asset: IAsset): void {
     this.printing.set(true);
     this.qrCodeService.printPng(asset.id).subscribe({

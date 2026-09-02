@@ -21,9 +21,6 @@
         <button mat-stroked-button *khdHasPermission="'asset:update'" (click)="openEditForm()">
           <khd-icon name="pencil-square" [size]="18" class="!mr-1" />แก้ไข
         </button>
-        <button mat-stroked-button *khdHasPermission="'qrcode:generate'" (click)="generateQr()">
-          <khd-icon name="qr-code" [size]="18" class="!mr-1" />สร้าง QR
-        </button>
         <button mat-flat-button color="primary" *khdHasPermission="'qrcode:print'" [disabled]="printing()" (click)="printQr()">
           <khd-icon name="printer" [size]="18" class="!mr-1" />พิมพ์ QR
         </button>
@@ -90,14 +87,12 @@
         }
       </div>
 
-      <div class="khd-card">
+      <div class="khd-card" *khdHasPermission="'qrcode:print'">
         <h2 class="text-sm font-medium mb-3">QR Code</h2>
         @if (qrDataUrl(); as qr) {
           <img [src]="qr" alt="QR Code" class="w-full rounded-lg border border-black/5" />
-        } @else if (a.qrcode) {
-          <p class="text-sm text-neutral-500">มี QR Code แล้ว — กด "พิมพ์ QR" เพื่อดาวน์โหลด หรือ "สร้าง QR" เพื่อสร้างใหม่</p>
         } @else {
-          <p class="text-sm text-neutral-500">ยังไม่มี QR Code — กด "สร้าง QR" เพื่อสร้างใหม่</p>
+          <div class="flex justify-center py-6"><mat-spinner diameter="28" /></div>
         }
       </div>
     </div>
