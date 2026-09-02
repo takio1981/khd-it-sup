@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import type { Request, Response } from 'express';
 import { repairTicketService } from '@modules/repair-tickets/services/repairTicket.service';
 import type {
@@ -20,6 +21,28 @@ import { buildCsv, buildExcelBuffer, type IExportColumn } from '@common/utils/ex
 
 function contextOf(req: Request): IRequestContext {
   return { user: req.user!, ipAddress: req.ip ?? 'unknown', userAgent: req.headers['user-agent'] ?? 'unknown' };
+}
+
+const CREATE_MAX_PHOTOS = 3;
+const CREATE_MAX_TOTAL_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+
+/** ตรวจซ้ำฝั่ง server ตามกติกาไฟล์แนบตอนแจ้งซ่อม (client บังคับไว้แล้ว แต่ห้าม trust ฝั่ง client อย่างเดียว) —
+ * จำกัดรูปภาพไม่เกิน CREATE_MAX_PHOTOS ภาพ และขนาดไฟล์แนบทั้งหมด (รูป+วิดีโอ) รวมกันไม่เกิน CREATE_MAX_TOTAL_ATTACHMENT_BYTES
+ * ไม่ตรวจความยาววิดีโอฝั่ง server (ต้องใช้ไลบรารีถอดรหัสวิดีโอเพิ่ม เกินความจำเป็นสำหรับ soft-limit นี้)
+ * multer เขียนไฟล์ลงดิสก์ไปแล้วก่อนถึง handler นี้เสมอ — ถ้า reject ต้องลบไฟล์ที่เขียนไปแล้วทิ้งเอง ไม่งั้นค้างเป็นขยะ */
+function validateCreateAttachments(files: Express.Multer.File[]): void {
+  const photoCount = files.filter((f) => f.mimetype.startsWith('image/')).length;
+  const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+
+  if (photoCount > CREATE_MAX_PHOTOS) {
+    files.forEach((f) => fs.unlink(f.path, () => undefined));
+    throw new BadRequestError(`แนบรูปได้สูงสุด ${CREATE_MAX_PHOTOS} ภาพ`);
+  }
+
+  if (totalBytes > CREATE_MAX_TOTAL_ATTACHMENT_BYTES) {
+    files.forEach((f) => fs.unlink(f.path, () => undefined));
+    throw new BadRequestError('ขนาดไฟล์แนบทั้งหมด (รูป+วิดีโอ) ต้องไม่เกิน 5 MB');
+  }
 }
 
 const URGENCY_LABEL_TH: Record<string, string> = { LOW: 'ต่ำ', MEDIUM: 'ปานกลาง', HIGH: 'สูง', CRITICAL: 'วิกฤต' };
@@ -93,9 +116,13 @@ export const getTicketTimeline = asyncHandler(async (req: Request, res: Response
 });
 
 export const createTicket = asyncHandler(async (req: Request, res: Response) => {
+  const files = req.files as Express.Multer.File[] | undefined;
+  if (files?.length) {
+    validateCreateAttachments(files);
+  }
+
   const ticket = await repairTicketService.create(req.body as CreateTicketDto, contextOf(req));
 
-  const files = req.files as Express.Multer.File[] | undefined;
   if (files?.length) {
     await repairTicketService.addAttachments(ticket.id, files, contextOf(req));
   }

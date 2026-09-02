@@ -167,32 +167,73 @@
 
           <div>
             <p class="text-xs text-neutral-500 mb-2">
-              แนบรูปเครื่อง/อาการเสีย (ถ้ามี) — สูงสุด {{ MAX_TICKET_PHOTOS }} ภาพ
+              แนบรูป/วิดีโอเครื่อง-อาการเสีย (ถ้ามี) — รูปสูงสุด {{ MAX_TICKET_PHOTOS }} ภาพ, วิดีโอไม่เกิน
+              {{ MAX_VIDEO_DURATION_SEC }} วินาที, รวมกันไม่เกิน 5 MB
             </p>
-            <div class="flex flex-wrap gap-2">
-              @for (photo of ticketPhotos(); track photo.previewUrl; let i = $index) {
-                <div class="relative h-16 w-16 rounded-lg overflow-hidden border border-black/10 dark:border-white/10">
-                  <img [src]="photo.previewUrl" alt="" class="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    class="absolute top-0 right-0 flex items-center justify-center h-5 w-5 rounded-bl-lg bg-black/60 text-white"
-                    (click)="removeTicketPhoto(i)"
-                  >
-                    <khd-icon name="x-mark" [size]="12" />
-                  </button>
-                </div>
-              }
-              @if (ticketPhotos().length < MAX_TICKET_PHOTOS) {
-                <label
-                  class="flex items-center justify-center h-16 w-16 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 text-neutral-400 cursor-pointer"
-                >
-                  <khd-icon name="paper-clip" [size]="22" />
-                  <input type="file" accept="image/*" multiple class="hidden" (change)="onTicketPhotosSelected($event)" />
-                </label>
-              }
+
+            <div class="flex flex-wrap gap-2 mb-2">
+              <button type="button" mat-stroked-button class="!text-xs" (click)="photoCaptureInput.click()">
+                <khd-icon name="camera" [size]="16" class="!mr-1" />ถ่ายภาพ
+              </button>
+              <input
+                #photoCaptureInput
+                type="file"
+                accept="image/*"
+                capture="environment"
+                class="hidden"
+                (change)="onCameraPhotoSelected($event)"
+              />
+
+              <button type="button" mat-stroked-button class="!text-xs" (click)="videoCaptureInput.click()">
+                <khd-icon name="video-camera" [size]="16" class="!mr-1" />บันทึกวิดีโอ
+              </button>
+              <input
+                #videoCaptureInput
+                type="file"
+                accept="video/*"
+                capture="environment"
+                class="hidden"
+                (change)="onCameraVideoSelected($event)"
+              />
+
+              <button type="button" mat-stroked-button class="!text-xs" (click)="galleryPickerInput.click()">
+                <khd-icon name="paper-clip" [size]="16" class="!mr-1" />แนบไฟล์
+              </button>
+              <input
+                #galleryPickerInput
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                class="hidden"
+                (change)="onGalleryFilesSelected($event)"
+              />
             </div>
-            @if (photoError(); as pe) {
-              <p class="text-xs text-rose-600 mt-1">{{ pe }}</p>
+
+            @if (ticketAttachments().length > 0) {
+              <div class="flex flex-wrap gap-2">
+                @for (att of ticketAttachments(); track att.previewUrl; let i = $index) {
+                  <div class="relative h-16 w-16 rounded-lg overflow-hidden border border-black/10 dark:border-white/10 bg-black">
+                    @if (att.kind === 'image') {
+                      <img [src]="att.previewUrl" alt="" class="w-full h-full object-cover" />
+                    } @else {
+                      <video [src]="att.previewUrl" class="w-full h-full object-cover" muted></video>
+                      <span class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] text-center py-0.5">
+                        <khd-icon name="video-camera" [size]="10" class="!inline !mr-0.5" />วิดีโอ
+                      </span>
+                    }
+                    <button
+                      type="button"
+                      class="absolute top-0 right-0 flex items-center justify-center h-5 w-5 rounded-bl-lg bg-black/60 text-white"
+                      (click)="removeTicketAttachment(i)"
+                    >
+                      <khd-icon name="x-mark" [size]="12" />
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+            @if (attachmentError(); as ae) {
+              <p class="text-xs text-rose-600 mt-1">{{ ae }}</p>
             }
           </div>
 

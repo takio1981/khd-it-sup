@@ -135,10 +135,14 @@ export class QrScanComponent {
   /** รูปครุภัณฑ์ที่บันทึกไว้ในระบบ — คลิกดูขยายได้ */
   readonly viewingPhotoUrl = signal<string | null>(null);
 
-  /** รูปเครื่อง/อาการเสียที่แนบตอนแจ้งซ่อม — เลือกได้สูงสุด MAX_TICKET_PHOTOS ภาพ (บังคับซ้ำที่ backend ด้วย) */
+  /** รูปเครื่อง/อาการเสียที่แนบตอนแจ้งซ่อม — ถ่ายจากกล้อง/แนบไฟล์ก็ได้ (บังคับซ้ำที่ backend ด้วย)
+   *  รูป: สูงสุด MAX_TICKET_PHOTOS ภาพ, วิดีโอ: แต่ละคลิปยาวไม่เกิน MAX_VIDEO_DURATION_SEC วินาที,
+   *  ทั้งหมดรวมกัน (รูป+วิดีโอ) ต้องไม่เกิน MAX_TOTAL_ATTACHMENT_BYTES */
   readonly MAX_TICKET_PHOTOS = 3;
-  readonly ticketPhotos = signal<{ file: File; previewUrl: string }[]>([]);
-  readonly photoError = signal<string | null>(null);
+  readonly MAX_VIDEO_DURATION_SEC = 10;
+  readonly MAX_TOTAL_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+  readonly ticketAttachments = signal<{ file: File; previewUrl: string; kind: 'image' | 'video' }[]>([]);
+  readonly attachmentError = signal<string | null>(null);
 
   /** ยืม-คืนอุปกรณ์ผ่านสแกน QR (self-service) — ตัดสินใจโหมด "ยืม"/"คืน" จาก activeLoan ของครุภัณฑ์ที่สแกนได้ */
   readonly showLoanForm = signal(false);
@@ -181,45 +185,111 @@ export class QrScanComponent {
 
   openTicketForm(): void {
     this.form.reset({ description: '', urgency: 'MEDIUM', locationNote: '', contactPhone: '' });
-    this.clearTicketPhotos();
+    this.clearTicketAttachments();
     this.showForm.set(true);
   }
 
   closeTicketForm(): void {
-    this.clearTicketPhotos();
+    this.clearTicketAttachments();
     this.showForm.set(false);
   }
 
-  private clearTicketPhotos(): void {
-    this.ticketPhotos().forEach((p) => URL.revokeObjectURL(p.previewUrl));
-    this.ticketPhotos.set([]);
-    this.photoError.set(null);
+  private clearTicketAttachments(): void {
+    this.ticketAttachments().forEach((a) => URL.revokeObjectURL(a.previewUrl));
+    this.ticketAttachments.set([]);
+    this.attachmentError.set(null);
   }
 
-  onTicketPhotosSelected(event: Event): void {
+  /** ถ่ายภาพด้วยกล้อง (capture="environment" เปิดกล้องหลังของมือถือโดยตรง) */
+  async onCameraPhotoSelected(event: Event): Promise<void> {
+    await this.addTicketFiles(event);
+  }
+
+  /** บันทึกวิดีโอด้วยกล้อง — ความยาวตรวจสอบหลังบันทึกเสร็จ (เบราว์เซอร์ไม่มีทางจำกัดความยาวตอนอัดในแอปกล้องของเครื่องได้) */
+  async onCameraVideoSelected(event: Event): Promise<void> {
+    await this.addTicketFiles(event);
+  }
+
+  /** เลือกไฟล์รูป/วิดีโอที่มีอยู่แล้ว (แกลเลอรี) */
+  async onGalleryFilesSelected(event: Event): Promise<void> {
+    await this.addTicketFiles(event);
+  }
+
+  removeTicketAttachment(index: number): void {
+    const list = this.ticketAttachments();
+    URL.revokeObjectURL(list[index].previewUrl);
+    this.ticketAttachments.set(list.filter((_, i) => i !== index));
+    this.attachmentError.set(null);
+  }
+
+  private totalAttachmentBytes(): number {
+    return this.ticketAttachments().reduce((sum, a) => sum + a.file.size, 0);
+  }
+
+  /** อ่านความยาววิดีโอผ่าน metadata (ไม่โหลดไฟล์เต็ม) ก่อนยอมรับแนบเข้าฟอร์ม */
+  private readVideoDuration(file: File): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const videoEl = document.createElement('video');
+      videoEl.preload = 'metadata';
+      videoEl.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        resolve(videoEl.duration);
+      };
+      videoEl.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('ไม่สามารถอ่านไฟล์วิดีโอนี้ได้'));
+      };
+      videoEl.src = url;
+    });
+  }
+
+  private async addTicketFiles(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
-    input.value = ''; // เคลียร์ input เพื่อให้เลือกไฟล์เดิมซ้ำได้อีกครั้งถ้าลบออกไปแล้ว
+    input.value = ''; // เคลียร์ input เพื่อให้เลือก/ถ่ายไฟล์เดิมซ้ำได้อีกครั้งถ้าลบออกไปแล้ว
+    if (files.length === 0) return;
 
-    const remaining = this.MAX_TICKET_PHOTOS - this.ticketPhotos().length;
-    const imageFiles = files.filter((f) => f.type.startsWith('image/'));
-    const accepted = imageFiles.slice(0, Math.max(0, remaining));
+    this.attachmentError.set(null);
 
-    if (imageFiles.length < files.length || accepted.length < imageFiles.length || remaining <= 0) {
-      this.photoError.set(`แนบรูปได้สูงสุด ${this.MAX_TICKET_PHOTOS} ภาพ และรองรับเฉพาะไฟล์รูปภาพเท่านั้น`);
-    } else {
-      this.photoError.set(null);
+    for (const file of files) {
+      const kind: 'image' | 'video' | null = file.type.startsWith('image/')
+        ? 'image'
+        : file.type.startsWith('video/')
+          ? 'video'
+          : null;
+
+      if (!kind) {
+        this.attachmentError.set('รองรับเฉพาะไฟล์รูปภาพหรือวิดีโอเท่านั้น');
+        continue;
+      }
+
+      if (kind === 'image' && this.ticketAttachments().filter((a) => a.kind === 'image').length >= this.MAX_TICKET_PHOTOS) {
+        this.attachmentError.set(`แนบรูปได้สูงสุด ${this.MAX_TICKET_PHOTOS} ภาพ`);
+        continue;
+      }
+
+      if (kind === 'video') {
+        try {
+          const duration = await this.readVideoDuration(file);
+          if (duration > this.MAX_VIDEO_DURATION_SEC) {
+            this.attachmentError.set(`วิดีโอต้องมีความยาวไม่เกิน ${this.MAX_VIDEO_DURATION_SEC} วินาที`);
+            continue;
+          }
+        } catch {
+          this.attachmentError.set('ไม่สามารถอ่านไฟล์วิดีโอนี้ได้ กรุณาลองใหม่');
+          continue;
+        }
+      }
+
+      if (this.totalAttachmentBytes() + file.size > this.MAX_TOTAL_ATTACHMENT_BYTES) {
+        this.attachmentError.set('ขนาดไฟล์แนบทั้งหมด (รูป+วิดีโอ) ต้องไม่เกิน 5 MB');
+        continue;
+      }
+
+      const previewUrl = URL.createObjectURL(file);
+      this.ticketAttachments.update((list) => [...list, { file, previewUrl, kind }]);
     }
-
-    const added = accepted.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
-    this.ticketPhotos.update((list) => [...list, ...added]);
-  }
-
-  removeTicketPhoto(index: number): void {
-    const list = this.ticketPhotos();
-    URL.revokeObjectURL(list[index].previewUrl);
-    this.ticketPhotos.set(list.filter((_, i) => i !== index));
-    this.photoError.set(null);
   }
 
   submitTicket(): void {
@@ -232,7 +302,7 @@ export class QrScanComponent {
         this.submitting.set(false);
         return;
       }
-      const files = this.ticketPhotos().map((p) => p.file);
+      const files = this.ticketAttachments().map((a) => a.file);
       this.repairTicketService
         .create({ assetId: asset.id, ...this.form.getRawValue() } as ICreateTicketPayload, files)
         .subscribe({
