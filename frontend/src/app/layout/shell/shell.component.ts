@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -16,6 +17,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { SettingsService } from '../../core/services/settings.service';
+import { RepairTicketService } from '../../core/services/repair-ticket.service';
+import { SocketService } from '../../core/services/socket.service';
+import { STAFF_ROLES } from '../../core/models/auth.model';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { PageWatermarkComponent } from '../../shared/components/page-watermark/page-watermark.component';
 import { UserAvatarComponent } from '../../shared/components/user-avatar/user-avatar.component';
@@ -55,12 +59,21 @@ export class ShellComponent {
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly settingsService = inject(SettingsService);
+  private readonly repairTicketService = inject(RepairTicketService);
+  private readonly socketService = inject(SocketService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly authService = inject(AuthService);
   readonly themeService = inject(ThemeService);
   readonly notificationService = inject(NotificationService);
   readonly appName = environment.appName;
+
+  /** เห็นตัวเลขงานแจ้งซ่อมใหม่ที่เมนู sidebar เฉพาะ role เจ้าหน้าที่ — ผู้แจ้งซ่อมทั่วไปไม่ควรเห็นตัวเลขรวมทั้งระบบ */
+  readonly isStaffRole = computed(() => {
+    const role = this.authService.currentUser()?.role;
+    return !!role && STAFF_ROLES.includes(role);
+  });
+  readonly unviewedTicketCount = signal(0);
 
   /** ชื่อองค์กร/โลโก้ — โหลดจาก "ตั้งค่าทั่วไป" (ถ้าแอดมินยังไม่ได้ตั้งค่า ใช้ค่า default จาก environment/logo1.png แทน) */
   private readonly orgNameFromSettings = signal<string | null>(null);
@@ -78,6 +91,18 @@ export class ShellComponent {
     this.destroyRef.onDestroy(() => {
       const url = this.logoObjectUrl();
       if (url) URL.revokeObjectURL(url);
+    });
+
+    if (this.isStaffRole()) {
+      this.repairTicketService.getUnviewedCount().subscribe((count) => this.unviewedTicketCount.set(count));
+    }
+
+    // งานแจ้งซ่อมใหม่เข้ามา/มีคนเข้าดูเป็นคนแรก — อัปเดตตัวเลขที่เมนูสด (backend ส่ง event นี้ให้เฉพาะ role เจ้าหน้าที่อยู่แล้ว)
+    this.socketService.ticketCreated$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.unviewedTicketCount.update((v) => v + 1);
+    });
+    this.socketService.ticketViewed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.unviewedTicketCount.update((v) => Math.max(0, v - 1));
     });
   }
 

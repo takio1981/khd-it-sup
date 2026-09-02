@@ -28,6 +28,14 @@
         >
           <khd-icon matListItemIcon [name]="item.icon" [size]="20" />
           <span matListItemTitle>{{ item.label }}</span>
+          @if (item.route === '/repair-tickets' && isStaffRole() && unviewedTicketCount() > 0) {
+            <span
+              matListItemMeta
+              class="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white"
+            >
+              {{ unviewedTicketCount() > 99 ? '99+' : unviewedTicketCount() }}
+            </span>
+          }
         </a>
       }
     </mat-nav-list>

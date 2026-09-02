@@ -77,6 +77,11 @@ export const exportTickets = asyncHandler(async (req: Request, res: Response) =>
   }
 });
 
+export const getUnviewedCount = asyncHandler(async (_req: Request, res: Response) => {
+  const count = await repairTicketService.getUnviewedCount();
+  sendSuccess(res, { count });
+});
+
 export const getTicket = asyncHandler(async (req: Request, res: Response) => {
   const ticket = await repairTicketService.getById(req.params.id, contextOf(req));
   sendSuccess(res, ticket);

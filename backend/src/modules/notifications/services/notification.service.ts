@@ -14,7 +14,7 @@ import { env } from '@config/env';
 import { prisma } from '@infrastructure/database/prisma';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { systemSettingService } from '@modules/settings/services/systemSetting.service';
-import { ROLES } from '@common/constants/roles.const';
+import { STAFF_ROLES } from '@common/constants/roles.const';
 import type { ListNotificationLogsQueryDto } from '@modules/notifications/dto/notification.dto';
 import type { NotificationChannel, NotificationStatus } from '@prisma/client';
 
@@ -181,11 +181,7 @@ export class NotificationService {
    *  ในหน้าตารางแบบสดโดยไม่ต้อง refresh — แยกจาก notifyTicketEvent เพราะไม่ต้องบันทึก notification_logs/ส่ง email-telegram-line */
   async notifyTicketLiveList(event: TicketLiveListEvent, payload: ITicketLiveListPayload): Promise<void> {
     const staff = await prisma.user.findMany({
-      where: {
-        isActive: true,
-        deletedAt: null,
-        role: { code: { in: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.IT_OFFICER, ROLES.TECHNICIAN] } },
-      },
+      where: { isActive: true, deletedAt: null, role: { code: { in: [...STAFF_ROLES] } } },
       select: { id: true },
     });
     for (const s of staff) {
@@ -383,8 +379,9 @@ export class NotificationService {
     const recipients = new Map<string, string>();
 
     if (event === 'NEW_TICKET') {
+      // แจ้งทุก role เจ้าหน้าที่ (แอดมิน/ไอที/ช่าง) ไม่ใช่แค่ IT_OFFICER เหมือนเดิม — ให้สอดคล้องกับสัญลักษณ์งานใหม่ที่แจ้งกลุ่มนี้เหมือนกัน
       const officers = await prisma.user.findMany({
-        where: { isActive: true, deletedAt: null, role: { code: 'IT_OFFICER' } },
+        where: { isActive: true, deletedAt: null, role: { code: { in: [...STAFF_ROLES] } } },
         select: { id: true, email: true },
       });
       officers.forEach((o) => recipients.set(o.id, o.email));

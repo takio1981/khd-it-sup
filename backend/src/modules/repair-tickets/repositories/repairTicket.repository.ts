@@ -75,6 +75,11 @@ export class RepairTicketRepository {
     return { items, total };
   }
 
+  /** จำนวนใบแจ้งซ่อมที่ยังไม่มีแอดมิน/ช่างเข้าดูรายละเอียดเลย — ใช้แสดงตัวเลขที่เมนู "งานแจ้งซ่อม" ใน sidebar */
+  async countUnviewed(): Promise<number> {
+    return prisma.repairTicket.count({ where: { firstViewedByUserId: null } });
+  }
+
   async findById(id: string, db: PrismaClientOrTx = prisma) {
     return db.repairTicket.findUnique({
       where: { id },

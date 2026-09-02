@@ -49,6 +49,16 @@ router.get(
 
 /**
  * @openapi
+ * /repair-tickets/unviewed-count:
+ *   get:
+ *     tags: [Repair Tickets]
+ *     summary: จำนวนใบแจ้งซ่อมที่ยังไม่มีแอดมิน/ช่างเข้าดู — ใช้แสดงตัวเลขที่เมนู sidebar
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/unviewed-count', requirePermission(...VIEW_PERMS), ticketController.getUnviewedCount);
+
+/**
+ * @openapi
  * /repair-tickets/{id}:
  *   get:
  *     tags: [Repair Tickets]

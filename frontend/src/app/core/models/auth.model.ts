@@ -1,5 +1,9 @@
 export type RoleCode = 'SUPER_ADMIN' | 'ADMIN' | 'IT_OFFICER' | 'TECHNICIAN' | 'USER';
 
+/** กลุ่ม role "เจ้าหน้าที่" (แอดมิน/ช่าง) — ต้องตรงกับ backend/src/common/constants/roles.const.ts STAFF_ROLES เสมอ
+ * ใช้กำหนดว่าใครเห็นตัวเลขงานแจ้งซ่อมใหม่ที่เมนู sidebar (ผู้แจ้งซ่อมทั่วไป role USER ไม่ควรเห็นตัวเลขรวมทั้งระบบ) */
+export const STAFF_ROLES: readonly RoleCode[] = ['SUPER_ADMIN', 'ADMIN', 'IT_OFFICER', 'TECHNICIAN'];
+
 export type Gender = 'MALE' | 'FEMALE';
 
 /** ต้องตรงกับ backend/src/common/constants/permissions.const.ts เสมอ (source of truth คือฝั่ง backend) */

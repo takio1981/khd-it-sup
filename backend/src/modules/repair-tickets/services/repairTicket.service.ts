@@ -20,6 +20,7 @@ import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import { notificationService } from '@modules/notifications/services/notification.service';
 import type { IRequestContext } from '@common/interfaces';
 import { PERMISSIONS } from '@common/constants/permissions.const';
+import { STAFF_ROLES } from '@common/constants/roles.const';
 import { prisma } from '@infrastructure/database/prisma';
 import { logger } from '@infrastructure/logger/logger';
 
@@ -72,13 +73,19 @@ export class RepairTicketService {
     return items;
   }
 
+  /** จำนวนใบแจ้งซ่อมที่ยังไม่มีแอดมิน/ช่างเข้าดู — ใช้แสดงตัวเลขที่เมนู sidebar */
+  async getUnviewedCount(): Promise<number> {
+    return this.repo.countUnviewed();
+  }
+
   async getById(id: string, ctx: IRequestContext) {
     let ticket = await this.repo.findById(id);
     if (!ticket) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
     this.assertViewable(ticket, ctx);
 
-    // บันทึกแอดมิน/ช่างคนแรกที่เข้ามาดูรายละเอียด — ไม่นับผู้แจ้งซ่อมเองดูงานของตัวเอง เพื่อหยุดสัญลักษณ์ "งานใหม่" ในตาราง/รายละเอียด
-    if (!ticket.firstViewedByUserId && ticket.reportedByUserId !== ctx.user.id) {
+    // บันทึกแอดมิน/ช่างคนแรกที่เข้ามาดูรายละเอียด — เช็คจาก role เจ้าหน้าที่ (ไม่ใช่ "ไม่ใช่ผู้แจ้ง") เพราะแอดมิน/ไอที
+    // มักเป็นคนแจ้งซ่อมแทนผู้อื่นเอง ถ้าเช็คจาก reportedByUserId แล้วแอดมินเปิดดูใบที่ตัวเองแจ้ง สัญลักษณ์จะไม่หายไปเลย
+    if (!ticket.firstViewedByUserId && STAFF_ROLES.includes(ctx.user.role)) {
       const didSet = await this.repo.markFirstViewed(id, ctx.user.id);
       if (didSet) {
         ticket = await this.repo.findById(id);

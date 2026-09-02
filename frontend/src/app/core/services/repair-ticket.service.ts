@@ -56,6 +56,13 @@ export class RepairTicketService {
     return this.http.get<IApiSuccessResponse<ITimelineEvent[]>>(`${this.base}/${id}/timeline`).pipe(map((res) => res.data));
   }
 
+  /** จำนวนใบแจ้งซ่อมที่ยังไม่มีแอดมิน/ช่างเข้าดู — ใช้แสดงตัวเลขที่เมนู sidebar */
+  getUnviewedCount(): Observable<number> {
+    return this.http
+      .get<IApiSuccessResponse<{ count: number }>>(`${this.base}/unviewed-count`)
+      .pipe(map((res) => res.data.count));
+  }
+
   /** files (สูงสุด 3 ภาพ — บังคับที่ backend ด้วย) ถ้ามีจะส่งเป็น multipart/form-data พร้อมแนบไฟล์ในคำขอเดียวกันเลย */
   create(payload: ICreateTicketPayload, files?: File[]): Observable<IRepairTicketDetail> {
     if (files?.length) {
