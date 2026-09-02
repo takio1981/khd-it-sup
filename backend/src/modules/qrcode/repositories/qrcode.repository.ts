@@ -38,10 +38,13 @@ export class QrCodeRepository {
         id: true,
         assetNumber: true,
         govAssetNumber: true,
+        serialNumber: true,
         model: true,
         brand: true,
         status: true,
+        purchaseDate: true,
         photoUrl: true,
+        owner: { select: { fullName: true } },
         photos: {
           select: { id: true, fileUrl: true, caption: true },
           orderBy: { uploadedAt: 'desc' },

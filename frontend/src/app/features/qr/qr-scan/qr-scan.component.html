@@ -18,13 +18,25 @@
       </div>
     } @else if (asset(); as a) {
       <div class="khd-card">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-xs text-neutral-500">{{ a.category.nameTh }}</p>
-            <h1 class="text-lg font-semibold">{{ a.assetNumber }}</h1>
-            <p class="text-sm text-neutral-500">{{ a.brand }} {{ a.model }}</p>
+        <div class="flex items-start gap-3">
+          <div
+            class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-black/5 dark:border-white/10 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center"
+          >
+            @if (a.photos.length > 0) {
+              <img [src]="a.photos[0].dataUrl" [alt]="a.assetNumber" class="w-full h-full object-cover" />
+            } @else {
+              <khd-icon [name]="categoryIconName(a)" [size]="28" class="text-neutral-400" />
+            }
           </div>
-          <khd-status-badge [status]="a.status" />
+
+          <div class="flex-1 min-w-0 flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs text-neutral-500">{{ a.category.nameTh }}</p>
+              <h1 class="text-lg font-semibold">{{ a.assetNumber }}</h1>
+              <p class="text-sm text-neutral-500">{{ a.brand }} {{ a.model }}</p>
+            </div>
+            <khd-status-badge [status]="a.status" />
+          </div>
         </div>
 
         <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -44,6 +56,24 @@
             <div>
               <p class="text-neutral-400 text-xs">เลขครุภัณฑ์ราชการ</p>
               <p>{{ a.govAssetNumber }}</p>
+            </div>
+          }
+          @if (a.serialNumber) {
+            <div>
+              <p class="text-neutral-400 text-xs">Serial Number</p>
+              <p>{{ a.serialNumber }}</p>
+            </div>
+          }
+          @if (a.owner) {
+            <div>
+              <p class="text-neutral-400 text-xs">ผู้รับผิดชอบ</p>
+              <p>{{ a.owner.fullName }}</p>
+            </div>
+          }
+          @if (a.purchaseDate) {
+            <div>
+              <p class="text-neutral-400 text-xs">วันที่จัดซื้อ</p>
+              <p>{{ a.purchaseDate | date: 'd MMM yyyy' }}</p>
             </div>
           }
         </div>

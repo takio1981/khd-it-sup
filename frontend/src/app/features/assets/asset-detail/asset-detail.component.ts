@@ -20,6 +20,7 @@ import type { IQrLabelData } from '../../../shared/components/qr-print-preview/q
 import { AssetFormComponent } from '../asset-form/asset-form.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { getAcquisitionTypeLabel } from '../../../core/constants/status.const';
+import { getCategoryIconName } from '../../../core/utils/category-icon.util';
 import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/models/asset.model';
 
 @Component({
@@ -75,6 +76,11 @@ export class AssetDetailComponent implements OnDestroy {
 
   acquisitionTypeLabel(code: string): string {
     return getAcquisitionTypeLabel(code);
+  }
+
+  /** ไม่มีรูปภาพบันทึกไว้ — ใช้ icon ของประเภทครุภัณฑ์นั้นแทน */
+  categoryIconName(asset: IAsset): string {
+    return getCategoryIconName(asset.category.icon);
   }
 
   openEditForm(): void {

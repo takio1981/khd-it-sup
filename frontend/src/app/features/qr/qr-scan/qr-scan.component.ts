@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -15,6 +16,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
 import { URGENCY_LABEL_TH } from '../../../core/constants/status.const';
+import { getCategoryIconName } from '../../../core/utils/category-icon.util';
 import type { ICreateTicketPayload } from '../../../core/models/repair-ticket.model';
 
 type LoanAction = 'borrow' | 'return';
@@ -91,6 +93,7 @@ export class QrLoginDialogComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    DatePipe,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -248,6 +251,11 @@ export class QrScanComponent {
   /** true ถ้าครุภัณฑ์นี้ว่าง (ไม่มีใครยืมอยู่) — ตัดสิน "ยืม" หรือ "คืน" จากสถานะเครื่องเท่านั้น ไม่ต้องรู้ตัวตนผู้ดูก่อน login */
   isBorrowMode(a: IQrScanResult): boolean {
     return a.activeLoan === null;
+  }
+
+  /** ไม่มีรูปภาพบันทึกไว้ — ใช้ icon ของประเภทครุภัณฑ์นั้นแทน */
+  categoryIconName(a: IQrScanResult): string {
+    return getCategoryIconName(a.category.icon);
   }
 
   openLoanForm(): void {

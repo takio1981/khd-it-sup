@@ -32,11 +32,14 @@ export interface IQrScanResult {
   id: string;
   assetNumber: string;
   govAssetNumber: string | null;
+  serialNumber: string | null;
   model: string | null;
   brand: string | null;
   status: string;
+  purchaseDate: string | null;
   photoUrl: string | null;
   photos: IQrScanPhoto[];
+  owner: { fullName: string } | null;
   category: { nameTh: string; nameEn: string; icon: string | null };
   department: { nameTh: string } | null;
   room: { name: string } | null;
