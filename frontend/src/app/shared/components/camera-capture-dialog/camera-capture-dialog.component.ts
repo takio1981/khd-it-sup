@@ -139,10 +139,13 @@ export class CameraCaptureDialogComponent implements AfterViewInit, OnDestroy {
   }
 
   private finishRecording(): void {
-    const mimeType = this.mediaRecorder?.mimeType || 'video/webm';
-    const blob = new Blob(this.recordedChunks, { type: mimeType });
-    const ext = mimeType.includes('webm') ? 'webm' : 'mp4';
-    this.close(new File([blob], `capture-${Date.now()}.${ext}`, { type: mimeType }));
+    // ตัดพารามิเตอร์ codec ทิ้ง (เช่น "video/webm;codecs=vp9,opus" -> "video/webm") ก่อนตั้งเป็น Content-Type ของไฟล์ —
+    // multipart parser ฝั่ง server (busboy) parse ค่าที่มี comma อยู่ในพารามิเตอร์ codec ไม่ได้ แล้ว fallback เป็น text/plain เงียบๆ
+    const rawMimeType = this.mediaRecorder?.mimeType || 'video/webm';
+    const baseMimeType = rawMimeType.split(';')[0].trim() || 'video/webm';
+    const blob = new Blob(this.recordedChunks, { type: baseMimeType });
+    const ext = baseMimeType.includes('webm') ? 'webm' : 'mp4';
+    this.close(new File([blob], `capture-${Date.now()}.${ext}`, { type: baseMimeType }));
   }
 
   cancel(): void {
