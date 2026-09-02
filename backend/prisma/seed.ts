@@ -68,10 +68,10 @@ const ROLE_PERMISSION_MAP: Record<string, string[] | '*'> = {
   ],
   IT_OFFICER: [
     'dashboard:view', 'asset:read', 'qrcode:generate',
-    'ticket:read', 'ticket:receive', 'ticket:assign', 'ticket:update_status', 'ticket:upload_attachment', 'ticket:close',
+    'ticket:create', 'ticket:read', 'ticket:receive', 'ticket:assign', 'ticket:update_status', 'ticket:upload_attachment', 'ticket:close',
     'document:print', 'document:generate', 'report:view', 'report:export',
   ],
-  TECHNICIAN: ['asset:read', 'ticket:read', 'ticket:update_status', 'ticket:upload_attachment', 'ticket:close'],
+  TECHNICIAN: ['asset:read', 'ticket:create', 'ticket:read', 'ticket:update_status', 'ticket:upload_attachment', 'ticket:close'],
   USER: [
     'asset:read', 'asset:view_history', 'qrcode:print', 'ticket:create', 'ticket:read', 'ticket:track',
     'ticket:accept', 'ticket:approve_unit_head',

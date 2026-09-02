@@ -91,22 +91,22 @@ WHERE `code` IN (
   'vendor:view','vendor:manage'
 );
 
--- IT Officer: receive jobs, assign jobs, update status, print documents
+-- IT Officer: receive jobs, assign jobs, update status, print documents, แจ้งซ่อมเองได้ด้วย (เช่นรับแจ้งทางโทรศัพท์แล้วกรอกแทนผู้ใช้)
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_it_officer, `id` FROM `permissions`
 WHERE `code` IN (
   'dashboard:view','asset:read','asset:loan','qrcode:generate',
-  'ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment','ticket:approve','ticket:close',
+  'ticket:create','ticket:read','ticket:receive','ticket:assign','ticket:update_status','ticket:upload_attachment','ticket:approve','ticket:close',
   'document:print','document:generate','report:view','report:export',
   'spare_part:view','spare_part:issue',
   'vendor:view','vendor:manage'
 );
 
--- Technician: update repair status, upload images, record repair, close job
+-- Technician: update repair status, upload images, record repair, close job, แจ้งซ่อมเองได้ด้วย
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT @role_technician, `id` FROM `permissions`
 WHERE `code` IN (
-  'asset:read','asset:loan','ticket:read','ticket:update_status','ticket:upload_attachment','ticket:close',
+  'asset:read','asset:loan','ticket:create','ticket:read','ticket:update_status','ticket:upload_attachment','ticket:close',
   'spare_part:view','spare_part:issue',
   'vendor:view'
 );
