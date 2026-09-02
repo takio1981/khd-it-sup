@@ -344,7 +344,12 @@ model Asset {
   ownerUserId         String?      @map("owner_user_id") @db.Char(36)
   remark              String?      @db.Text
   externalSource      String?      @map("external_source") @db.VarChar(50)
+  externalId          String?      @map("external_id") @db.VarChar(50)
   externalSyncedAt    DateTime?    @map("external_synced_at")
+  unitType            String?      @map("unit_type") @db.VarChar(50)
+  budgetYear          String?      @map("budget_year") @db.VarChar(10)
+  equipClassificationCode String?  @map("equip_classification_code") @db.VarChar(20)
+  equipClassificationName String?  @map("equip_classification_name") @db.VarChar(150)
   createdAt           DateTime     @default(now()) @map("created_at")
   updatedAt           DateTime     @updatedAt @map("updated_at")
   createdBy           String?      @map("created_by") @db.Char(36)

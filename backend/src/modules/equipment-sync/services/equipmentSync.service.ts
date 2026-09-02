@@ -12,9 +12,13 @@ import {
   buildDepartmentIndex,
   composeRemark,
   mapStatus,
+  normalizeBudgetYear,
   normalizeDate,
+  normalizeExternalId,
   normalizePrice,
+  normalizeUnitType,
   resolveCategoryCode,
+  resolveClassification,
   resolveDepartment,
   truncateText,
 } from '@modules/equipment-sync/utils/equipmentMapper.util';
@@ -237,6 +241,7 @@ export class EquipmentSyncService {
         unmatchedDepartmentCounts.set(key, (unmatchedDepartmentCounts.get(key) ?? 0) + 1);
       }
 
+      const classification = resolveClassification(record);
       const mappedFields = {
         serialNumber: truncateText(record.serial_no),
         model: truncateText(record.model),
@@ -246,6 +251,11 @@ export class EquipmentSyncService {
         purchaseDate: normalizeDate(record.datetime_in),
         remark: composeRemark(record),
         locationNote,
+        externalId: normalizeExternalId(record.id),
+        unitType: normalizeUnitType(record.unit_type),
+        budgetYear: normalizeBudgetYear(record.budget_year),
+        equipClassificationCode: classification.code,
+        equipClassificationName: truncateText(classification.name, 150),
       };
 
       const existing = existingByGovNumber.get(govAssetNumber);

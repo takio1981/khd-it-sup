@@ -66,14 +66,43 @@ export function truncateText(value: string | null, maxLength = TEXT_FIELD_MAX_LE
 
 /**
  * รวมข้อมูลที่ไม่มีช่องเก็บโดยตรงในตาราง assets ไว้ใน remark เป็นข้อความอ่านง่าย
- * budget_year เก็บเป็นข้อความดิบโดยตั้งใจ — ข้อมูลจริงปนกันทั้ง พ.ศ. (เช่น 2568) และ ค.ศ. (เช่น 2026) ไม่สามารถ normalize ได้อย่างน่าเชื่อถือ
+ * (budget_year/unit_type/รหัสจำแนกครุภัณฑ์ ย้ายไปเป็นคอลัมน์เฉพาะแล้ว ไม่ต้องซ้ำในนี้)
  */
 export function composeRemark(record: IMophEquipmentRecord): string {
   const lines = ['นำเข้าอัตโนมัติจากระบบ MOPH AssetTracker'];
   if (record.owner) lines.push(`ผู้ครอบครองจากระบบ MOPH: ${record.owner}`);
-  if (record.budget_year) lines.push(`ปีงบประมาณ (ข้อมูลดิบจากระบบต้นทาง ไม่แปลง พ.ศ./ค.ศ.): ${record.budget_year}`);
   if (record.detail) lines.push(`รายละเอียดจากระบบต้นทาง: ${record.detail}`);
   return lines.join('\n');
+}
+
+/** MOPH ไม่ได้ระบุ id เป็น string เสมอ (เป็น number) — แปลงเป็น string ไว้เก็บ ไม่ใช้เป็น upsert key (gov_asset_number ยังเป็น key หลักเหมือนเดิม) */
+export function normalizeExternalId(id: number): string {
+  return String(id);
+}
+
+/**
+ * ปีงบประมาณ/หน่วยนับ เก็บเป็นข้อความดิบโดยตั้งใจ — budget_year ข้อมูลจริงปนกันทั้ง พ.ศ. (เช่น 2568) และ ค.ศ.
+ * (เช่น 2026) ไม่สามารถ normalize ได้อย่างน่าเชื่อถือ ส่วน unit_type เป็น free text จากต้นทางอยู่แล้ว
+ */
+export function normalizeBudgetYear(raw: string | null): string | null {
+  return raw?.trim() || null;
+}
+
+export function normalizeUnitType(raw: string | null): string | null {
+  return raw?.trim() || null;
+}
+
+export interface IEquipClassification {
+  code: string | null;
+  name: string | null;
+}
+
+/** equip_type_name จากข้อมูลจริงเป็น null เสมอ (สำรวจแล้ว) จึงใช้ equip_sub_name เป็นชื่อหลัก ตกไป equip_group_name ถ้าไม่มี */
+export function resolveClassification(record: IMophEquipmentRecord): IEquipClassification {
+  return {
+    code: record.equip_class?.trim() || null,
+    name: record.equip_sub_name?.trim() || record.equip_group_name?.trim() || null,
+  };
 }
 
 export interface IResolvedDepartment {
