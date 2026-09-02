@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, ViewChild, ElementRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -98,6 +98,7 @@ export class TicketDetailComponent {
   private readonly vendorRepairOrderService = inject(VendorRepairOrderService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
 
   readonly partsUsed = signal<ISparePartTransaction[]>([]);
 
@@ -179,9 +180,17 @@ export class TicketDetailComponent {
     const id = this.id();
     if (!id) return;
     this.loading.set(true);
-    this.repairTicketService.getById(id).subscribe((ticket) => {
-      this.ticket.set(ticket);
-      this.loading.set(false);
+    this.repairTicketService.getById(id).subscribe({
+      next: (ticket) => {
+        this.ticket.set(ticket);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        const message = err?.error?.error?.message ?? 'ไม่พบใบแจ้งซ่อมนี้ อาจถูกลบไปแล้วหรือคุณไม่มีสิทธิ์เข้าถึง';
+        this.snackBar.open(message, 'ปิด', { duration: 4000 });
+        void this.router.navigate(['/repair-tickets']);
+      },
     });
     this.repairTicketService.getTimeline(id).subscribe((events) => this.timeline.set(events));
     this.sparePartService.listTransactions({ ticketId: id, limit: 50 }).subscribe((res) => this.partsUsed.set(res.items));

@@ -269,26 +269,35 @@ export class AssetListComponent implements OnDestroy {
     this.qrCodeService.printPng(asset.id).subscribe({
       next: (blob) => {
         // หลังเรียก print แล้ว อาจมีการสร้าง QR ให้อัตโนมัติถ้ายังไม่เคยมี — ดึงข้อมูลล่าสุดเพื่อได้ token ที่ถูกต้อง
-        this.assetService.getById(asset.id).subscribe((fresh) => {
-          this.printing.set(false);
-          const imageSrc = URL.createObjectURL(blob);
-          const scanUrl = fresh.qrcode?.shortCode ? this.qrCodeService.buildScanUrl(fresh.qrcode.shortCode) : '';
-          this.openPreview([
-            {
-              assetId: fresh.id,
-              assetNumber: fresh.assetNumber,
-              categoryNameTh: fresh.category.nameTh,
-              brand: fresh.brand,
-              model: fresh.model,
-              govAssetNumber: fresh.govAssetNumber,
-              departmentNameTh: fresh.department?.nameTh ?? null,
-              imageSrc,
-              scanUrl,
-            },
-          ]);
+        this.assetService.getById(asset.id).subscribe({
+          next: (fresh) => {
+            this.printing.set(false);
+            const imageSrc = URL.createObjectURL(blob);
+            const scanUrl = fresh.qrcode?.shortCode ? this.qrCodeService.buildScanUrl(fresh.qrcode.shortCode) : '';
+            this.openPreview([
+              {
+                assetId: fresh.id,
+                assetNumber: fresh.assetNumber,
+                categoryNameTh: fresh.category.nameTh,
+                brand: fresh.brand,
+                model: fresh.model,
+                govAssetNumber: fresh.govAssetNumber,
+                departmentNameTh: fresh.department?.nameTh ?? null,
+                imageSrc,
+                scanUrl,
+              },
+            ]);
+          },
+          error: () => {
+            this.printing.set(false);
+            this.snackBar.open('ดึงข้อมูลครุภัณฑ์ล่าสุดไม่สำเร็จ', 'ปิด', { duration: 3000 });
+          },
         });
       },
-      error: () => this.printing.set(false),
+      error: () => {
+        this.printing.set(false);
+        this.snackBar.open('พิมพ์ QR ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
     });
   }
 

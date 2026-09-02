@@ -109,9 +109,17 @@ export class AssetDetailComponent implements OnDestroy {
     if (!id) return;
 
     this.loading.set(true);
-    this.assetService.getById(id).subscribe((asset) => {
-      this.asset.set(asset);
-      this.loading.set(false);
+    this.assetService.getById(id).subscribe({
+      next: (asset) => {
+        this.asset.set(asset);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        const message = err?.error?.error?.message ?? 'ไม่พบครุภัณฑ์นี้ อาจถูกลบไปแล้วหรือคุณไม่มีสิทธิ์เข้าถึง';
+        this.snackBar.open(message, 'ปิด', { duration: 4000 });
+        void this.router.navigate(['/assets']);
+      },
     });
     this.assetService.getHistory(id).subscribe((history) => this.history.set(history));
     this.loadQrImage(id);
