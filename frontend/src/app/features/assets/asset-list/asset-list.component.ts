@@ -86,7 +86,6 @@ export class AssetListComponent {
     'owner',
     'acquisitionType',
     'status',
-    'expand',
     'actions',
   ];
   /** แถวรายละเอียดที่ขยายลงมา (multiTemplateDataRows) — ใช้ colspan คลุมทั้งแถว จึงไม่ต้องมีชื่อคอลัมน์ตรงกับ displayedColumns */
