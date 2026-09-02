@@ -13,7 +13,21 @@
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <p class="text-xs text-neutral-500">ใบแจ้งซ่อม</p>
-          <h1 class="text-xl font-semibold">{{ t.ticketNumber }}</h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-semibold">{{ t.ticketNumber }}</h1>
+            @if (!t.firstViewedBy) {
+              <span class="relative flex h-2.5 w-2.5 shrink-0" title="งานใหม่ — ยังไม่มีแอดมิน/ช่างเข้าดู">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+            }
+          </div>
+          @if (t.firstViewedBy) {
+            <p class="text-xs text-neutral-400 mt-0.5">
+              <khd-icon name="check-circle" [size]="12" class="!inline text-emerald-500 !mr-1" />
+              เข้าดูโดย {{ t.firstViewedBy.fullName }} · {{ t.firstViewedAt | date: 'd MMM yyyy, HH:mm' }}
+            </p>
+          }
         </div>
         <div class="flex items-center gap-2">
           <khd-status-badge [status]="t.status" />
@@ -81,14 +95,33 @@
         <h2 class="text-sm font-medium">รายละเอียด</h2>
         <p class="text-neutral-600 dark:text-neutral-300">{{ t.description }}</p>
 
+        @if (t.asset) {
+          <div class="flex items-center gap-3 p-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/60">
+            @if (t.asset.photos.length > 0) {
+              <khd-asset-photo-thumbnail [fileUrl]="t.asset.photos[0].fileUrl" />
+            } @else {
+              <div
+                class="h-24 w-24 shrink-0 flex items-center justify-center rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900"
+              >
+                <khd-icon [name]="assetCategoryIconName(t.asset.category)" [size]="32" class="text-neutral-400" />
+              </div>
+            }
+            <div class="min-w-0">
+              <a [routerLink]="['/assets', t.asset.id]" class="block truncate font-medium text-brand-primary hover:underline">{{
+                t.asset.assetNumber
+              }}</a>
+              @if (t.asset.category) {
+                <p class="truncate text-xs text-neutral-500">{{ t.asset.category.nameTh }}</p>
+              }
+              @if (t.asset.brand || t.asset.model) {
+                <p class="truncate text-xs text-neutral-500">{{ t.asset.brand }} {{ t.asset.model }}</p>
+              }
+            </div>
+          </div>
+        }
+
         <dl class="space-y-2 pt-2 border-t border-black/5 dark:border-white/10">
           <div class="flex justify-between"><dt class="text-neutral-400">ความเร่งด่วน</dt><dd>{{ urgencyLabels[t.urgency] }}</dd></div>
-          @if (t.asset) {
-            <div class="flex justify-between">
-              <dt class="text-neutral-400">ครุภัณฑ์</dt>
-              <dd><a [routerLink]="['/assets', t.asset.id]" class="text-brand-primary hover:underline">{{ t.asset.assetNumber }}</a></dd>
-            </div>
-          }
           <div class="flex justify-between"><dt class="text-neutral-400">ผู้แจ้ง</dt><dd>{{ t.reportedBy.fullName }}</dd></div>
           @if (t.department) {
             <div class="flex justify-between"><dt class="text-neutral-400">หน่วยงาน</dt><dd>{{ t.department.nameTh }}</dd></div>

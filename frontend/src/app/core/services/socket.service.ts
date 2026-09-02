@@ -13,6 +13,15 @@ export interface IInAppNotificationPayload {
   createdAt: string;
 }
 
+/** เหตุการณ์ realtime เบาๆ สำหรับตารางงานแจ้งซ่อมของแอดมิน/ช่างเท่านั้น (ดู backend notification.service.ts notifyTicketLiveList) */
+export interface ITicketLiveEvent {
+  ticketId: string;
+  ticketNumber: string;
+  urgency?: string;
+  viewedByUserId?: string;
+  viewedByName?: string;
+}
+
 /**
  * เชื่อมต่อ Socket.IO เมื่อ login แล้วเท่านั้น (ตัด connection ทันทีที่ logout) — ห้องแยกตาม userId ที่ backend
  * ผูกไว้แล้ว (ดู infrastructure/socket/socket.server.ts) จึงไม่ต้อง subscribe ห้องเองฝั่ง client
@@ -25,6 +34,12 @@ export class SocketService {
 
   private readonly notificationSubject = new Subject<IInAppNotificationPayload>();
   readonly notification$ = this.notificationSubject.asObservable();
+
+  private readonly ticketCreatedSubject = new Subject<ITicketLiveEvent>();
+  readonly ticketCreated$ = this.ticketCreatedSubject.asObservable();
+
+  private readonly ticketViewedSubject = new Subject<ITicketLiveEvent>();
+  readonly ticketViewed$ = this.ticketViewedSubject.asObservable();
 
   readonly connected = signal(false);
 
@@ -64,6 +79,8 @@ export class SocketService {
     this.socket.on('connect', () => this.connected.set(true));
     this.socket.on('disconnect', () => this.connected.set(false));
     this.socket.on('notification:new', (payload: IInAppNotificationPayload) => this.notificationSubject.next(payload));
+    this.socket.on('ticket:created', (payload: ITicketLiveEvent) => this.ticketCreatedSubject.next(payload));
+    this.socket.on('ticket:viewed', (payload: ITicketLiveEvent) => this.ticketViewedSubject.next(payload));
   }
 
   private disconnect(): void {

@@ -73,10 +73,38 @@ export class RepairTicketService {
   }
 
   async getById(id: string, ctx: IRequestContext) {
-    const ticket = await this.repo.findById(id);
+    let ticket = await this.repo.findById(id);
     if (!ticket) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
     this.assertViewable(ticket, ctx);
+
+    // บันทึกแอดมิน/ช่างคนแรกที่เข้ามาดูรายละเอียด — ไม่นับผู้แจ้งซ่อมเองดูงานของตัวเอง เพื่อหยุดสัญลักษณ์ "งานใหม่" ในตาราง/รายละเอียด
+    if (!ticket.firstViewedByUserId && ticket.reportedByUserId !== ctx.user.id) {
+      const didSet = await this.repo.markFirstViewed(id, ctx.user.id);
+      if (didSet) {
+        ticket = await this.repo.findById(id);
+        if (!ticket) throw new NotFoundError('ไม่พบใบแจ้งซ่อม');
+        await this.notifyTicketLiveListSafe('ticket:viewed', {
+          ticketId: ticket.id,
+          ticketNumber: ticket.ticketNumber,
+          viewedByUserId: ctx.user.id,
+          viewedByName: ctx.user.fullName,
+        });
+      }
+    }
+
     return { ...ticket, progress: this.computeProgress(ticket) };
+  }
+
+  /** ห่อการดัน realtime ไปตารางรายการงานแจ้งซ่อม ไม่ให้ error จาก Socket.IO ไปกระทบ flow หลัก (คู่ขนานกับ notifySafe) */
+  private async notifyTicketLiveListSafe(
+    event: Parameters<typeof notificationService.notifyTicketLiveList>[0],
+    payload: Parameters<typeof notificationService.notifyTicketLiveList>[1],
+  ): Promise<void> {
+    try {
+      await notificationService.notifyTicketLiveList(event, payload);
+    } catch (err) {
+      logger.error(`[repair-ticket] live list push ${event} ล้มเหลว: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
 
   private assertViewable(ticket: { reportedByUserId: string }, ctx: IRequestContext): void {
@@ -169,6 +197,7 @@ export class RepairTicketService {
     );
 
     await this.notifySafe('NEW_TICKET', ticket, ticket.workflowInstance?.currentStep.stepNameTh ?? ticket.status);
+    await this.notifyTicketLiveListSafe('ticket:created', { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, urgency: ticket.urgency });
 
     return ticket;
   }

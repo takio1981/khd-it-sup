@@ -21,8 +21,10 @@ import { TimelineComponent } from '../../../shared/components/timeline/timeline.
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { TicketPrintPreviewComponent } from '../../../shared/components/ticket-print-preview/ticket-print-preview.component';
 import { AttachmentThumbnailComponent } from '../../../shared/components/attachment-thumbnail/attachment-thumbnail.component';
+import { AssetPhotoThumbnailComponent } from '../../../shared/components/asset-photo-thumbnail/asset-photo-thumbnail.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { EQUIPMENT_TYPE_LABEL_TH, INSPECTION_OUTCOME_LABEL_TH, URGENCY_LABEL_TH } from '../../../core/constants/status.const';
+import { getCategoryIconName } from '../../../core/utils/category-icon.util';
 import {
   CancelTicketDialogComponent,
   AssignTechnicianDialogComponent,
@@ -83,6 +85,7 @@ const VENDOR_ORDER_STATUS_LABEL_TH: Record<string, string> = {
     TimelineComponent,
     IconComponent,
     AttachmentThumbnailComponent,
+    AssetPhotoThumbnailComponent,
     HasPermissionDirective,
   ],
   templateUrl: './ticket-detail.component.html',
@@ -165,6 +168,11 @@ export class TicketDetailComponent {
     effect(() => {
       if (this.id()) this.load();
     });
+  }
+
+  /** ไม่มีรูปภาพครุภัณฑ์บันทึกไว้ — ใช้ icon ของประเภทครุภัณฑ์นั้นแทน */
+  assetCategoryIconName(category: { icon: string | null } | null): string {
+    return getCategoryIconName(category?.icon);
   }
 
   private load(): void {

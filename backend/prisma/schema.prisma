@@ -162,6 +162,7 @@ model User {
   inspectedTickets                 RepairTicket[]  @relation("TicketInspectedBy")
   digitalHealthHeadApprovedTickets RepairTicket[]  @relation("TicketDigitalHealthHeadApprover")
   acceptedTickets     RepairTicket[]               @relation("TicketAcceptedBy")
+  firstViewedTickets  RepairTicket[]               @relation("TicketFirstViewedBy")
   timelineEvents      RepairTicketTimelineEvent[]
   approvals           Approval[]
   auditLogs           AuditLog[]
@@ -630,6 +631,10 @@ model RepairTicket {
   acceptedByUserId  String?      @map("accepted_by_user_id") @db.Char(36)
   acceptorSignature String?      @map("acceptor_signature") @db.MediumText
 
+  // แอดมิน/ช่างคนแรกที่เข้ามาดูรายละเอียดใบแจ้งซ่อมนี้ (ไม่นับผู้แจ้งซ่อมเอง) — ใช้หยุดสัญลักษณ์แจ้งเตือนงานใหม่
+  firstViewedByUserId String?    @map("first_viewed_by_user_id") @db.Char(36)
+  firstViewedAt       DateTime?  @map("first_viewed_at")
+
   asset             Asset?                      @relation(fields: [assetId], references: [id], onDelete: SetNull)
   reportedBy        User                        @relation("TicketReporter", fields: [reportedByUserId], references: [id])
   department        Department?                 @relation(fields: [departmentId], references: [id], onDelete: SetNull)
@@ -639,6 +644,7 @@ model RepairTicket {
   inspectedBy       User?                        @relation("TicketInspectedBy", fields: [inspectedByUserId], references: [id], onDelete: SetNull)
   digitalHealthHeadApprovedBy User?              @relation("TicketDigitalHealthHeadApprover", fields: [digitalHealthHeadApprovedByUserId], references: [id], onDelete: SetNull)
   acceptedBy        User?                        @relation("TicketAcceptedBy", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+  firstViewedBy     User?                        @relation("TicketFirstViewedBy", fields: [firstViewedByUserId], references: [id], onDelete: SetNull)
   workflowInstance  WorkflowInstance?            @relation(fields: [workflowInstanceId], references: [id], onDelete: SetNull)
   attachments       RepairTicketAttachment[]
   timeline          RepairTicketTimelineEvent[]

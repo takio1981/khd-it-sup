@@ -496,6 +496,10 @@ CREATE TABLE `repair_tickets` (
   `accepted_by_user_id`   CHAR(36)     NULL,
   `acceptor_signature`    MEDIUMTEXT   NULL COMMENT 'ลายเซ็นผู้ตรวจรับงาน (base64 PNG data URL จาก signature pad บนมือถือ/เว็บ)',
 
+  -- แอดมิน/ช่างคนแรกที่เข้ามาดูรายละเอียดใบแจ้งซ่อมนี้ (ไม่นับผู้แจ้งซ่อมเอง) — ใช้หยุดสัญลักษณ์แจ้งเตือนงานใหม่ในหน้าตาราง/รายละเอียด
+  `first_viewed_by_user_id` CHAR(36)   NULL,
+  `first_viewed_at`         DATETIME(3) NULL,
+
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_repair_tickets_number` (`ticket_number`),
   KEY `idx_repair_tickets_asset` (`asset_id`),
@@ -512,7 +516,8 @@ CREATE TABLE `repair_tickets` (
   CONSTRAINT `fk_repair_tickets_unit_head` FOREIGN KEY (`unit_head_approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_repair_tickets_inspected_by` FOREIGN KEY (`inspected_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_repair_tickets_dh_head` FOREIGN KEY (`digital_health_head_approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_repair_tickets_accepted_by` FOREIGN KEY (`accepted_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_repair_tickets_accepted_by` FOREIGN KEY (`accepted_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_repair_tickets_first_viewed_by` FOREIGN KEY (`first_viewed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `repair_ticket_attachments` (

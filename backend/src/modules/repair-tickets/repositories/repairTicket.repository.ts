@@ -31,6 +31,7 @@ const ticketListInclude = {
   reportedBy: { select: { id: true, fullName: true, username: true, email: true } },
   department: { select: { id: true, nameTh: true } },
   assignedTechnician: { select: { id: true, fullName: true, username: true, email: true } },
+  firstViewedBy: { select: { id: true, fullName: true } },
   workflowInstance: { include: { currentStep: true } },
 } satisfies Prisma.RepairTicketInclude;
 
@@ -86,7 +87,8 @@ export class RepairTicketRepository {
             brand: true,
             govAssetNumber: true,
             serialNumber: true,
-            category: { select: { nameTh: true } },
+            category: { select: { nameTh: true, icon: true } },
+            photos: { select: { id: true, fileUrl: true }, orderBy: { uploadedAt: 'desc' }, take: 1 },
           },
         },
         reportedBy: {
@@ -99,6 +101,7 @@ export class RepairTicketRepository {
         inspectedBy: { select: { id: true, fullName: true } },
         digitalHealthHeadApprovedBy: { select: { id: true, fullName: true } },
         acceptedBy: { select: { id: true, fullName: true } },
+        firstViewedBy: { select: { id: true, fullName: true } },
         attachments: { orderBy: { uploadedAt: 'desc' } },
         workflowInstance: {
           include: {
@@ -120,5 +123,15 @@ export class RepairTicketRepository {
 
   async addAttachment(data: Omit<Prisma.RepairTicketAttachmentUncheckedCreateInput, 'id'>, db: PrismaClientOrTx = prisma) {
     return db.repairTicketAttachment.create({ data: { id: randomUUID(), ...data } });
+  }
+
+  /** บันทึกผู้เข้าดูรายละเอียดคนแรก — atomic update แบบมีเงื่อนไข (WHERE first_viewed_by_user_id IS NULL) กัน race
+   *  ถ้าแอดมิน/ช่างสองคนเปิดพร้อมกันพอดี คืนค่า true เฉพาะคำเรียกที่ set ค่าสำเร็จจริงเท่านั้น เพื่อไม่ให้ยิงแจ้งเตือนซ้ำ */
+  async markFirstViewed(id: string, userId: string): Promise<boolean> {
+    const result = await prisma.repairTicket.updateMany({
+      where: { id, firstViewedByUserId: null },
+      data: { firstViewedByUserId: userId, firstViewedAt: new Date() },
+    });
+    return result.count > 0;
   }
 }

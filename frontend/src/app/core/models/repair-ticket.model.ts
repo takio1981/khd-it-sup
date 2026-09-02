@@ -23,6 +23,9 @@ export interface IRepairTicketListItem {
   department: { id: string; nameTh: string } | null;
   assignedTechnician: { id: string; fullName: string; username: string } | null;
   workflowInstance: { id: string; currentStep: { stepCode: string; stepNameTh: string; colorCode: string | null } } | null;
+  /** แอดมิน/ช่างคนแรกที่เข้ามาดูรายละเอียด — null = ยังไม่มีใครดู (แสดงสัญลักษณ์งานใหม่กระพริบ) */
+  firstViewedBy: { id: string; fullName: string } | null;
+  firstViewedAt: string | null;
 }
 
 export interface IWorkflowStep {
@@ -56,6 +59,17 @@ export interface IRepairTicketDetail extends IRepairTicketListItem, IRepairSumma
   problemType: string | null;
   locationNote: string | null;
   contactPhone: string | null;
+  /** override asset ของ IRepairTicketListItem — เพิ่ม category.icon + photos สำหรับแสดงรูปครุภัณฑ์ (หรือ icon สำรอง) ในหน้ารายละเอียด */
+  asset: {
+    id: string;
+    assetNumber: string;
+    model: string | null;
+    brand: string | null;
+    govAssetNumber: string | null;
+    serialNumber: string | null;
+    category: { nameTh: string; icon: string | null } | null;
+    photos: { id: string; fileUrl: string }[];
+  } | null;
   attachments: { id: string; fileUrl: string; fileType: string | null; uploadedAt: string }[];
   progress: { currentStepCode: string | null; currentStepNameTh: string | null; progressPercent: number };
   workflowInstance:

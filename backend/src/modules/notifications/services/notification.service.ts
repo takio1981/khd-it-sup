@@ -14,6 +14,7 @@ import { env } from '@config/env';
 import { prisma } from '@infrastructure/database/prisma';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { systemSettingService } from '@modules/settings/services/systemSetting.service';
+import { ROLES } from '@common/constants/roles.const';
 import type { ListNotificationLogsQueryDto } from '@modules/notifications/dto/notification.dto';
 import type { NotificationChannel, NotificationStatus } from '@prisma/client';
 
@@ -36,6 +37,17 @@ const EVENT_LABEL_TH: Record<TicketNotificationEvent, string> = {
   COMPLETE: 'งานซ่อมของคุณเสร็จสิ้นแล้ว',
   CANCEL: 'ใบแจ้งซ่อมถูกยกเลิก',
 };
+
+/** เหตุการณ์ realtime ที่ดันไปแค่ตารางรายการงานแจ้งซ่อมของแอดมิน/ช่าง (ไม่ผ่าน notification_logs/email/telegram/line เหมือน TicketNotificationEvent — เบากว่ามาก แค่ให้หน้าตารางที่เปิดค้างไว้อัปเดตสด) */
+export type TicketLiveListEvent = 'ticket:created' | 'ticket:viewed';
+
+export interface ITicketLiveListPayload {
+  ticketId: string;
+  ticketNumber: string;
+  urgency?: string;
+  viewedByUserId?: string;
+  viewedByName?: string;
+}
 
 interface ITicketForNotification {
   id: string;
@@ -158,6 +170,27 @@ export class NotificationService {
     for (const r of recipients) {
       try {
         await this.pushInApp(r.userId, actionLabel, `[${ticket.ticketNumber}] ${statusNameTh}`, 'RepairTicket', ticket.id);
+      } catch {
+        // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
+      }
+    }
+  }
+
+  /** เรียกจาก RepairTicketService ตอนสร้าง ticket ใหม่ และตอนมีคนเข้าดูรายละเอียดเป็นคนแรก — ดัน realtime ไปหาแอดมิน/ช่างที่
+   *  ล็อกอินอยู่ทุกคน (ไม่จำกัดแค่ IT_OFFICER เหมือน resolveRecipients ของ NEW_TICKET) เพื่อให้สัญลักษณ์ "งานใหม่" กระพริบ/หยุด
+   *  ในหน้าตารางแบบสดโดยไม่ต้อง refresh — แยกจาก notifyTicketEvent เพราะไม่ต้องบันทึก notification_logs/ส่ง email-telegram-line */
+  async notifyTicketLiveList(event: TicketLiveListEvent, payload: ITicketLiveListPayload): Promise<void> {
+    const staff = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        role: { code: { in: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.IT_OFFICER, ROLES.TECHNICIAN] } },
+      },
+      select: { id: true },
+    });
+    for (const s of staff) {
+      try {
+        emitToUser(s.id, event, payload);
       } catch {
         // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
       }

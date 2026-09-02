@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DatePipe, NgClass } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -13,6 +14,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxjs';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
+import { SocketService } from '../../../core/services/socket.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
@@ -32,6 +34,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
     RouterLink,
     FormsModule,
     DatePipe,
+    NgClass,
     MatTableModule,
     MatPaginatorModule,
     MatFormFieldModule,
@@ -47,9 +50,11 @@ const EXPORT_PDF_MAX_ROWS = 500;
 })
 export class TicketListComponent {
   private readonly repairTicketService = inject(RepairTicketService);
+  private readonly socketService = inject(SocketService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly exporting = signal(false);
 
@@ -74,6 +79,21 @@ export class TicketListComponent {
       this.fetch();
     });
     this.fetch();
+
+    // งานแจ้งซ่อมใหม่เข้ามาขณะเปิดหน้าตารางค้างไว้ — รีเฟรชหน้าปัจจุบันเงียบๆ ให้เห็นสัญลักษณ์กระพริบทันทีโดยไม่ต้องกดรีเฟรชเอง
+    this.socketService.ticketCreated$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.fetch());
+
+    // มีแอดมิน/ช่างอีกคนเปิดดูรายละเอียด ticket ที่แสดงอยู่ในตารางนี้เป็นคนแรก — แก้ค่าตรงแถวนั้นให้หยุดกระพริบทันที ไม่ต้อง fetch ใหม่ทั้งตาราง
+    this.socketService.ticketViewed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      if (!event.viewedByUserId || !event.viewedByName) return;
+      this.tickets.update((list) =>
+        list.map((t) =>
+          t.id === event.ticketId && !t.firstViewedBy
+            ? { ...t, firstViewedBy: { id: event.viewedByUserId!, fullName: event.viewedByName! }, firstViewedAt: new Date().toISOString() }
+            : t,
+        ),
+      );
+    });
   }
 
   onKeywordChange(): void {
