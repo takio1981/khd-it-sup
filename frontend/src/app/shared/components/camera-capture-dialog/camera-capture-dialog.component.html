@@ -1,0 +1,54 @@
+<h2 mat-dialog-title>{{ data.mode === 'photo' ? 'ถ่ายภาพ' : 'บันทึกวิดีโอ' }}</h2>
+
+<mat-dialog-content class="!p-0">
+  <div class="relative aspect-video w-full overflow-hidden rounded-md bg-black">
+    <video
+      #video
+      class="h-full w-full object-contain"
+      [class.opacity-0]="starting() || errorMessage()"
+      autoplay
+      playsinline
+      muted
+    ></video>
+    <canvas #canvas class="hidden"></canvas>
+
+    @if (starting()) {
+      <div class="absolute inset-0 flex items-center justify-center">
+        <mat-spinner diameter="32" />
+      </div>
+    }
+
+    @if (errorMessage(); as em) {
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center text-white">
+        <khd-icon name="exclamation-triangle" [size]="28" class="text-amber-400" />
+        <p class="text-sm">{{ em }}</p>
+      </div>
+    }
+
+    @if (data.mode === 'video' && recording()) {
+      <div class="absolute top-2 left-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 text-xs text-white">
+        <span class="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+        {{ recordedSeconds() }} / {{ data.maxVideoDurationSec }} วินาที
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">ยกเลิก</button>
+  @if (!starting() && !errorMessage()) {
+    @if (data.mode === 'photo') {
+      <button mat-flat-button color="primary" type="button" (click)="capturePhoto()">
+        <khd-icon name="camera" [size]="18" class="!mr-1" />ถ่ายภาพ
+      </button>
+    } @else if (!recording()) {
+      <button mat-flat-button color="primary" type="button" (click)="startRecording()">
+        <khd-icon name="video-camera" [size]="18" class="!mr-1" />เริ่มบันทึก
+      </button>
+    } @else {
+      <button mat-flat-button color="warn" type="button" (click)="stopRecording()">
+        <khd-icon name="x-circle" [size]="18" class="!mr-1" />หยุดบันทึก
+      </button>
+    }
+  }
+</mat-dialog-actions>

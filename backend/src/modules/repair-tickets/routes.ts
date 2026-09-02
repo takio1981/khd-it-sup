@@ -88,7 +88,7 @@ router.get(
  *   post:
  *     tags: [Repair Tickets]
  *     summary: แจ้งซ่อมใหม่ (auto-generate เลขที่ ticket และเริ่ม workflow instance อัตโนมัติ)
- *       รองรับแนบรูปภาพ (สูงสุด 3 ภาพ) และวิดีโอ (คลิปละไม่เกิน 10 วินาที) เครื่อง/อาการเสีย รวมขนาดไม่เกิน 5 MB
+ *       รองรับแนบรูปภาพ (สูงสุด 3 ภาพ) และวิดีโอ (คลิปละไม่เกิน 10 วินาที) เครื่อง/อาการเสีย รวมขนาดไม่เกิน 10 MB
  *       (multipart/form-data, field "attachments" — ถ้าไม่แนบไฟล์ส่งเป็น application/json ตามปกติได้เหมือนเดิม)
  *     security: [{ bearerAuth: [] }]
  */

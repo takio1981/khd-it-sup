@@ -15,6 +15,10 @@ import { AuthService } from '../../../core/services/auth.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
+import {
+  CameraCaptureDialogComponent,
+  type ICameraCaptureDialogData,
+} from '../../../shared/components/camera-capture-dialog/camera-capture-dialog.component';
 import { URGENCY_LABEL_TH } from '../../../core/constants/status.const';
 import { getCategoryIconName } from '../../../core/utils/category-icon.util';
 import type { ICreateTicketPayload } from '../../../core/models/repair-ticket.model';
@@ -140,7 +144,7 @@ export class QrScanComponent {
    *  ทั้งหมดรวมกัน (รูป+วิดีโอ) ต้องไม่เกิน MAX_TOTAL_ATTACHMENT_BYTES */
   readonly MAX_TICKET_PHOTOS = 3;
   readonly MAX_VIDEO_DURATION_SEC = 10;
-  readonly MAX_TOTAL_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+  readonly MAX_TOTAL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
   readonly ticketAttachments = signal<{ file: File; previewUrl: string; kind: 'image' | 'video' }[]>([]);
   readonly attachmentError = signal<string | null>(null);
 
@@ -200,19 +204,24 @@ export class QrScanComponent {
     this.attachmentError.set(null);
   }
 
-  /** ถ่ายภาพด้วยกล้อง (capture="environment" เปิดกล้องหลังของมือถือโดยตรง) */
-  async onCameraPhotoSelected(event: Event): Promise<void> {
-    await this.addTicketFiles(event);
-  }
-
-  /** บันทึกวิดีโอด้วยกล้อง — ความยาวตรวจสอบหลังบันทึกเสร็จ (เบราว์เซอร์ไม่มีทางจำกัดความยาวตอนอัดในแอปกล้องของเครื่องได้) */
-  async onCameraVideoSelected(event: Event): Promise<void> {
-    await this.addTicketFiles(event);
+  /** เปิดกล้องของเครื่อง (มือถือ/โน้ตบุ๊ก) ผ่าน getUserMedia จริง — ไม่ใช่ <input capture> ซึ่งเดสก์ท็อปส่วนใหญ่ไม่รองรับ
+   *  (จะได้ file picker ธรรมดาแทนกล้องจริง) รองรับทั้ง facingMode 'environment' บนมือถือและกล้องหน้าบนโน้ตบุ๊ก */
+  openCameraCapture(mode: 'photo' | 'video'): void {
+    const ref = this.dialog.open<CameraCaptureDialogComponent, ICameraCaptureDialogData, File | undefined>(
+      CameraCaptureDialogComponent,
+      { width: mode === 'video' ? '480px' : '420px', maxWidth: '95vw', data: { mode, maxVideoDurationSec: this.MAX_VIDEO_DURATION_SEC } },
+    );
+    ref.afterClosed().subscribe((file) => {
+      if (file) void this.processIncomingFiles([file]);
+    });
   }
 
   /** เลือกไฟล์รูป/วิดีโอที่มีอยู่แล้ว (แกลเลอรี) */
   async onGalleryFilesSelected(event: Event): Promise<void> {
-    await this.addTicketFiles(event);
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = ''; // เคลียร์ input เพื่อให้เลือกไฟล์เดิมซ้ำได้อีกครั้งถ้าลบออกไปแล้ว
+    await this.processIncomingFiles(files);
   }
 
   removeTicketAttachment(index: number): void {
@@ -222,8 +231,15 @@ export class QrScanComponent {
     this.attachmentError.set(null);
   }
 
-  private totalAttachmentBytes(): number {
+  totalAttachmentBytes(): number {
     return this.ticketAttachments().reduce((sum, a) => sum + a.file.size, 0);
+  }
+
+  /** แสดงขนาดไฟล์แบบอ่านง่าย เช่น "340 KB", "1.2 MB" — ใช้บอกผู้ใช้ว่าไฟล์แต่ละไฟล์กินโควตาเท่าไร */
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   /** อ่านความยาววิดีโอผ่าน metadata (ไม่โหลดไฟล์เต็ม) ก่อนยอมรับแนบเข้าฟอร์ม */
@@ -244,10 +260,7 @@ export class QrScanComponent {
     });
   }
 
-  private async addTicketFiles(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []);
-    input.value = ''; // เคลียร์ input เพื่อให้เลือก/ถ่ายไฟล์เดิมซ้ำได้อีกครั้งถ้าลบออกไปแล้ว
+  private async processIncomingFiles(files: File[]): Promise<void> {
     if (files.length === 0) return;
 
     this.attachmentError.set(null);
@@ -283,7 +296,9 @@ export class QrScanComponent {
       }
 
       if (this.totalAttachmentBytes() + file.size > this.MAX_TOTAL_ATTACHMENT_BYTES) {
-        this.attachmentError.set('ขนาดไฟล์แนบทั้งหมด (รูป+วิดีโอ) ต้องไม่เกิน 5 MB');
+        this.attachmentError.set(
+          `ไฟล์นี้ขนาด ${this.formatFileSize(file.size)} — รวมกับไฟล์อื่นแล้วเกิน ${this.formatFileSize(this.MAX_TOTAL_ATTACHMENT_BYTES)}`,
+        );
         continue;
       }
 

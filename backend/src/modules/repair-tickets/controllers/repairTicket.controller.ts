@@ -24,7 +24,7 @@ function contextOf(req: Request): IRequestContext {
 }
 
 const CREATE_MAX_PHOTOS = 3;
-const CREATE_MAX_TOTAL_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const CREATE_MAX_TOTAL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
 /** ตรวจซ้ำฝั่ง server ตามกติกาไฟล์แนบตอนแจ้งซ่อม (client บังคับไว้แล้ว แต่ห้าม trust ฝั่ง client อย่างเดียว) —
  * จำกัดรูปภาพไม่เกิน CREATE_MAX_PHOTOS ภาพ และขนาดไฟล์แนบทั้งหมด (รูป+วิดีโอ) รวมกันไม่เกิน CREATE_MAX_TOTAL_ATTACHMENT_BYTES
@@ -41,7 +41,7 @@ function validateCreateAttachments(files: Express.Multer.File[]): void {
 
   if (totalBytes > CREATE_MAX_TOTAL_ATTACHMENT_BYTES) {
     files.forEach((f) => fs.unlink(f.path, () => undefined));
-    throw new BadRequestError('ขนาดไฟล์แนบทั้งหมด (รูป+วิดีโอ) ต้องไม่เกิน 5 MB');
+    throw new BadRequestError('ขนาดไฟล์แนบทั้งหมด (รูป+วิดีโอ) ต้องไม่เกิน 10 MB');
   }
 }
 

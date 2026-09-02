@@ -44,7 +44,10 @@ function buildStorage(subDir: string): multer.StorageEngine {
 
 function buildFileFilter(allowedMimeTypes: Set<string>) {
   return (_req: Request, file: Express.Multer.File, cb: FileFilterCallback): void => {
-    if (!allowedMimeTypes.has(file.mimetype)) {
+    // ตัดพารามิเตอร์ codec ทิ้งก่อนเทียบ — วิดีโอที่อัดจาก MediaRecorder ของเบราว์เซอร์ (เช่นฟีเจอร์ถ่ายวิดีโอผ่านกล้อง)
+    // รายงาน mimetype พร้อม codecs เสมอ เช่น "video/webm;codecs=vp9,opus" ซึ่งไม่ตรงกับ allowlist แบบตรงตัว
+    const baseMimeType = file.mimetype.split(';')[0].trim();
+    if (!allowedMimeTypes.has(baseMimeType)) {
       cb(new BadRequestError(`ไม่รองรับชนิดไฟล์: ${file.mimetype}`));
       return;
     }
@@ -64,10 +67,11 @@ export function createUploader(
 }
 
 export const assetPhotoUploader = createUploader('assets');
-/** ไฟล์แนบใบแจ้งซ่อม — เฉพาะรูปภาพ/วิดีโอหน้างาน ขนาดไม่เกิน 5 MB ต่อไฟล์ */
+/** ไฟล์แนบใบแจ้งซ่อม — เฉพาะรูปภาพ/วิดีโอหน้างาน ขนาดไม่เกิน 10 MB ต่อไฟล์ (ตอนแจ้งซ่อมใหม่ยังบังคับรวมกันไม่เกิน
+ *  10 MB เพิ่มอีกชั้นที่ controller ด้วย — ดู CREATE_MAX_TOTAL_ATTACHMENT_BYTES ใน repairTicket.controller.ts) */
 export const ticketAttachmentUploader = createUploader('tickets', {
   allowedMimeTypes: IMAGE_AND_VIDEO_MIME_TYPES,
-  maxFileSizeMB: 5,
+  maxFileSizeMB: 10,
 });
 /** รูปโปรไฟล์ผู้ใช้ — เฉพาะรูปภาพ ขนาดไม่เกิน 2 MB */
 export const avatarUploader = createUploader('avatars', {
