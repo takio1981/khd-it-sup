@@ -63,6 +63,20 @@ export function getStatusLabel(code: string): string {
   return STATUS_LABEL_TH[code] ?? code;
 }
 
+/** ต้องตรงกับ backend/src/modules/assets/controllers/asset.controller.ts's ASSET_ACQUISITION_TYPE_LABEL_TH เสมอ */
+export const ACQUISITION_TYPE_LABEL_TH: Record<string, string> = {
+  PURCHASE: 'ซื้อ',
+  LEASE_TO_OWN: 'เช่า-ซื้อ',
+  LEASE_USE: 'เช่า-ใช้',
+  DONATED: 'บริจาค/ได้รับบริจาค',
+  BORROWED: 'ยืมตัวชั่วคราว',
+  UNKNOWN: 'ไม่ทราบ',
+};
+
+export function getAcquisitionTypeLabel(code: string): string {
+  return ACQUISITION_TYPE_LABEL_TH[code] ?? code;
+}
+
 export const URGENCY_LABEL_TH: Record<string, string> = {
   LOW: 'ต่ำ',
   MEDIUM: 'ปานกลาง',

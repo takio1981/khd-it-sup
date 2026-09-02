@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { AssetRepository } from '@modules/assets/repositories/asset.repository';
+import { AssetRepository, type IAssetListFilter } from '@modules/assets/repositories/asset.repository';
 import type {
   CreateAssetDto,
   CreateCategoryDto,
@@ -17,29 +17,39 @@ import type { IRequestContext } from '@common/interfaces';
 
 const EXPORT_MAX_ROWS = 5000;
 
+function assetFilterFrom(query: ListAssetsQueryDto | ExportAssetsQueryDto): IAssetListFilter {
+  return {
+    categoryId: query.categoryId,
+    departmentId: query.departmentId,
+    status: query.status,
+    acquisitionType: query.acquisitionType,
+    externalSource: query.externalSource,
+    budgetYear: query.budgetYear,
+    keyword: query.keyword,
+  };
+}
+
 export class AssetService {
   private readonly repo = new AssetRepository();
 
   async list(query: ListAssetsQueryDto) {
     const pagination = normalizePagination(query);
-    const { items, total } = await this.repo.findMany(
-      { categoryId: query.categoryId, departmentId: query.departmentId, status: query.status, keyword: query.keyword },
-      pagination,
-    );
+    const { items, total } = await this.repo.findMany(assetFilterFrom(query), pagination);
     return buildPaginatedResult(items, total, pagination);
   }
 
   /** ใช้เฉพาะสำหรับ export Excel/CSV — ดึงแบบไม่แบ่งหน้า (จำกัดที่ EXPORT_MAX_ROWS) ใช้ filter เดียวกับ list() ทุกจุด */
   async listForExport(query: ExportAssetsQueryDto) {
-    const { items } = await this.repo.findMany(
-      { categoryId: query.categoryId, departmentId: query.departmentId, status: query.status, keyword: query.keyword },
-      { page: 1, limit: EXPORT_MAX_ROWS, skip: 0, take: EXPORT_MAX_ROWS },
-    );
+    const { items } = await this.repo.findMany(assetFilterFrom(query), { page: 1, limit: EXPORT_MAX_ROWS, skip: 0, take: EXPORT_MAX_ROWS });
     return items;
   }
 
   async listCategories() {
     return this.repo.listCategories();
+  }
+
+  async listBudgetYears() {
+    return this.repo.listDistinctBudgetYears();
   }
 
   async createCategory(dto: CreateCategoryDto, ctx: IRequestContext) {
@@ -120,6 +130,9 @@ export class AssetService {
       vendorId: dto.vendorId,
       price: dto.price,
       ownerUserId: dto.ownerUserId,
+      acquisitionType: dto.acquisitionType,
+      unitType: dto.unitType,
+      budgetYear: dto.budgetYear,
       remark: dto.remark,
       createdBy: ctx.user.id,
     });

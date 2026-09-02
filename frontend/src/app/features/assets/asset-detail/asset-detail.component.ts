@@ -19,6 +19,7 @@ import { AssetPhotoThumbnailComponent } from '../../../shared/components/asset-p
 import type { IQrLabelData } from '../../../shared/components/qr-print-preview/qr-print-preview.model';
 import { AssetFormComponent } from '../asset-form/asset-form.component';
 import { downloadBlob } from '../../../core/utils/download.util';
+import { getAcquisitionTypeLabel } from '../../../core/constants/status.const';
 import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/models/asset.model';
 
 @Component({
@@ -70,6 +71,10 @@ export class AssetDetailComponent {
     effect(() => {
       if (this.id()) this.load();
     });
+  }
+
+  acquisitionTypeLabel(code: string): string {
+    return getAcquisitionTypeLabel(code);
   }
 
   openEditForm(): void {

@@ -322,6 +322,15 @@ enum AssetStatus {
   LOST
 }
 
+enum AssetAcquisitionType {
+  PURCHASE
+  LEASE_TO_OWN
+  LEASE_USE
+  DONATED
+  BORROWED
+  UNKNOWN
+}
+
 model Asset {
   id                  String       @id @db.Char(36)
   assetNumber         String       @unique @map("asset_number") @db.VarChar(50)
@@ -341,6 +350,7 @@ model Asset {
   price               Decimal?     @db.Decimal(14, 2)
   photoUrl            String?      @map("photo_url") @db.VarChar(500)
   status              AssetStatus  @default(ACTIVE)
+  acquisitionType     AssetAcquisitionType @default(UNKNOWN) @map("acquisition_type")
   ownerUserId         String?      @map("owner_user_id") @db.Char(36)
   remark              String?      @db.Text
   externalSource      String?      @map("external_source") @db.VarChar(50)

@@ -1,9 +1,10 @@
-import type { AssetStatus, Department } from '@prisma/client';
+import type { AssetStatus, Department, Gender } from '@prisma/client';
 import { logger } from '@infrastructure/logger/logger';
 import type { IMophEquipmentRecord } from '@infrastructure/moph/mophEquipment.client';
 
 const TEXT_FIELD_MAX_LENGTH = 150;
 const LOCATION_NOTE_MAX_LENGTH = 255;
+const USERNAME_MAX_LENGTH = 100;
 
 /** MOPH ส่งมาแค่ null (ปกติ) กับ 'discharge' (จำหน่ายแล้ว) เท่านั้นจากข้อมูลจริงที่สำรวจ — ค่าอื่นที่ไม่รู้จักให้ default เป็น ACTIVE และ log ไว้ ไม่ throw กันทั้ง run พัง */
 export function mapStatus(raw: string | null): AssetStatus {
@@ -128,4 +129,21 @@ export function buildDepartmentIndex(departments: Department[]): Map<string, Dep
     index.set(dept.nameTh.trim(), dept);
   }
   return index;
+}
+
+/** ตัดคำนำหน้าชื่อไทยทั่วไปออกก่อนเดา gender — คำนำหน้าเองบอก gender ได้ตรงกว่าการเดาจากชื่อ */
+const MALE_TITLE_PATTERN = /^(นาย|ว่าที่ร้อยตรี|นายแพทย์)\s*/;
+const FEMALE_TITLE_PATTERN = /^(นางสาว|นาง|แพทย์หญิง)\s*/;
+
+/** เดา gender จากคำนำหน้าชื่อภาษาไทย — ใช้แค่เลือก avatar เริ่มต้นให้ user ที่สร้างจาก owner เท่านั้น ไม่ใช่ข้อมูลยืนยันตัวตน เดาไม่ได้ให้เป็น null */
+export function inferGenderFromName(fullName: string): Gender | null {
+  if (MALE_TITLE_PATTERN.test(fullName)) return 'MALE';
+  if (FEMALE_TITLE_PATTERN.test(fullName)) return 'FEMALE';
+  return null;
+}
+
+/** ใช้ทำ username จากชื่อ owner — ตัดช่องว่างออกทั้งหมด (ชื่อไทยไม่ต้องมีช่องว่างในการอ้างอิง) ตัดความยาวตาม username column, เผื่อที่ท้ายไว้ 4 หลักสำหรับเลขกันชนตอนซ้ำ */
+export function slugifyUsername(fullName: string): string {
+  const collapsed = fullName.replace(/\s+/g, '');
+  return collapsed.slice(0, USERNAME_MAX_LENGTH - 4);
 }

@@ -126,8 +126,21 @@ export class UserRepository {
     return prisma.user.findFirst({ where: { OR: [{ username }, { email }] } });
   }
 
+  async findRoleByCode(code: string) {
+    return prisma.role.findUnique({ where: { code } });
+  }
+
+  /** ใช้เฉพาะ equipment-sync — โหลดชื่อ/username ผู้ใช้ทุกคน (รวมที่เคยสร้างจาก sync ก่อนหน้า) ครั้งเดียวก่อนเริ่ม sync เพื่อจับคู่ owner ตามชื่อแทน query ทีละแถว */
+  async findAllForOwnerMatch() {
+    return prisma.user.findMany({ where: { deletedAt: null }, select: { id: true, fullName: true, username: true } });
+  }
+
   async create(data: Prisma.UserUncheckedCreateInput) {
     return prisma.user.create({ data, include: userListInclude });
+  }
+
+  async createMinimal(data: Prisma.UserUncheckedCreateInput) {
+    return prisma.user.create({ data, select: { id: true } });
   }
 
   async update(id: string, data: Prisma.UserUncheckedUpdateInput) {

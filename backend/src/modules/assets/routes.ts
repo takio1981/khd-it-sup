@@ -30,6 +30,16 @@ router.get('/categories', assetController.listCategories);
 
 /**
  * @openapi
+ * /assets/budget-years:
+ *   get:
+ *     tags: [Assets]
+ *     summary: รายการปีงบประมาณที่มีอยู่จริงในข้อมูลครุภัณฑ์ (สำหรับตัวกรอง)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get('/budget-years', assetController.listBudgetYears);
+
+/**
+ * @openapi
  * /assets/categories:
  *   post:
  *     tags: [Assets]

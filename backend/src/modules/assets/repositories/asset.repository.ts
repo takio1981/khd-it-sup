@@ -6,6 +6,9 @@ export interface IAssetListFilter {
   categoryId?: string;
   departmentId?: string;
   status?: string;
+  acquisitionType?: string;
+  externalSource?: string;
+  budgetYear?: string;
   keyword?: string;
 }
 
@@ -15,15 +18,18 @@ const assetListInclude = {
   building: { select: { id: true, name: true } },
   floor: { select: { id: true, name: true } },
   room: { select: { id: true, name: true } },
+  owner: { select: { id: true, fullName: true, username: true } },
   qrcode: { select: { id: true, qrToken: true, isActive: true } },
 } satisfies Prisma.AssetInclude;
 
 const assetDetailInclude = {
   ...assetListInclude,
   vendor: { select: { id: true, name: true } },
-  owner: { select: { id: true, fullName: true, username: true } },
   photos: { orderBy: { uploadedAt: 'desc' } },
 } satisfies Prisma.AssetInclude;
+
+/** ค่าพิเศษของ externalSource filter แทน "สร้างเอง" (external_source IS NULL) — คอลัมน์จริงไม่มีค่านี้อยู่แล้ว จึงใช้เป็น sentinel ได้ปลอดภัย */
+const MANUAL_SOURCE_FILTER_VALUE = 'NONE';
 
 function buildWhere(filter: IAssetListFilter): Prisma.AssetWhereInput {
   return {
@@ -31,6 +37,9 @@ function buildWhere(filter: IAssetListFilter): Prisma.AssetWhereInput {
     categoryId: filter.categoryId,
     departmentId: filter.departmentId,
     status: filter.status as Prisma.EnumAssetStatusFilter['equals'],
+    acquisitionType: filter.acquisitionType as Prisma.EnumAssetAcquisitionTypeFilter['equals'],
+    externalSource: filter.externalSource === MANUAL_SOURCE_FILTER_VALUE ? null : filter.externalSource,
+    budgetYear: filter.budgetYear,
     ...(filter.keyword
       ? {
           OR: [
@@ -39,6 +48,8 @@ function buildWhere(filter: IAssetListFilter): Prisma.AssetWhereInput {
             { serialNumber: { contains: filter.keyword } },
             { model: { contains: filter.keyword } },
             { brand: { contains: filter.keyword } },
+            { equipClassificationName: { contains: filter.keyword } },
+            { externalId: { contains: filter.keyword } },
           ],
         }
       : {}),
@@ -99,6 +110,17 @@ export class AssetRepository {
 
   async listCategories() {
     return prisma.assetCategory.findMany({ where: { isActive: true }, orderBy: { nameTh: 'asc' } });
+  }
+
+  /** ตัวเลือกปีงบประมาณที่มีอยู่จริงในข้อมูล — สำหรับ dropdown ตัวกรองในหน้ารายการครุภัณฑ์ */
+  async listDistinctBudgetYears(): Promise<string[]> {
+    const rows = await prisma.asset.findMany({
+      where: { deletedAt: null, budgetYear: { not: null } },
+      select: { budgetYear: true },
+      distinct: ['budgetYear'],
+      orderBy: { budgetYear: 'desc' },
+    });
+    return rows.map((r) => r.budgetYear as string);
   }
 
   async findCategoryByCode(code: string) {

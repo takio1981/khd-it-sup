@@ -42,6 +42,21 @@
       </mat-select>
     </mat-form-field>
 
+    <mat-form-field appearance="outline" class="w-full" *khdHasPermission="'user:read'">
+      <mat-label>ผู้รับผิดชอบ</mat-label>
+      <input matInput [formControl]="ownerSearch" [matAutocomplete]="ownerAuto" placeholder="พิมพ์ชื่อเพื่อค้นหา" />
+      @if (ownerSearch.value) {
+        <button matSuffix mat-icon-button type="button" (click)="clearOwner()">
+          <khd-icon name="x-mark" [size]="16" />
+        </button>
+      }
+      <mat-autocomplete #ownerAuto="matAutocomplete" (optionSelected)="ownerSelected($event)" [displayWith]="ownerDisplayFn">
+        @for (u of ownerOptions(); track u.id) {
+          <mat-option [value]="u">{{ u.fullName }} ({{ u.username }})</mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+
     <div class="grid grid-cols-3 gap-3">
       <mat-form-field appearance="outline">
         <mat-label>อาคาร</mat-label>
@@ -69,6 +84,32 @@
             <mat-option [value]="r.id">{{ r.name }}</mat-option>
           }
         </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <mat-form-field appearance="outline">
+        <mat-label>ราคา</mat-label>
+        <input matInput type="number" min="0" formControlName="price" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ประเภทการได้มา</mat-label>
+        <mat-select formControlName="acquisitionType">
+          @for (a of acquisitionTypeOptions; track a.code) {
+            <mat-option [value]="a.code">{{ a.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <mat-form-field appearance="outline">
+        <mat-label>หน่วยนับ</mat-label>
+        <input matInput formControlName="unitType" placeholder="เช่น เครื่อง, อัน" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ปีงบประมาณ</mat-label>
+        <input matInput formControlName="budgetYear" />
       </mat-form-field>
     </div>
 

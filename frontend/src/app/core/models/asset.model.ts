@@ -17,6 +17,8 @@ export type AssetStatus =
   | 'DISPOSED'
   | 'LOST';
 
+export type AssetAcquisitionType = 'PURCHASE' | 'LEASE_TO_OWN' | 'LEASE_USE' | 'DONATED' | 'BORROWED' | 'UNKNOWN';
+
 export interface IAssetPhoto {
   id: string;
   fileUrl: string;
@@ -37,11 +39,19 @@ export interface IAsset {
   building: { id: string; name: string } | null;
   floor: { id: string; name: string } | null;
   room: { id: string; name: string } | null;
+  owner: { id: string; fullName: string; username: string } | null;
   purchaseDate: string | null;
   warrantyExpireDate: string | null;
   price: string | null;
   photoUrl: string | null;
   status: AssetStatus;
+  acquisitionType: AssetAcquisitionType;
+  unitType: string | null;
+  budgetYear: string | null;
+  equipClassificationCode: string | null;
+  equipClassificationName: string | null;
+  externalSource: string | null;
+  externalId: string | null;
   remark: string | null;
   createdAt: string;
   qrcode: { id: string; qrToken: string; isActive: boolean } | null;
@@ -71,6 +81,10 @@ export interface ICreateAssetPayload {
   roomId?: string;
   locationNote?: string;
   price?: number;
+  ownerUserId?: string;
+  acquisitionType?: AssetAcquisitionType;
+  unitType?: string;
+  budgetYear?: string;
   remark?: string;
   status?: AssetStatus;
 }

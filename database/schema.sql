@@ -263,6 +263,7 @@ CREATE TABLE `assets` (
   `price`                DECIMAL(14,2) NULL,
   `photo_url`            VARCHAR(500)  NULL COMMENT 'primary photo, see asset_photos for gallery',
   `status`               ENUM('ACTIVE','IN_REPAIR','WAITING_PARTS','MAINTENANCE','RESERVED','INACTIVE','DISPOSED','LOST') NOT NULL DEFAULT 'ACTIVE',
+  `acquisition_type`     ENUM('PURCHASE','LEASE_TO_OWN','LEASE_USE','DONATED','BORROWED','UNKNOWN') NOT NULL DEFAULT 'UNKNOWN' COMMENT 'ประเภทการได้มา: ซื้อ/เช่า-ซื้อ/เช่า-ใช้/บริจาค/ยืมตัวชั่วคราว/ไม่ทราบ',
   `owner_user_id`        CHAR(36)      NULL COMMENT 'ผู้ครอบครอง/ผู้รับผิดชอบ',
   `remark`               TEXT          NULL,
   `external_source`      VARCHAR(50)   NULL COMMENT 'ระบบต้นทางถ้านำเข้าอัตโนมัติ เช่น MOPH_ASSETTRACKER — NULL = สร้างเองในระบบนี้',

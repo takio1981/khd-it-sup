@@ -19,6 +19,9 @@ export interface IAssetListFilter {
   categoryId?: string;
   departmentId?: string;
   status?: string;
+  acquisitionType?: string;
+  externalSource?: string;
+  budgetYear?: string;
   keyword?: string;
 }
 
@@ -41,6 +44,10 @@ export class AssetService {
 
   getCategories(): Observable<IAssetCategory[]> {
     return this.http.get<IApiSuccessResponse<IAssetCategory[]>>(`${this.base}/categories`).pipe(map((res) => res.data));
+  }
+
+  getBudgetYears(): Observable<string[]> {
+    return this.http.get<IApiSuccessResponse<string[]>>(`${this.base}/budget-years`).pipe(map((res) => res.data));
   }
 
   createCategory(payload: ICreateAssetCategoryPayload): Observable<IAssetCategory> {

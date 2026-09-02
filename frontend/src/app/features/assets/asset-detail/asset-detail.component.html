@@ -40,14 +40,28 @@
           <div><dt class="text-neutral-400 text-xs">เลขครุภัณฑ์ราชการ</dt><dd>{{ a.govAssetNumber ?? '-' }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">หน่วยงาน</dt><dd>{{ a.department?.nameTh ?? '-' }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">สถานที่</dt><dd>{{ a.building?.name }} {{ a.floor?.name }} {{ a.room?.name }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">ผู้รับผิดชอบ</dt><dd>{{ a.owner?.fullName ?? '-' }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">วันที่จัดซื้อ</dt><dd>{{ a.purchaseDate ?? '-' }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">หมดประกัน</dt><dd>{{ a.warrantyExpireDate ?? '-' }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">ราคา</dt><dd>{{ a.price ?? '-' }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">ประเภทการได้มา</dt><dd>{{ acquisitionTypeLabel(a.acquisitionType) }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">หน่วยนับ</dt><dd>{{ a.unitType ?? '-' }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">ปีงบประมาณ</dt><dd>{{ a.budgetYear ?? '-' }}</dd></div>
         </dl>
         @if (a.remark) {
           <div class="mt-3 pt-3 border-t border-black/5 dark:border-white/10">
             <p class="text-neutral-400 text-xs mb-1">หมายเหตุ</p>
             <p class="text-sm">{{ a.remark }}</p>
+          </div>
+        }
+        @if (a.externalSource) {
+          <div class="mt-3 pt-3 border-t border-black/5 dark:border-white/10">
+            <p class="text-neutral-400 text-xs mb-2">ข้อมูลจากระบบต้นทาง ({{ a.externalSource }})</p>
+            <dl class="grid grid-cols-2 gap-y-3 text-sm">
+              <div><dt class="text-neutral-400 text-xs">รหัสอ้างอิงต้นทาง</dt><dd>{{ a.externalId ?? '-' }}</dd></div>
+              <div><dt class="text-neutral-400 text-xs">รหัสจำแนกครุภัณฑ์ราชการ</dt><dd>{{ a.equipClassificationCode ?? '-' }}</dd></div>
+              <div class="col-span-2"><dt class="text-neutral-400 text-xs">ชื่อจำแนกครุภัณฑ์ราชการ</dt><dd>{{ a.equipClassificationName ?? '-' }}</dd></div>
+            </dl>
           </div>
         }
       </div>

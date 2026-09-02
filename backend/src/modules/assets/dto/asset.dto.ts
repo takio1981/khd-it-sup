@@ -11,6 +11,8 @@ const assetStatusEnum = z.enum([
   'LOST',
 ]);
 
+const assetAcquisitionTypeEnum = z.enum(['PURCHASE', 'LEASE_TO_OWN', 'LEASE_USE', 'DONATED', 'BORROWED', 'UNKNOWN']);
+
 export const createAssetSchema = z.object({
   govAssetNumber: z.string().max(100).optional(),
   serialNumber: z.string().max(150).optional(),
@@ -27,6 +29,9 @@ export const createAssetSchema = z.object({
   vendorId: z.string().uuid().optional(),
   price: z.coerce.number().nonnegative().optional(),
   ownerUserId: z.string().uuid().optional(),
+  acquisitionType: assetAcquisitionTypeEnum.optional(),
+  unitType: z.string().max(50).optional(),
+  budgetYear: z.string().max(10).optional(),
   remark: z.string().optional(),
 });
 export type CreateAssetDto = z.infer<typeof createAssetSchema>;
@@ -42,6 +47,9 @@ export const listAssetsQuerySchema = z.object({
   categoryId: z.string().uuid().optional(),
   departmentId: z.string().uuid().optional(),
   status: assetStatusEnum.optional(),
+  acquisitionType: assetAcquisitionTypeEnum.optional(),
+  externalSource: z.string().optional(),
+  budgetYear: z.string().optional(),
   keyword: z.string().optional(),
 });
 export type ListAssetsQueryDto = z.infer<typeof listAssetsQuerySchema>;
@@ -50,6 +58,9 @@ export const exportAssetsQuerySchema = z.object({
   categoryId: z.string().uuid().optional(),
   departmentId: z.string().uuid().optional(),
   status: assetStatusEnum.optional(),
+  acquisitionType: assetAcquisitionTypeEnum.optional(),
+  externalSource: z.string().optional(),
+  budgetYear: z.string().optional(),
   keyword: z.string().optional(),
   format: z.enum(['xlsx', 'csv']).default('xlsx'),
 });

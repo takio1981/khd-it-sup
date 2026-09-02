@@ -16,6 +16,7 @@ import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxj
 import { AssetService } from '../../../core/services/asset.service';
 import { QrCodeService } from '../../../core/services/qrcode.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { DepartmentService } from '../../../core/services/department.service';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
@@ -23,10 +24,22 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 import { QrPrintPreviewComponent } from '../../../shared/components/qr-print-preview/qr-print-preview.component';
 import type { IQrLabelData } from '../../../shared/components/qr-print-preview/qr-print-preview.model';
 import { AssetFormComponent } from '../asset-form/asset-form.component';
-import { getStatusLabel } from '../../../core/constants/status.const';
+import { getStatusLabel, getAcquisitionTypeLabel, ACQUISITION_TYPE_LABEL_TH } from '../../../core/constants/status.const';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
-import type { IAsset, IAssetCategory } from '../../../core/models/asset.model';
+import type { AssetStatus, IAsset, IAssetCategory } from '../../../core/models/asset.model';
+import type { IDepartment } from '../../../core/models/user.model';
+
+const ASSET_STATUS_OPTIONS: AssetStatus[] = [
+  'ACTIVE',
+  'IN_REPAIR',
+  'WAITING_PARTS',
+  'MAINTENANCE',
+  'RESERVED',
+  'INACTIVE',
+  'DISPOSED',
+  'LOST',
+];
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -55,14 +68,27 @@ const EXPORT_PDF_MAX_ROWS = 500;
 export class AssetListComponent {
   private readonly assetService = inject(AssetService);
   private readonly qrCodeService = inject(QrCodeService);
+  private readonly departmentService = inject(DepartmentService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
   readonly authService = inject(AuthService);
 
-  readonly displayedColumns = ['select', 'assetNumber', 'category', 'brandModel', 'department', 'status', 'actions'];
+  readonly displayedColumns = [
+    'select',
+    'assetNumber',
+    'category',
+    'brandModel',
+    'department',
+    'owner',
+    'acquisitionType',
+    'status',
+    'actions',
+  ];
   readonly assets = signal<IAsset[]>([]);
   readonly categories = signal<IAssetCategory[]>([]);
+  readonly departments = signal<IDepartment[]>([]);
+  readonly budgetYears = signal<string[]>([]);
   readonly total = signal(0);
   readonly pageSize = signal(20);
   readonly pageIndex = signal(0);
@@ -71,12 +97,25 @@ export class AssetListComponent {
   readonly printing = signal(false);
   readonly exporting = signal(false);
 
+  readonly statusOptions = ASSET_STATUS_OPTIONS.map((code) => ({ code, label: getStatusLabel(code) }));
+  readonly acquisitionTypeOptions = Object.keys(ACQUISITION_TYPE_LABEL_TH).map((code) => ({
+    code,
+    label: getAcquisitionTypeLabel(code),
+  }));
+
   keyword = '';
   categoryId = '';
+  departmentId = '';
+  status = '';
+  acquisitionType = '';
+  budgetYear = '';
+  externalSource = '';
   private readonly keyword$ = new Subject<string>();
 
   constructor() {
     this.assetService.getCategories().subscribe((cats) => this.categories.set(cats));
+    this.departmentService.list().subscribe((depts) => this.departments.set(depts));
+    this.assetService.getBudgetYears().subscribe((years) => this.budgetYears.set(years));
 
     this.keyword$.pipe(debounceTime(350), distinctUntilChanged()).subscribe(() => {
       this.pageIndex.set(0);
@@ -107,8 +146,7 @@ export class AssetListComponent {
       .list({
         page: this.pageIndex() + 1,
         limit: this.pageSize(),
-        keyword: this.keyword || undefined,
-        categoryId: this.categoryId || undefined,
+        ...this.currentFilter(),
       })
       .subscribe((res) => {
         this.assets.set(res.items);
@@ -132,6 +170,10 @@ export class AssetListComponent {
   get allSelectedOnPage(): boolean {
     const items = this.assets();
     return items.length > 0 && items.every((a) => this.selectedIds().has(a.id));
+  }
+
+  acquisitionTypeLabel(code: string): string {
+    return getAcquisitionTypeLabel(code);
   }
 
   toggleSelectAll(): void {
@@ -286,7 +328,15 @@ export class AssetListComponent {
   }
 
   private currentFilter() {
-    return { keyword: this.keyword || undefined, categoryId: this.categoryId || undefined };
+    return {
+      keyword: this.keyword || undefined,
+      categoryId: this.categoryId || undefined,
+      departmentId: this.departmentId || undefined,
+      status: this.status || undefined,
+      acquisitionType: this.acquisitionType || undefined,
+      budgetYear: this.budgetYear || undefined,
+      externalSource: this.externalSource || undefined,
+    };
   }
 
   exportExcel(): void {
@@ -327,13 +377,15 @@ export class AssetListComponent {
       await exportTableToPdf({
         title: 'รายงานครุภัณฑ์',
         subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
-        columns: ['เลขครุภัณฑ์', 'ประเภท', 'ยี่ห้อ/รุ่น', 'สถานะ', 'หน่วยงาน', 'สถานที่'],
+        columns: ['เลขครุภัณฑ์', 'ประเภท', 'ยี่ห้อ/รุ่น', 'สถานะ', 'ประเภทการได้มา', 'หน่วยงาน', 'ผู้รับผิดชอบ', 'สถานที่'],
         rows: res.items.map((a) => [
           a.assetNumber,
           a.category.nameTh,
           [a.brand, a.model].filter(Boolean).join(' / '),
           getStatusLabel(a.status),
+          getAcquisitionTypeLabel(a.acquisitionType),
           a.department?.nameTh ?? '',
+          a.owner?.fullName ?? '',
           [a.building?.name, a.floor?.name, a.room?.name].filter(Boolean).join(' / '),
         ]),
         filename: `assets-${Date.now()}.pdf`,

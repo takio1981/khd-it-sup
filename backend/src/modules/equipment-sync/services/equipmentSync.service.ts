@@ -1,16 +1,20 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes } from 'node:crypto';
+import bcrypt from 'bcryptjs';
 import { Prisma, type AssetCategory, type Department } from '@prisma/client';
 import { AssetRepository } from '@modules/assets/repositories/asset.repository';
 import { DepartmentRepository } from '@modules/departments/repositories/department.repository';
+import { UserRepository } from '@modules/users/repositories/user.repository';
 import { fetchEquipmentPage, type IMophEquipmentPage, type IMophEquipmentRecord } from '@infrastructure/moph/mophEquipment.client';
 import { runningNumberService } from '@modules/settings/services/runningNumber.service';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import { logger } from '@infrastructure/logger/logger';
 import { ConflictError } from '@common/errors';
+import { env } from '@config/env';
 import type { IRequestContext } from '@common/interfaces';
 import {
   buildDepartmentIndex,
   composeRemark,
+  inferGenderFromName,
   mapStatus,
   normalizeBudgetYear,
   normalizeDate,
@@ -20,8 +24,13 @@ import {
   resolveCategoryCode,
   resolveClassification,
   resolveDepartment,
+  slugifyUsername,
   truncateText,
 } from '@modules/equipment-sync/utils/equipmentMapper.util';
+
+/** role ที่ user ซึ่งสร้างจากชื่อ owner ใน MOPH จะได้รับ — สิทธิ์ต่ำสุดในระบบ และตั้ง is_active=false อยู่แล้ว จึง login ไม่ได้จนกว่าแอดมินจะเปิดใช้งานเอง */
+const OWNER_PLACEHOLDER_ROLE_CODE = 'USER';
+const OWNER_PLACEHOLDER_EMAIL_DOMAIN = 'moph-import.local';
 
 /** เครื่องหมายว่า asset แถวนี้เป็นของ sync นี้ — ใช้กันไม่ให้ re-sync ไปแตะ asset ที่สร้างเองแม้จะบังเอิญมี gov_asset_number ตรงกัน */
 const EXTERNAL_SOURCE = 'MOPH_ASSETTRACKER';
@@ -66,7 +75,16 @@ interface IRunContext {
   categoryIndex: Map<string, AssetCategory>;
   departmentIndex: Map<string, Department>;
   existingByGovNumber: Map<string, IExistingAssetRef>;
+  /** gov_asset_number ที่สร้างสำเร็จไปแล้วใน run นี้ (ไม่ได้อยู่ใน existingByGovNumber ตอนเริ่ม run เพราะเพิ่งสร้างใหม่) —
+   * กันไม่ให้ record ซ้ำตัวถัดไปใน run เดียวกัน (ข้อมูลต้นทางมี gov_asset_number ซ้ำกันจริงราว 30%) เดินหน้าไปทำงาน
+   * ที่เสียเปล่า (resolve category/department/สร้าง owner user ใหม่) ก่อนจะไปชน unique constraint แล้วถูกนับเป็น skip อยู่ดี */
+  createdThisRun: Set<string>;
   unmatchedDepartmentCounts: Map<string, number>;
+  /** ชื่อเต็ม (trim แล้ว) -> userId — preload จาก user ทุกคนที่มีอยู่แล้ว (รวม placeholder จาก sync รอบก่อน) แล้วเติมเพิ่มระหว่าง run เมื่อสร้างใหม่ กันสร้างซ้ำเมื่อ owner คนเดียวกันปรากฏหลายแถว */
+  ownerUserIndex: Map<string, string>;
+  /** username ที่ถูกใช้แล้วทั้งหมด (ของเดิม + ที่เพิ่งสร้างใน run นี้) — เช็คการชนกันแบบในหน่วยความจำ ไม่ query DB ซ้ำ */
+  usedUsernames: Set<string>;
+  ownerRoleId: string | null;
   ctx?: IRequestContext;
   summary: IEquipmentSyncSummary;
 }
@@ -86,6 +104,7 @@ interface IRunState {
 export class EquipmentSyncService {
   private readonly assetRepo = new AssetRepository();
   private readonly departmentRepo = new DepartmentRepository();
+  private readonly userRepo = new UserRepository();
 
   private readonly state: IRunState = {
     isRunning: false,
@@ -148,17 +167,27 @@ export class EquipmentSyncService {
     };
 
     try {
-      const [categories, departments, existingAssets] = await Promise.all([
+      const [categories, departments, existingAssets, ownerRole, existingUsers] = await Promise.all([
         this.assetRepo.listCategories(),
         this.departmentRepo.findAll(),
         this.assetRepo.findAllWithGovAssetNumber(),
+        this.userRepo.findRoleByCode(OWNER_PLACEHOLDER_ROLE_CODE),
+        this.userRepo.findAllForOwnerMatch(),
       ]);
+
+      if (!ownerRole) {
+        logger.warn(`[equipment-sync] ไม่พบ role '${OWNER_PLACEHOLDER_ROLE_CODE}' ในระบบ — จะไม่สร้าง/ผูก user จากชื่อ owner ให้ครุภัณฑ์ที่สร้างใหม่ใน run นี้`);
+      }
 
       const runCtx: IRunContext = {
         categoryIndex: new Map(categories.map((c) => [c.code, c])),
         departmentIndex: buildDepartmentIndex(departments),
         existingByGovNumber: new Map(existingAssets.map((a) => [a.govAssetNumber as string, a])),
+        createdThisRun: new Set(),
         unmatchedDepartmentCounts: new Map(),
+        ownerUserIndex: new Map(existingUsers.map((u) => [u.fullName.trim(), u.id])),
+        usedUsernames: new Set(existingUsers.map((u) => u.username)),
+        ownerRoleId: ownerRole?.id ?? null,
         ctx,
         summary,
       };
@@ -220,11 +249,18 @@ export class EquipmentSyncService {
   }
 
   private async processRecord(record: IMophEquipmentRecord, runCtx: IRunContext): Promise<void> {
-    const { categoryIndex, departmentIndex, existingByGovNumber, unmatchedDepartmentCounts, ctx, summary } = runCtx;
+    const { categoryIndex, departmentIndex, existingByGovNumber, createdThisRun, unmatchedDepartmentCounts, ctx, summary } = runCtx;
 
     try {
       const govAssetNumber = record.equip_no_full?.trim();
       if (!govAssetNumber) {
+        summary.skipped += 1;
+        return;
+      }
+
+      // gov_asset_number นี้สร้างไปแล้วก่อนหน้าใน run เดียวกัน (ข้อมูลต้นทางซ้ำกันเอง) — ข้ามทันทีไม่ต้อง resolve
+      // category/department/owner ซ้ำอีกรอบ (จะไปชน unique constraint แล้วถูกนับเป็น skip อยู่ดี แค่ทำงานฟรีก่อนถึงจุดนั้น)
+      if (!existingByGovNumber.has(govAssetNumber) && createdThisRun.has(govAssetNumber)) {
         summary.skipped += 1;
         return;
       }
@@ -263,6 +299,8 @@ export class EquipmentSyncService {
 
       if (!existing) {
         const assetNumber = await runningNumberService.getNextNumber('ASSET');
+        // resolve owner ตอนสร้างครั้งแรกเท่านั้น (เหมือน category/department) — กัน sync รอบถัดไปทับ owner ที่แอดมินแก้ไขเองภายหลัง
+        const ownerUserId = await this.resolveOwnerUserId(record.owner, runCtx);
         try {
           await this.assetRepo.createMinimal({
             id: randomUUID(),
@@ -270,12 +308,14 @@ export class EquipmentSyncService {
             govAssetNumber,
             categoryId: category.id,
             departmentId,
+            ownerUserId,
             externalSource: EXTERNAL_SOURCE,
             externalSyncedAt: now,
             createdBy: ctx?.user.id ?? null,
             ...mappedFields,
           });
           summary.created += 1;
+          createdThisRun.add(govAssetNumber);
         } catch (err) {
           if (this.isUniqueConstraintError(err)) {
             summary.skipped += 1;
@@ -314,6 +354,56 @@ export class EquipmentSyncService {
         });
       }
     }
+  }
+
+  /**
+   * จับคู่ owner (ชื่อ-สกุลข้อความอิสระจาก MOPH) กับ user ที่มีอยู่แล้วก่อนเสมอ (เทียบชื่อเต็ม trim ตรงตัว — ถ้าเป็น
+   * staff จริงที่มีบัญชีอยู่แล้วจะได้ผูกกับบัญชีเดิม ไม่สร้างซ้ำ) ถ้าไม่พบให้สร้าง user ใหม่แบบ placeholder:
+   * is_active=false + รหัสผ่านสุ่มทิ้ง (login ไม่ได้จนกว่าแอดมินจะเปิดใช้งาน/รีเซ็ตรหัสผ่านเอง), ไม่ระบุ department
+   * (owner คนเดียวอาจเป็นเจ้าของครุภัณฑ์คนละหน่วยงานกัน ไม่มีค่าที่ถูกต้องเดียวให้เดา)
+   */
+  private async resolveOwnerUserId(rawOwner: string | null, runCtx: IRunContext): Promise<string | null> {
+    const fullName = rawOwner?.trim();
+    if (!fullName || !runCtx.ownerRoleId) return null;
+
+    const existingId = runCtx.ownerUserIndex.get(fullName);
+    if (existingId) return existingId;
+
+    const username = this.pickAvailableUsername(fullName, runCtx.usedUsernames);
+    const passwordHash = await bcrypt.hash(randomBytes(24).toString('base64url'), env.BCRYPT_SALT_ROUNDS);
+
+    try {
+      const user = await this.userRepo.createMinimal({
+        id: randomUUID(),
+        username,
+        email: `${username}@${OWNER_PLACEHOLDER_EMAIL_DOMAIN}`,
+        passwordHash,
+        fullName,
+        gender: inferGenderFromName(fullName),
+        roleId: runCtx.ownerRoleId,
+        isActive: false,
+        mustChangePassword: true,
+      });
+      runCtx.ownerUserIndex.set(fullName, user.id);
+      runCtx.usedUsernames.add(username);
+      return user.id;
+    } catch (err) {
+      logger.warn(`[equipment-sync] สร้าง user จากชื่อ owner "${fullName}" ไม่สำเร็จ: ${err instanceof Error ? err.message : String(err)} — ข้าม ownerUserId ให้ครุภัณฑ์นี้`);
+      return null;
+    }
+  }
+
+  private pickAvailableUsername(fullName: string, usedUsernames: Set<string>): string {
+    const base = slugifyUsername(fullName);
+    if (!usedUsernames.has(base)) return base;
+
+    let suffix = 2;
+    let candidate = `${base}${suffix}`;
+    while (usedUsernames.has(candidate)) {
+      suffix += 1;
+      candidate = `${base}${suffix}`;
+    }
+    return candidate;
   }
 
   private isUniqueConstraintError(err: unknown): boolean {
