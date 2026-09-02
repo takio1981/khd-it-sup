@@ -44,8 +44,9 @@
         @if (showSetupForm()) {
           <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4 pt-1">
             <p class="text-sm text-neutral-500 -mt-1">
-              เครื่องนี้ยังไม่เคยตั้งค่า PIN ไว้ — ตั้ง PIN 6 หลักสำหรับ<span class="font-medium">เครื่องนี้เท่านั้น</span>
-              เพื่อเริ่มใช้งาน
+              เครื่องนี้ยังไม่มี PIN ที่ใช้งานได้อยู่ (ยังไม่เคยตั้งค่า หรือเคยตั้งไว้แต่ถูกยกเลิกไปแล้ว เช่น กด "ลืมอุปกรณ์นี้"
+              หรือ "ปิดใช้งาน PIN ทุกอุปกรณ์" ก่อนหน้านี้) — ตั้ง PIN 6 หลักสำหรับ<span class="font-medium">เครื่องนี้เท่านั้น</span>
+              เพื่อเริ่มใช้งานอีกครั้ง
             </p>
 
             <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
