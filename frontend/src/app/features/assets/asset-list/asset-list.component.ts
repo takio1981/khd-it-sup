@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
@@ -50,6 +51,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
   imports: [
     RouterLink,
     FormsModule,
+    DatePipe,
     MatTableModule,
     MatPaginatorModule,
     MatFormFieldModule,
@@ -78,13 +80,18 @@ export class AssetListComponent {
     'select',
     'assetNumber',
     'category',
+    'equipClassificationName',
     'brandModel',
     'department',
     'owner',
     'acquisitionType',
     'status',
+    'expand',
     'actions',
   ];
+  /** แถวรายละเอียดที่ขยายลงมา (multiTemplateDataRows) — ใช้ colspan คลุมทั้งแถว จึงไม่ต้องมีชื่อคอลัมน์ตรงกับ displayedColumns */
+  readonly detailColumns = ['expandedDetail'];
+  readonly expandedId = signal<string | null>(null);
   readonly assets = signal<IAsset[]>([]);
   readonly categories = signal<IAssetCategory[]>([]);
   readonly departments = signal<IDepartment[]>([]);
@@ -174,6 +181,19 @@ export class AssetListComponent {
 
   acquisitionTypeLabel(code: string): string {
     return getAcquisitionTypeLabel(code);
+  }
+
+  /** คลิกที่แถว (หรือปุ่ม dropdown) เพื่อขยาย/ยุบแถวรายละเอียดในหน้าเดิม — ไม่เปลี่ยนหน้า ต่างจาก viewAsset ที่ไปหน้ารายละเอียดเต็ม */
+  toggleExpand(asset: IAsset): void {
+    this.expandedId.set(this.expandedId() === asset.id ? null : asset.id);
+  }
+
+  isExpanded(asset: IAsset): boolean {
+    return this.expandedId() === asset.id;
+  }
+
+  locationLabel(asset: IAsset): string {
+    return [asset.building?.name, asset.floor?.name, asset.room?.name].filter(Boolean).join(' / ');
   }
 
   toggleSelectAll(): void {
