@@ -37,22 +37,31 @@ const OVERVIEW_DIAGRAM = `flowchart TD
   NOTI["ระบบแจ้งเตือนหลายช่องทาง"]
   AUDIT[("ประวัติการใช้งานระบบ (Audit Log)")]
 
-  MOPH --> ASSETDB
-  ASSETDB -->|"ออก QR Code"| QR
-  QR --> RESOLVE
-  RESOLVE -->|"แจ้งซ่อม"| TICKET
-  RESOLVE -->|"ยืม/คืน"| LOAN
-  TICKET -->|"เบิก/จองอะไหล่"| PARTS
-  TICKET -->|"เกินขีดความสามารถซ่อมเอง"| VENDOR
-  VENDOR -->|"รับเครื่องคืน"| TICKET
-  TICKET -->|"ออกใบแจ้งซ่อม/ใบส่งซ่อม"| DOC
+  MOPH e1@--> ASSETDB
+  ASSETDB e2@-->|"ออก QR Code"| QR
+  QR e3@--> RESOLVE
+  RESOLVE e4@-->|"แจ้งซ่อม"| TICKET
+  RESOLVE e5@-->|"ยืม/คืน"| LOAN
+  TICKET e6@-->|"เบิก/จองอะไหล่"| PARTS
+  TICKET e7@-->|"เกินขีดความสามารถซ่อมเอง"| VENDOR
+  VENDOR e8@-->|"รับเครื่องคืน"| TICKET
+  TICKET e9@-->|"ออกใบแจ้งซ่อม/ใบส่งซ่อม"| DOC
   TICKET -.->|"ทุกการเปลี่ยนสถานะ"| NOTI
   LOAN -.->|"ยืม/คืนสำเร็จ"| NOTI
   TICKET -.-> AUDIT
   LOAN -.-> AUDIT
   PARTS -.-> AUDIT
   VENDOR -.-> AUDIT
-  ASSETDB -.-> AUDIT`;
+  ASSETDB -.-> AUDIT
+  e1@{ animate: true }
+  e2@{ animate: true }
+  e3@{ animate: true }
+  e4@{ animate: true }
+  e5@{ animate: true }
+  e6@{ animate: true }
+  e7@{ animate: true }
+  e8@{ animate: true }
+  e9@{ animate: true }`;
 
 const TICKET_DIAGRAM = `flowchart TD
   START(["ผู้ใช้แจ้งซ่อม<br/>(สแกน QR หรือหน้าเว็บ)"])
@@ -76,30 +85,47 @@ const TICKET_DIAGRAM = `flowchart TD
   SIGN1[/"หัวหน้างาน/กลุ่มงานผู้แจ้ง<br/>ลงนามรับทราบ (ไม่บังคับ ไม่กันขั้นตอน)"/]
   SIGN2[/"หัวหน้ากลุ่มงานสุขภาพดิจิทัล<br/>ลงนามรับรองผล (ไม่บังคับ ไม่กันขั้นตอน)"/]
 
-  START --> DUPCHECK
-  DUPCHECK -->|"มี"| BLOCK
-  DUPCHECK -->|"ไม่มี"| SUBMITTED
-  SUBMITTED -->|"ไอทีรับเรื่อง"| RECEIVED
-  RECEIVED -->|"ตรวจสอบเบื้องต้น"| REVIEW
-  REVIEW --> DIAG
+  START e1@--> DUPCHECK
+  DUPCHECK e2@-->|"มี"| BLOCK
+  DUPCHECK e3@-->|"ไม่มี"| SUBMITTED
+  SUBMITTED e4@-->|"ไอทีรับเรื่อง"| RECEIVED
+  RECEIVED e5@-->|"ตรวจสอบเบื้องต้น"| REVIEW
+  REVIEW e6@--> DIAG
   RECEIVED -.-> ASSIGN
   SUBMITTED -.-> SIGN1
-  DIAG --> OUTCOME
-  OUTCOME -->|"ซ่อมได้ทันที"| REPAIRING
-  OUTCOME -->|"ต้องรออะไหล่"| PARTS
-  OUTCOME -->|"เกินขีดความสามารถ"| VENDOR
+  DIAG e7@--> OUTCOME
+  OUTCOME e8@-->|"ซ่อมได้ทันที"| REPAIRING
+  OUTCOME e9@-->|"ต้องรออะไหล่"| PARTS
+  OUTCOME e10@-->|"เกินขีดความสามารถ"| VENDOR
   DIAG -.-> SIGN2
-  PARTS -->|"อะไหล่พร้อม"| REPAIRING
-  REPAIRING -->|"ซ่อมเสร็จ"| TESTING
-  VENDOR -->|"รับเครื่องคืนจากร้าน"| TESTING
-  TESTING -->|"ทดสอบผ่าน"| COMPLETED
-  COMPLETED -->|"คืนอุปกรณ์ให้ผู้ใช้"| RETURNED
-  RETURNED -->|"ผู้ใช้ตรวจรับ"| ACCEPT
-  ACCEPT -->|"ปิดงาน"| CLOSED
+  PARTS e11@-->|"อะไหล่พร้อม"| REPAIRING
+  REPAIRING e12@-->|"ซ่อมเสร็จ"| TESTING
+  VENDOR e13@-->|"รับเครื่องคืนจากร้าน"| TESTING
+  TESTING e14@-->|"ทดสอบผ่าน"| COMPLETED
+  COMPLETED e15@-->|"คืนอุปกรณ์ให้ผู้ใช้"| RETURNED
+  RETURNED e16@-->|"ผู้ใช้ตรวจรับ"| ACCEPT
+  ACCEPT e17@-->|"ปิดงาน"| CLOSED
   SUBMITTED -.->|"ยกเลิก"| CANCELLED
   RECEIVED -.->|"ยกเลิก"| CANCELLED
   REVIEW -.->|"ยกเลิก"| CANCELLED
-  VENDOR -.->|"ยกเลิก"| CANCELLED`;
+  VENDOR -.->|"ยกเลิก"| CANCELLED
+  e1@{ animate: true }
+  e2@{ animate: true }
+  e3@{ animate: true }
+  e4@{ animate: true }
+  e5@{ animate: true }
+  e6@{ animate: true }
+  e7@{ animate: true }
+  e8@{ animate: true }
+  e9@{ animate: true }
+  e10@{ animate: true }
+  e11@{ animate: true }
+  e12@{ animate: true }
+  e13@{ animate: true }
+  e14@{ animate: true }
+  e15@{ animate: true }
+  e16@{ animate: true }
+  e17@{ animate: true }`;
 
 const LOAN_DIAGRAM = `flowchart TD
   START(["สแกน QR หรือเลือกครุภัณฑ์ที่ต้องการยืม"])
@@ -111,13 +137,19 @@ const LOAN_DIAGRAM = `flowchart TD
   RETURNFORM[/"กรอกสภาพตอนคืน"/]
   RETURNED(["คืนแล้ว (RETURNED)<br/>แจ้งเตือนคืนสำเร็จ"])
 
-  START --> CHECK
-  CHECK -->|"ถูกยืมอยู่"| BLOCK
-  CHECK -->|"ว่าง"| FORM
-  FORM --> BORROWED
+  START e1@--> CHECK
+  CHECK e2@-->|"ถูกยืมอยู่"| BLOCK
+  CHECK e3@-->|"ว่าง"| FORM
+  FORM e4@--> BORROWED
   BORROWED -.-> NOTE1
-  BORROWED -->|"คืนอุปกรณ์"| RETURNFORM
-  RETURNFORM --> RETURNED`;
+  BORROWED e5@-->|"คืนอุปกรณ์"| RETURNFORM
+  RETURNFORM e6@--> RETURNED
+  e1@{ animate: true }
+  e2@{ animate: true }
+  e3@{ animate: true }
+  e4@{ animate: true }
+  e5@{ animate: true }
+  e6@{ animate: true }`;
 
 const VENDOR_DIAGRAM = `flowchart TD
   TRIGGER(["ผลตรวจสอบเบื้องต้น = ส่งซ่อมภายนอก<br/>(จากผัง SOP งานแจ้งซ่อม)"])
@@ -133,9 +165,19 @@ const VENDOR_DIAGRAM = `flowchart TD
   INSPECTED["ตรวจสอบเครื่องที่ได้คืน (INSPECTED)"]
   COMPLETED(["เสร็จสิ้น (COMPLETED)"])
 
-  TRIGGER --> CREATE --> QREQ --> QREC --> APPROVED --> PO --> SENT --> INREPAIR --> RETURNED
+  TRIGGER e1@--> CREATE e2@--> QREQ e3@--> QREC e4@--> APPROVED e5@--> PO e6@--> SENT e7@--> INREPAIR e8@--> RETURNED
   RETURNED -.-> AUTOBACK
-  RETURNED --> INSPECTED --> COMPLETED`;
+  RETURNED e9@--> INSPECTED e10@--> COMPLETED
+  e1@{ animate: true }
+  e2@{ animate: true }
+  e3@{ animate: true }
+  e4@{ animate: true }
+  e5@{ animate: true }
+  e6@{ animate: true }
+  e7@{ animate: true }
+  e8@{ animate: true }
+  e9@{ animate: true }
+  e10@{ animate: true }`;
 
 const PARTS_DIAGRAM = `flowchart TD
   PART[("รายการอะไหล่ (รหัส/ชื่อ/จำนวนคงเหลือ)")]
@@ -148,12 +190,22 @@ const PARTS_DIAGRAM = `flowchart TD
   LINK[/"ผูกกับใบแจ้งซ่อม (ถ้ามี)"/]
   DONE(["บันทึกยอดคงเหลือใหม่ + ประวัติธุรกรรม"])
 
-  PART --> TYPE
-  TYPE -->|"เพิ่มยอด"| RECEIVE --> DONE
-  TYPE -->|"ลดยอด"| OUT --> STOCKCHECK
-  STOCKCHECK -->|"ไม่พอ"| REJECT
-  STOCKCHECK -->|"พอ"| LINK --> DONE
-  TYPE -->|"ปรับยอดตรง ๆ"| ADJUST --> DONE`;
+  PART e1@--> TYPE
+  TYPE e2@-->|"เพิ่มยอด"| RECEIVE e3@--> DONE
+  TYPE e4@-->|"ลดยอด"| OUT e5@--> STOCKCHECK
+  STOCKCHECK e6@-->|"ไม่พอ"| REJECT
+  STOCKCHECK e7@-->|"พอ"| LINK e8@--> DONE
+  TYPE e9@-->|"ปรับยอดตรง ๆ"| ADJUST e10@--> DONE
+  e1@{ animate: true }
+  e2@{ animate: true }
+  e3@{ animate: true }
+  e4@{ animate: true }
+  e5@{ animate: true }
+  e6@{ animate: true }
+  e7@{ animate: true }
+  e8@{ animate: true }
+  e9@{ animate: true }
+  e10@{ animate: true }`;
 
 const NOTIFICATION_DIAGRAM = `flowchart TD
   EVENT{"เหตุการณ์ในระบบ<br/>(แจ้งซ่อมใหม่ / เปลี่ยนสถานะ / มอบหมายช่าง / ยืม-คืน ฯลฯ)"}
@@ -164,11 +216,20 @@ const NOTIFICATION_DIAGRAM = `flowchart TD
   PUSH["แจ้งเตือนในระบบ (กระดิ่ง)<br/>+ อัปเดตแบบเรียลไทม์ (Socket.IO)"]
   LOG[("บันทึกประวัติการแจ้งเตือน<br/>ทุกช่องทาง ทั้งสำเร็จและล้มเหลว")]
 
-  EVENT --> ROUTE
-  ROUTE --> EMAIL --> LOG
-  ROUTE --> TG --> LOG
-  ROUTE --> LINE --> LOG
-  ROUTE --> PUSH --> LOG`;
+  EVENT e1@--> ROUTE
+  ROUTE e2@--> EMAIL e3@--> LOG
+  ROUTE e4@--> TG e5@--> LOG
+  ROUTE e6@--> LINE e7@--> LOG
+  ROUTE e8@--> PUSH e9@--> LOG
+  e1@{ animate: true }
+  e2@{ animate: true }
+  e3@{ animate: true }
+  e4@{ animate: true }
+  e5@{ animate: true }
+  e6@{ animate: true }
+  e7@{ animate: true }
+  e8@{ animate: true }
+  e9@{ animate: true }`;
 
 const ASSET_DIAGRAM = `flowchart TD
   MANUAL[/"เจ้าหน้าที่กรอกข้อมูลครุภัณฑ์เอง"/]
@@ -184,13 +245,24 @@ const ASSET_DIAGRAM = `flowchart TD
   TICKETFLOW(["ไปที่ผัง SOP งานแจ้งซ่อม"])
   LOANFLOW(["ไปที่ผัง SOP ยืม-คืนครุภัณฑ์"])
 
-  MANUAL --> CREATE
-  MOPH --> CHECKDUP
-  CHECKDUP -->|"ตรง (นำเข้าซ้ำ)"| UPDATE
-  CHECKDUP -->|"ไม่ตรง (รายการใหม่)"| CREATE
-  CREATE --> QR --> PRINT --> SCAN --> RESOLVE --> ACTION
-  ACTION -->|"แจ้งซ่อม"| TICKETFLOW
-  ACTION -->|"ยืม/คืน"| LOANFLOW`;
+  MANUAL e1@--> CREATE
+  MOPH e2@--> CHECKDUP
+  CHECKDUP e3@-->|"ตรง (นำเข้าซ้ำ)"| UPDATE
+  CHECKDUP e4@-->|"ไม่ตรง (รายการใหม่)"| CREATE
+  CREATE e5@--> QR e6@--> PRINT e7@--> SCAN e8@--> RESOLVE e9@--> ACTION
+  ACTION e10@-->|"แจ้งซ่อม"| TICKETFLOW
+  ACTION e11@-->|"ยืม/คืน"| LOANFLOW
+  e1@{ animate: true }
+  e2@{ animate: true }
+  e3@{ animate: true }
+  e4@{ animate: true }
+  e5@{ animate: true }
+  e6@{ animate: true }
+  e7@{ animate: true }
+  e8@{ animate: true }
+  e9@{ animate: true }
+  e10@{ animate: true }
+  e11@{ animate: true }`;
 
 const DOCUMENT_DIAGRAM = `flowchart TD
   START(["เลือกใบแจ้งซ่อม + เลือกแบบฟอร์มเอกสาร"])
@@ -200,7 +272,12 @@ const DOCUMENT_DIAGRAM = `flowchart TD
   SAVE[("บันทึกประวัติเอกสารที่ออกแล้ว ผูกกับใบแจ้งซ่อม")]
   DONE(["ดาวน์โหลด/พิมพ์เอกสารได้ทันที"])
 
-  START --> RENDER --> UPLOAD --> RUNNO --> SAVE --> DONE`;
+  START e1@--> RENDER e2@--> UPLOAD e3@--> RUNNO e4@--> SAVE e5@--> DONE
+  e1@{ animate: true }
+  e2@{ animate: true }
+  e3@{ animate: true }
+  e4@{ animate: true }
+  e5@{ animate: true }`;
 
 @Component({
   selector: 'khd-workflow-diagrams',
@@ -208,6 +285,7 @@ const DOCUMENT_DIAGRAM = `flowchart TD
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatTabsModule, MatProgressSpinnerModule, IconComponent],
   templateUrl: './workflow-diagrams.component.html',
+  styleUrl: './workflow-diagrams.component.scss',
 })
 export class WorkflowDiagramsComponent {
   private readonly sanitizer = inject(DomSanitizer);
@@ -373,7 +451,7 @@ export class WorkflowDiagramsComponent {
       const svgs: Record<string, SafeHtml> = {};
       for (const section of all) {
         const { svg } = await mermaid.render(`khd-mermaid-${section.key}-${mode}`, section.definition!);
-        svgs[section.key] = this.sanitizer.bypassSecurityTrustHtml(svg);
+        svgs[section.key] = this.sanitizer.bypassSecurityTrustHtml(this.staggerEntranceAnimation(svg));
       }
       this.svgByKey.set(svgs);
     } catch (err) {
@@ -381,6 +459,28 @@ export class WorkflowDiagramsComponent {
       console.error('[workflow-diagrams] mermaid render failed', err);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** ไล่เวลาหน่วง (animation-delay) ให้แต่ละโหนดค่อยๆ ปรากฏทีละตัวตามลำดับที่ mermaid วาดจริง แทนที่จะกระพริบพร้อมกันทั้งภาพ
+   * — ทำที่นี่แทนใน CSS เพราะจำนวนโหนดแต่ละผังไม่เท่ากัน กำหนดล่วงหน้าด้วย nth-child ไม่ครอบคลุม
+   * ใช้ div.innerHTML (parser แบบ HTML ที่ผ่อนปรน) แทน DOMParser('image/svg+xml') เพราะ SVG ที่ mermaid สร้างตอนเปิด
+   * htmlLabels ไม่ใช่ XML ที่ well-formed จริง (มี foreignObject/div ปนอยู่) ทำให้ parse แบบ XML strict ล้มเหลวเงียบๆ
+   * ล้มเหลวได้อย่างปลอดภัย: คืนค่า SVG เดิมถ้ามีปัญหา (แอนิเมชันเป็นแค่ของตกแต่ง ไม่ควรทำให้ผังทั้งหมดหายไป) */
+  private staggerEntranceAnimation(svg: string): string {
+    try {
+      const container = document.createElement('div');
+      container.innerHTML = svg;
+
+      const STEP_MS = 35;
+      const MAX_DELAY_MS = 500;
+      container.querySelectorAll('.node').forEach((node, i) => {
+        (node as SVGElement).style.animationDelay = `${Math.min(i * STEP_MS, MAX_DELAY_MS)}ms`;
+      });
+
+      return container.innerHTML;
+    } catch {
+      return svg;
     }
   }
 

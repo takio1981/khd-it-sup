@@ -28,9 +28,11 @@
         <span class="inline-block h-4 w-7 border-2 border-brand-primary dark:border-emerald-400 shrink-0" style="clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%)"></span>
         ข้อมูลเข้า/ออก
       </div>
-      <div class="flex items-center gap-2">
-        <span class="inline-block h-1 w-7 bg-brand-primary dark:bg-emerald-400 shrink-0"></span>
-        ลำดับขั้นตอนหลัก
+      <div class="flex items-center gap-2 text-brand-primary dark:text-emerald-400">
+        <svg width="28" height="8" viewBox="0 0 28 8" class="shrink-0" aria-hidden="true">
+          <line x1="1" y1="4" x2="27" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="khd-legend-flow-line" />
+        </svg>
+        <span class="text-neutral-600 dark:text-neutral-400">ลำดับขั้นตอนหลัก (เส้นไหล = ทิศทางข้อมูล)</span>
       </div>
       <div class="flex items-center gap-2">
         <span class="inline-block h-0 w-7 border-t-2 border-dashed border-brand-primary dark:border-emerald-400 shrink-0"></span>
@@ -57,7 +59,7 @@
       </div>
       <p class="text-xs text-neutral-500 mb-3">{{ overview.description }}</p>
       <div class="overflow-x-auto rounded-xl bg-white dark:bg-neutral-900 border border-black/5 dark:border-white/10 p-3">
-        <div class="min-w-[720px] flex justify-center [&_svg]:max-w-none" [innerHTML]="svgFor(overview.key)"></div>
+        <div class="khd-mermaid-diagram min-w-[720px] flex justify-center [&_svg]:max-w-none" [innerHTML]="svgFor(overview.key)"></div>
       </div>
       @if (overview.notes.length > 0) {
         <ul class="list-disc list-inside space-y-1 text-xs text-neutral-500 mt-3">
@@ -82,7 +84,7 @@
 
               @if (section.definition) {
                 <div class="overflow-x-auto rounded-xl bg-white dark:bg-neutral-900 border border-black/5 dark:border-white/10 p-3">
-                  <div class="min-w-[640px] flex justify-center [&_svg]:max-w-none" [innerHTML]="svgFor(section.key)"></div>
+                  <div class="khd-mermaid-diagram min-w-[640px] flex justify-center [&_svg]:max-w-none" [innerHTML]="svgFor(section.key)"></div>
                 </div>
               } @else if (section.key === 'roles') {
                 <div class="overflow-x-auto rounded-xl border border-black/5 dark:border-white/10">

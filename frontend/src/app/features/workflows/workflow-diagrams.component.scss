@@ -1,0 +1,77 @@
+/**
+ * สไตล์ผัง mermaid ที่ฉีดเข้ามาผ่าน [innerHTML] — ต้องใช้ ::ng-deep เจาะ view encapsulation
+ * เพราะ Angular ไม่ใส่ scope attribute ให้กับ markup ที่แทรกด้วย innerHTML โดยตรง
+ * ขอบเขตจำกัดอยู่แค่ใต้ .khd-mermaid-diagram ของ component นี้เท่านั้น ไม่รั่วไปหน้าอื่น
+ *
+ * เส้นเชื่อมที่ไหล (จุดวิ่ง) ใช้ฟีเจอร์ animate ของ mermaid เองผ่าน edge metadata
+ * (`eN@{ animate: true }` ในนิยามผังแต่ละอัน) ไม่ได้ทำ CSS เองทั้งหมด — แต่ mermaid ตั้งความเร็ว
+ * เริ่มต้นไว้ที่รอบละ 20 วินาที (แทบไม่เห็นการเคลื่อนไหว) จึงต้อง override animation-duration ให้เร็วขึ้น
+ * ด้วย !important เพราะ <style> ที่ mermaid ฝังมาในตัว SVG เอง อยู่หลัง stylesheet นี้ใน DOM
+ * (ชนะ tie-break ตามลำดับถ้าไม่ใช้ !important)
+ */
+
+/* เส้นตัวอย่างในคำอธิบายสัญลักษณ์ด้านบนผัง — เป็น markup ของ component เอง (ไม่ใช่ innerHTML) จึงไม่ต้องใช้ ::ng-deep */
+@keyframes khd-legend-flow {
+  to {
+    stroke-dashoffset: -14;
+  }
+}
+
+.khd-legend-flow-line {
+  stroke-dasharray: 4 3;
+  animation: khd-legend-flow 1s linear infinite;
+}
+
+@keyframes khd-node-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+::ng-deep .khd-mermaid-diagram {
+  svg {
+    display: block;
+  }
+
+  /* เส้นลำดับขั้นตอนหลักที่ตั้ง animate:true ไว้ — เร่งจังหวะจุดไหลให้เห็นทิศทางข้อมูลชัดเจนภายในไม่กี่วินาที */
+  .edge-animation-fast,
+  .edge-animation-slow {
+    animation-duration: 1.4s !important;
+  }
+
+  /* ป้ายกำกับเส้น (ข้อความบนเส้นเชื่อม) — เพิ่มพื้นหลังโค้งมนอ่านง่ายขึ้นเวลาเส้นไขว้กัน */
+  .edgeLabel .labelBkg {
+    border-radius: 4px;
+  }
+
+  /* การ์ดโหนดแต่ละขั้นตอน — ทยอยปรากฏตอนโหลด (ลำดับกำหนดจาก animation-delay ที่ตั้งให้ทาง TS) */
+  .node {
+    animation: khd-node-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  @media (hover: hover) {
+    .node {
+      transition: filter 0.15s ease, transform 0.15s ease;
+      transform-box: fill-box;
+      transform-origin: center;
+      cursor: default;
+    }
+    .node:hover {
+      transform: scale(1.035);
+      filter: drop-shadow(0 6px 14px rgba(0, 108, 69, 0.35));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .edge-animation-fast,
+    .edge-animation-slow,
+    .node {
+      animation: none !important;
+    }
+  }
+}
