@@ -313,6 +313,21 @@ export class WorkflowDiagramsComponent {
   readonly renderError = signal<string | null>(null);
   private readonly svgByKey = signal<Record<string, SafeHtml>>({});
 
+  /** ความเร็วเส้นไหลของเส้นลำดับขั้นตอนหลัก (วินาทีต่อรอบ) — ค่านี้เองที่ทำให้ผังวาดใหม่ (ผ่าน effect ใน constructor)
+   * ส่วน flowSpeedDisplay ไว้โชว์ตัวเลขสดระหว่างลากสไลเดอร์เฉยๆ ไม่ trigger re-render ทุกพิกเซลที่ลาก (แพงเกินไป
+   * ต้อง mermaid.render() ใหม่ทั้ง 9 ผัง) — อัปเดต flowSpeedSec จริงเฉพาะตอนปล่อยเมาส์ (change event) เท่านั้น */
+  readonly flowSpeedDisplay = signal(8);
+  readonly flowSpeedSec = signal(8);
+
+  onSpeedInput(value: number): void {
+    this.flowSpeedDisplay.set(value);
+  }
+
+  onSpeedChange(value: number): void {
+    this.flowSpeedDisplay.set(value);
+    this.flowSpeedSec.set(value);
+  }
+
   readonly overview: IWorkflowSection = {
     key: 'overview',
     title: 'ภาพรวมการเชื่อมโยงและการส่งข้อมูลระหว่างระบบ',
@@ -443,7 +458,8 @@ export class WorkflowDiagramsComponent {
   constructor() {
     effect(() => {
       const mode = this.themeService.mode();
-      void this.renderAll(mode);
+      const speedSec = this.flowSpeedSec();
+      void this.renderAll(mode, speedSec);
     });
 
     // เฝ้าดู DOM เอง (แทนการเติมคลาส .khd-in ครั้งเดียวหลัง renderAll()) เพราะ mat-tab-group ไม่ได้ผูกเนื้อหาทุกแท็บ
@@ -475,7 +491,7 @@ export class WorkflowDiagramsComponent {
     return this.svgByKey()[key] ?? null;
   }
 
-  private async renderAll(mode: ThemeMode): Promise<void> {
+  private async renderAll(mode: ThemeMode, mainDurationSec: number): Promise<void> {
     this.loading.set(true);
     this.renderError.set(null);
 
@@ -495,7 +511,7 @@ export class WorkflowDiagramsComponent {
       for (const section of all) {
         const definition = section.definition! + this.buildDecisionColorSuffix(section.key, mode);
         const { svg } = await mermaid.render(`khd-mermaid-${section.key}-${mode}`, definition);
-        svgs[section.key] = this.sanitizer.bypassSecurityTrustHtml(this.enhanceSvg(svg, section.key));
+        svgs[section.key] = this.sanitizer.bypassSecurityTrustHtml(this.enhanceSvg(svg, section.key, mainDurationSec));
       }
       this.svgByKey.set(svgs);
       // การเติมคลาส .khd-in ให้โหนดที่เพิ่งแทรกเข้า DOM ทำผ่าน MutationObserver ใน constructor แทน (ดูคอมเมนต์ที่นั่น)
@@ -512,7 +528,7 @@ export class WorkflowDiagramsComponent {
    * — ใช้ div.innerHTML (parser แบบ HTML ที่ผ่อนปรน) แทน DOMParser('image/svg+xml') เพราะ SVG ที่ mermaid สร้างตอนเปิด
    * htmlLabels ไม่ใช่ XML ที่ well-formed จริง (มี foreignObject/div ปนอยู่) ทำให้ parse แบบ XML strict ล้มเหลวเงียบๆ
    * ล้มเหลวได้อย่างปลอดภัย: คืนค่า SVG เดิมถ้ามีปัญหา (แอนิเมชันเป็นแค่ของตกแต่ง ไม่ควรทำให้ผังทั้งหมดหายไป) */
-  private enhanceSvg(svg: string, diagramKey: string): string {
+  private enhanceSvg(svg: string, diagramKey: string, mainDurationSec: number): string {
     try {
       const container = document.createElement('div');
       container.innerHTML = svg;
@@ -523,8 +539,18 @@ export class WorkflowDiagramsComponent {
         node.style.transitionDelay = `${Math.min(i * STEP_MS, MAX_DELAY_MS)}ms`;
       });
 
+      // เส้นผลข้างเคียงช้ากว่าเส้นหลักเสมอ (คูณ 1.8) ให้ยังอ่านออกว่าเป็นเส้นทางรอง แม้ผู้ใช้จะปรับสไลเดอร์ความเร็วเอง
+      // ก็ตาม — ทุกค่าคำนวณจากตัวเลขเดียว (mainDurationSec จากสไลเดอร์มุมบนขวาของหน้า) ไม่ hardcode ไว้ใน CSS อีกต่อไป
+      // เพราะต้องปรับสดได้ตาม speed ที่ผู้ใช้เลือก — ดู renderAll()/flowSpeedSec ที่ trigger ให้ฟังก์ชันนี้รันใหม่ทุกครั้ง
+      // ที่ค่าเปลี่ยน (component ไม่ได้ animation-duration ใน SCSS แบบ !important อีกแล้ว เพื่อให้ inline style นี้ชนะ)
+      const secondaryDurationSec = mainDurationSec * 1.8;
+      const mainDotDurationSec = mainDurationSec * 1.2;
+      const secondaryDotDurationSec = secondaryDurationSec * 1.1;
+      const mainBlinkSec = Math.max(0.9, mainDurationSec * 0.3);
+      const secondaryBlinkSec = Math.max(1.2, secondaryDurationSec * 0.28);
+
       // จุดกระพริบเคลื่อนที่ — ใส่ทั้งเส้นลำดับขั้นตอนหลัก (edge-animation-fast) และเส้นผลข้างเคียง/แจ้งเตือน
-      // (edge-animation-slow) แต่ให้จังหวะ/ขนาดต่างกัน เพื่อให้ยังแยกออกว่าเส้นไหนเป็นทางหลัก/ทางรอง แม้ทั้งคู่จะมีจุดวิ่งแล้ว
+      // (edge-animation-slow) แต่ให้จังหวะ/ขนาด/สีต่างกัน เพื่อให้ยังแยกออกว่าเส้นไหนเป็นทางหลัก/ทางรอง
       const svgEl = container.querySelector('svg');
       const animatedPaths = Array.from(
         container.querySelectorAll<SVGPathElement>('.edgePaths path.edge-animation-fast, .edgePaths path.edge-animation-slow'),
@@ -533,6 +559,7 @@ export class WorkflowDiagramsComponent {
         const pathId = `khd-edge-${diagramKey}-${i}`;
         path.setAttribute('id', pathId);
         const isSecondary = path.classList.contains('edge-animation-slow');
+        path.style.animationDuration = `${isSecondary ? secondaryDurationSec : mainDurationSec}s`;
 
         const svgNs = 'http://www.w3.org/2000/svg';
         const xlinkNs = 'http://www.w3.org/1999/xlink';
@@ -541,7 +568,7 @@ export class WorkflowDiagramsComponent {
         dot.setAttribute('class', isSecondary ? 'khd-flow-dot khd-flow-dot-secondary' : 'khd-flow-dot');
 
         const motion = document.createElementNS(svgNs, 'animateMotion');
-        motion.setAttribute('dur', isSecondary ? '9s' : '6s');
+        motion.setAttribute('dur', `${isSecondary ? secondaryDotDurationSec : mainDotDurationSec}s`);
         motion.setAttribute('repeatCount', 'indefinite');
         motion.setAttribute('rotate', 'auto');
         const mpath = document.createElementNS(svgNs, 'mpath');
@@ -552,7 +579,7 @@ export class WorkflowDiagramsComponent {
         const blink = document.createElementNS(svgNs, 'animate');
         blink.setAttribute('attributeName', 'opacity');
         blink.setAttribute('values', isSecondary ? '0.15;0.85;0.15' : '0.2;1;0.2');
-        blink.setAttribute('dur', isSecondary ? '2.2s' : '1.6s');
+        blink.setAttribute('dur', `${isSecondary ? secondaryBlinkSec : mainBlinkSec}s`);
         blink.setAttribute('repeatCount', 'indefinite');
 
         dot.appendChild(motion);
@@ -586,7 +613,10 @@ export class WorkflowDiagramsComponent {
     const c = config[key];
     if (!c) return '';
 
-    const linkStyleLine = `linkStyle ${c.linkIndexes.join(',')} stroke:${rejectStroke},stroke-width:2.5px;`;
+    // stroke ใส่ !important เพราะเส้นนี้เป็นเส้นหลัก (edge-animation-fast) อยู่แล้วด้วย ซึ่งตอนนี้มี CSS
+    // .edge-animation-fast{stroke:blue!important} คุมสีเริ่มต้นไว้ — ใบนี้ต้อง !important เช่นกันถึงจะชนะ (inline
+    // style ที่มี !important ชนะทุกกรณี รวมถึง class rule ที่ !important เหมือนกันด้วย)
+    const linkStyleLine = `linkStyle ${c.linkIndexes.join(',')} stroke:${rejectStroke} !important,stroke-width:2.5px;`;
     const classLine = `class ${c.nodeIds.join(',')} khdBlocked;`;
     return `\n${classDef}\n${linkStyleLine}\n${classLine}`;
   }
