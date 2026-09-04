@@ -58,7 +58,11 @@
     </mat-nav-list>
   </mat-sidenav>
 
-  <mat-sidenav-content class="relative bg-brand-background dark:bg-neutral-950">
+  <mat-sidenav-content
+    class="relative bg-brand-background dark:bg-neutral-950 transition-[margin-left] duration-200 ease-in-out"
+    [class.!ml-64]="!isMobile() && isSidebarExpanded()"
+    [class.!ml-[72px]]="!isMobile() && !isSidebarExpanded()"
+  >
     @if (watermarkSrc(); as src) {
       <khd-page-watermark [src]="src" />
     }
