@@ -46,13 +46,13 @@ const OVERVIEW_DIAGRAM = `flowchart TD
   TICKET e7@-->|"เกินขีดความสามารถซ่อมเอง"| VENDOR
   VENDOR e8@-->|"รับเครื่องคืน"| TICKET
   TICKET e9@-->|"ออกใบแจ้งซ่อม/ใบส่งซ่อม"| DOC
-  TICKET -.->|"ทุกการเปลี่ยนสถานะ"| NOTI
-  LOAN -.->|"ยืม/คืนสำเร็จ"| NOTI
-  TICKET -.-> AUDIT
-  LOAN -.-> AUDIT
-  PARTS -.-> AUDIT
-  VENDOR -.-> AUDIT
-  ASSETDB -.-> AUDIT
+  TICKET e10@-.->|"ทุกการเปลี่ยนสถานะ"| NOTI
+  LOAN e11@-.->|"ยืม/คืนสำเร็จ"| NOTI
+  TICKET e12@-.-> AUDIT
+  LOAN e13@-.-> AUDIT
+  PARTS e14@-.-> AUDIT
+  VENDOR e15@-.-> AUDIT
+  ASSETDB e16@-.-> AUDIT
   e1@{ animate: true }
   e2@{ animate: true }
   e3@{ animate: true }
@@ -61,7 +61,14 @@ const OVERVIEW_DIAGRAM = `flowchart TD
   e6@{ animate: true }
   e7@{ animate: true }
   e8@{ animate: true }
-  e9@{ animate: true }`;
+  e9@{ animate: true }
+  e10@{ animate: true, animation: slow }
+  e11@{ animate: true, animation: slow }
+  e12@{ animate: true, animation: slow }
+  e13@{ animate: true, animation: slow }
+  e14@{ animate: true, animation: slow }
+  e15@{ animate: true, animation: slow }
+  e16@{ animate: true, animation: slow }`;
 
 const TICKET_DIAGRAM = `flowchart TD
   START(["ผู้ใช้แจ้งซ่อม<br/>(สแกน QR หรือหน้าเว็บ)"])
@@ -91,13 +98,13 @@ const TICKET_DIAGRAM = `flowchart TD
   SUBMITTED e4@-->|"ไอทีรับเรื่อง"| RECEIVED
   RECEIVED e5@-->|"ตรวจสอบเบื้องต้น"| REVIEW
   REVIEW e6@--> DIAG
-  RECEIVED -.-> ASSIGN
-  SUBMITTED -.-> SIGN1
+  RECEIVED e18@-.-> ASSIGN
+  SUBMITTED e19@-.-> SIGN1
   DIAG e7@--> OUTCOME
   OUTCOME e8@-->|"ซ่อมได้ทันที"| REPAIRING
   OUTCOME e9@-->|"ต้องรออะไหล่"| PARTS
   OUTCOME e10@-->|"เกินขีดความสามารถ"| VENDOR
-  DIAG -.-> SIGN2
+  DIAG e20@-.-> SIGN2
   PARTS e11@-->|"อะไหล่พร้อม"| REPAIRING
   REPAIRING e12@-->|"ซ่อมเสร็จ"| TESTING
   VENDOR e13@-->|"รับเครื่องคืนจากร้าน"| TESTING
@@ -105,10 +112,10 @@ const TICKET_DIAGRAM = `flowchart TD
   COMPLETED e15@-->|"คืนอุปกรณ์ให้ผู้ใช้"| RETURNED
   RETURNED e16@-->|"ผู้ใช้ตรวจรับ"| ACCEPT
   ACCEPT e17@-->|"ปิดงาน"| CLOSED
-  SUBMITTED -.->|"ยกเลิก"| CANCELLED
-  RECEIVED -.->|"ยกเลิก"| CANCELLED
-  REVIEW -.->|"ยกเลิก"| CANCELLED
-  VENDOR -.->|"ยกเลิก"| CANCELLED
+  SUBMITTED e21@-.->|"ยกเลิก"| CANCELLED
+  RECEIVED e22@-.->|"ยกเลิก"| CANCELLED
+  REVIEW e23@-.->|"ยกเลิก"| CANCELLED
+  VENDOR e24@-.->|"ยกเลิก"| CANCELLED
   e1@{ animate: true }
   e2@{ animate: true }
   e3@{ animate: true }
@@ -125,7 +132,14 @@ const TICKET_DIAGRAM = `flowchart TD
   e14@{ animate: true }
   e15@{ animate: true }
   e16@{ animate: true }
-  e17@{ animate: true }`;
+  e17@{ animate: true }
+  e18@{ animate: true, animation: slow }
+  e19@{ animate: true, animation: slow }
+  e20@{ animate: true, animation: slow }
+  e21@{ animate: true, animation: slow }
+  e22@{ animate: true, animation: slow }
+  e23@{ animate: true, animation: slow }
+  e24@{ animate: true, animation: slow }`;
 
 const LOAN_DIAGRAM = `flowchart TD
   START(["สแกน QR หรือเลือกครุภัณฑ์ที่ต้องการยืม"])
@@ -141,7 +155,7 @@ const LOAN_DIAGRAM = `flowchart TD
   CHECK e2@-->|"ถูกยืมอยู่"| BLOCK
   CHECK e3@-->|"ว่าง"| FORM
   FORM e4@--> BORROWED
-  BORROWED -.-> NOTE1
+  BORROWED e7@-.-> NOTE1
   BORROWED e5@-->|"คืนอุปกรณ์"| RETURNFORM
   RETURNFORM e6@--> RETURNED
   e1@{ animate: true }
@@ -149,7 +163,8 @@ const LOAN_DIAGRAM = `flowchart TD
   e3@{ animate: true }
   e4@{ animate: true }
   e5@{ animate: true }
-  e6@{ animate: true }`;
+  e6@{ animate: true }
+  e7@{ animate: true, animation: slow }`;
 
 const VENDOR_DIAGRAM = `flowchart TD
   TRIGGER(["ผลตรวจสอบเบื้องต้น = ส่งซ่อมภายนอก<br/>(จากผัง SOP งานแจ้งซ่อม)"])
@@ -166,7 +181,7 @@ const VENDOR_DIAGRAM = `flowchart TD
   COMPLETED(["เสร็จสิ้น (COMPLETED)"])
 
   TRIGGER e1@--> CREATE e2@--> QREQ e3@--> QREC e4@--> APPROVED e5@--> PO e6@--> SENT e7@--> INREPAIR e8@--> RETURNED
-  RETURNED -.-> AUTOBACK
+  RETURNED e11@-.-> AUTOBACK
   RETURNED e9@--> INSPECTED e10@--> COMPLETED
   e1@{ animate: true }
   e2@{ animate: true }
@@ -177,7 +192,8 @@ const VENDOR_DIAGRAM = `flowchart TD
   e7@{ animate: true }
   e8@{ animate: true }
   e9@{ animate: true }
-  e10@{ animate: true }`;
+  e10@{ animate: true }
+  e11@{ animate: true, animation: slow }`;
 
 const PARTS_DIAGRAM = `flowchart TD
   PART[("รายการอะไหล่ (รหัส/ชื่อ/จำนวนคงเหลือ)")]
@@ -507,8 +523,8 @@ export class WorkflowDiagramsComponent {
         node.style.transitionDelay = `${Math.min(i * STEP_MS, MAX_DELAY_MS)}ms`;
       });
 
-      // จุดกระพริบเคลื่อนที่ — เฉพาะเส้นลำดับขั้นตอนหลักที่ตั้ง animate:true ไว้ (edge-animation-fast/-slow)
-      // ไม่ใส่บนเส้นผลข้างเคียง/แจ้งเตือน (เส้นประที่ไม่ animate) เพื่อให้ยังอ่านออกว่าเป็นเส้นทางรอง ไม่ใช่ลำดับหลัก
+      // จุดกระพริบเคลื่อนที่ — ใส่ทั้งเส้นลำดับขั้นตอนหลัก (edge-animation-fast) และเส้นผลข้างเคียง/แจ้งเตือน
+      // (edge-animation-slow) แต่ให้จังหวะ/ขนาดต่างกัน เพื่อให้ยังแยกออกว่าเส้นไหนเป็นทางหลัก/ทางรอง แม้ทั้งคู่จะมีจุดวิ่งแล้ว
       const svgEl = container.querySelector('svg');
       const animatedPaths = Array.from(
         container.querySelectorAll<SVGPathElement>('.edgePaths path.edge-animation-fast, .edgePaths path.edge-animation-slow'),
@@ -516,15 +532,16 @@ export class WorkflowDiagramsComponent {
       animatedPaths.forEach((path, i) => {
         const pathId = `khd-edge-${diagramKey}-${i}`;
         path.setAttribute('id', pathId);
+        const isSecondary = path.classList.contains('edge-animation-slow');
 
         const svgNs = 'http://www.w3.org/2000/svg';
         const xlinkNs = 'http://www.w3.org/1999/xlink';
         const dot = document.createElementNS(svgNs, 'circle');
-        dot.setAttribute('r', '5');
-        dot.setAttribute('class', 'khd-flow-dot');
+        dot.setAttribute('r', isSecondary ? '3.5' : '5');
+        dot.setAttribute('class', isSecondary ? 'khd-flow-dot khd-flow-dot-secondary' : 'khd-flow-dot');
 
         const motion = document.createElementNS(svgNs, 'animateMotion');
-        motion.setAttribute('dur', '4.5s');
+        motion.setAttribute('dur', isSecondary ? '9s' : '6s');
         motion.setAttribute('repeatCount', 'indefinite');
         motion.setAttribute('rotate', 'auto');
         const mpath = document.createElementNS(svgNs, 'mpath');
@@ -534,8 +551,8 @@ export class WorkflowDiagramsComponent {
 
         const blink = document.createElementNS(svgNs, 'animate');
         blink.setAttribute('attributeName', 'opacity');
-        blink.setAttribute('values', '0.2;1;0.2');
-        blink.setAttribute('dur', '1.6s');
+        blink.setAttribute('values', isSecondary ? '0.15;0.85;0.15' : '0.2;1;0.2');
+        blink.setAttribute('dur', isSecondary ? '2.2s' : '1.6s');
         blink.setAttribute('repeatCount', 'indefinite');
 
         dot.appendChild(motion);
