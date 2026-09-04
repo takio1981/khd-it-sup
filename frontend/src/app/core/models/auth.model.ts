@@ -99,6 +99,7 @@ export interface IPinStatusResponse {
   username?: string;
   fullName?: string;
   gender?: Gender | null;
+  avatarUrl?: string | null;
 }
 
 export interface IPinLoginRequest {
@@ -119,4 +120,5 @@ export interface IPinLoginMarker {
   username: string;
   fullName: string;
   gender: Gender | null;
+  avatarUrl: string | null;
 }

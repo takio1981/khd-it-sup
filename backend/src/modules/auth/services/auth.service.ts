@@ -12,7 +12,7 @@ import type { IAuthUser } from '@common/interfaces';
 import type { Permission } from '@common/constants/permissions.const';
 import type { RoleCode } from '@common/constants/roles.const';
 import { logger } from '@infrastructure/logger/logger';
-import { deleteUploadedFileByUrl } from '@infrastructure/storage/multer.config';
+import { deleteUploadedFileByUrl, readUploadedFileAsDataUri } from '@infrastructure/storage/multer.config';
 import { auditLogService } from '@modules/audit-log/services/auditLog.service';
 import { notificationService } from '@modules/notifications/services/notification.service';
 
@@ -46,6 +46,7 @@ export interface IPinDeviceStatus {
   username?: string;
   fullName?: string;
   gender?: UserWithRole['gender'];
+  avatarUrl?: string | null;
 }
 
 export interface IPinDeviceSummary {
@@ -367,6 +368,15 @@ export class AuthService {
   }
 
   /**
+   * แปลง avatarUrl (path ที่ต้อง login ก่อนถึงจะดึงได้ตามปกติ) เป็น data URI ฝังไว้ในตัว response ของ
+   * pin/status โดยตรง — เพราะหน้ากรอก PIN ยังไม่มี access token ให้ยิงไปที่ /files/avatars ตามปกติได้เลย
+   */
+  private async resolvePinAvatarDataUri(avatarUrl: string | null): Promise<string | null> {
+    if (!avatarUrl) return null;
+    return readUploadedFileAsDataUri(avatarUrl, 'avatars');
+  }
+
+  /**
    * ตรวจสอบว่าอุปกรณ์นี้ (deviceSecret cookie) มี PIN ที่ยังใช้งานได้อยู่หรือไม่ — ไม่ต้อง login และไม่แตะ
    * failedAttempts/lockedUntil เลย (แค่เช็คว่าควรเสนอหน้ากรอก PIN หรือไม่ ไม่ใช่การพยายาม login จริง)
    *
@@ -392,7 +402,14 @@ export class AuthService {
     }
 
     const isActive = !row.revokedAt && row.expiresAt >= new Date();
-    return { available: isActive, hasHistory: true, username: user.username, fullName: user.fullName, gender: user.gender };
+    return {
+      available: isActive,
+      hasHistory: true,
+      username: user.username,
+      fullName: user.fullName,
+      gender: user.gender,
+      avatarUrl: await this.resolvePinAvatarDataUri(user.avatarUrl),
+    };
   }
 
   /**
@@ -418,7 +435,14 @@ export class AuthService {
     }
 
     const isActive = !row.revokedAt && row.expiresAt >= new Date();
-    return { available: isActive, hasHistory: true, username: user.username, fullName: user.fullName, gender: user.gender };
+    return {
+      available: isActive,
+      hasHistory: true,
+      username: user.username,
+      fullName: user.fullName,
+      gender: user.gender,
+      avatarUrl: await this.resolvePinAvatarDataUri(user.avatarUrl),
+    };
   }
 
   /**

@@ -102,7 +102,7 @@ export class AuthService {
         map((res) => res.data),
         tap(() => {
           const user = this._currentUser();
-          if (user) this.setPinLoginMarker({ username: user.username, fullName: user.fullName, gender: user.gender });
+          if (user) this.setPinLoginMarker({ username: user.username, fullName: user.fullName, gender: user.gender, avatarUrl: user.avatarUrl });
         }),
       );
   }

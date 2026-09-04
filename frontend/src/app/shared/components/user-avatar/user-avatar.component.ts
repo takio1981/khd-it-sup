@@ -48,6 +48,12 @@ export class UserAvatarComponent {
       const url = this.avatarUrl();
       this.objectUrl.set(null);
       if (!url) return;
+      // data URI (เช่นจากหน้ากรอก PIN ก่อน login — ดึงผ่าน endpoint ที่ต้อง Authorization header ตามปกติไม่ได้
+      // เพราะยังไม่มี access token ตอนนั้น จึงฝังรูปมาเป็น base64 ในตัว response แทน) ใช้แสดงได้ตรงๆ ไม่ต้อง fetch ซ้ำ
+      if (url.startsWith('data:')) {
+        this.objectUrl.set(url);
+        return;
+      }
       this.userService.getAvatarBlob(url).subscribe((blob) => this.objectUrl.set(URL.createObjectURL(blob)));
     });
 

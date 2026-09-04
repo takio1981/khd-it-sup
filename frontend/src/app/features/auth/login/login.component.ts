@@ -57,7 +57,12 @@ export class LoginComponent {
     this.authService.getPinStatus().subscribe({
       next: (status) => {
         if (status.available && status.fullName) {
-          this.authService.setPinLoginMarker({ username: status.username ?? '', fullName: status.fullName, gender: status.gender ?? null });
+          this.authService.setPinLoginMarker({
+            username: status.username ?? '',
+            fullName: status.fullName,
+            gender: status.gender ?? null,
+            avatarUrl: status.avatarUrl ?? null,
+          });
           this.mode.set('pin');
         } else {
           this.authService.clearPinLoginMarker();

@@ -94,3 +94,31 @@ export function deleteUploadedFileByUrl(fileUrl: string, subDir: string): void {
   const filePath = path.resolve(env.UPLOAD_DIR, subDir, filename);
   fs.unlink(filePath, () => undefined);
 }
+
+const IMAGE_MIME_BY_EXT: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+};
+
+/**
+ * อ่านรูปที่เคยอัปโหลดไว้แล้วแปลงเป็น data URI (base64) — ใช้เฉพาะจุดที่ต้องส่งรูปให้ฝั่งที่ "ยังไม่ login"
+ * (เช่นหน้ากรอก PIN ก่อนเข้าสู่ระบบ) ซึ่งดึงผ่าน endpoint /files/:subdir/:filename ปกติไม่ได้ เพราะ endpoint นั้น
+ * บังคับ authenticate เสมอโดยตั้งใจ (กันไฟล์แนบอื่นที่ sensitive กว่ารูปโปรไฟล์รั่วไหลแบบสาธารณะ — ดู serveFile.controller.ts)
+ * best-effort เหมือน deleteUploadedFileByUrl ด้านบน — คืน null ถ้าไม่มีไฟล์/อ่านไม่ได้ ไม่ throw
+ */
+export async function readUploadedFileAsDataUri(fileUrl: string, subDir: string): Promise<string | null> {
+  const filename = path.basename(fileUrl);
+  const mimeType = IMAGE_MIME_BY_EXT[path.extname(filename).toLowerCase()];
+  if (!mimeType) return null;
+
+  const filePath = path.resolve(env.UPLOAD_DIR, subDir, filename);
+  try {
+    const buffer = await fs.promises.readFile(filePath);
+    return `data:${mimeType};base64,${buffer.toString('base64')}`;
+  } catch {
+    return null;
+  }
+}
