@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '@infrastructure/database/prisma';
 import { NotFoundError } from '@common/errors';
 
@@ -14,10 +15,24 @@ function formatYear(year: number, format: string | null): string {
 export class RunningNumberService {
   async getNextNumber(docType: string): Promise<string> {
     return prisma.$transaction(async (tx) => {
-      const seq = await tx.runningNumberSequence.findUnique({ where: { docType } });
-      if (!seq) {
+      // ใช้ SELECT ... FOR UPDATE ล็อกแถวนี้ตั้งแต่อ่าน (แทน findUnique เฉยๆ) เพราะแถวเลขรันเป็น "hot row"
+      // เดียวที่ทุกการสร้างเอกสารประเภทเดียวกันแย่งกันอ่าน-เขียนพร้อมกัน — ถ้าอ่านแบบไม่ล็อกก่อน หลาย transaction
+      // จะอ่านค่าเดิมพร้อมกันแล้วชนกันตอน UPDATE (MariaDB error 1020 "Record has changed since last read")
+      // ทำให้การแจ้งซ่อม/สร้างครุภัณฑ์ล้มเหลวเป็นชุดเมื่อมีผู้ใช้พร้อมกันหลายคน — ล็อกก่อนอ่านทำให้ transaction อื่น
+      // รอคิวแทนที่จะชนกันแล้ว fail ทั้งคู่
+      const rows = await tx.$queryRaw<
+        { currentNumber: bigint; updatedAt: Date; prefix: string | null; yearFormat: string | null; resetYearly: number }[]
+      >(
+        Prisma.sql`
+          SELECT current_number AS currentNumber, updated_at AS updatedAt, prefix, year_format AS yearFormat, reset_yearly AS resetYearly
+          FROM running_number_sequences WHERE doc_type = ${docType} FOR UPDATE
+        `,
+      );
+      const row = rows[0];
+      if (!row) {
         throw new NotFoundError(`ไม่พบการตั้งค่าเลขที่เอกสารสำหรับประเภท ${docType} กรุณาตั้งค่าใน running_number_sequences ก่อน`);
       }
+      const seq = { currentNumber: row.currentNumber, updatedAt: row.updatedAt, prefix: row.prefix, yearFormat: row.yearFormat, resetYearly: Boolean(row.resetYearly) };
 
       const now = new Date();
       const currentYear = now.getFullYear();

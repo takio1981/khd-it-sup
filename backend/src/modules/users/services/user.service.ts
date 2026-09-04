@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import crypto from 'node:crypto';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { UserRepository, type IUserListFilter } from '@modules/users/repositories/user.repository';
 import type { CreateUserDto, ListUsersQueryDto, UpdateUserDto } from '@modules/users/dto/user.dto';
 import { ConflictError, ForbiddenError, NotFoundError } from '@common/errors';

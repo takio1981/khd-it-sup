@@ -1,5 +1,5 @@
 import { randomUUID, randomBytes } from 'node:crypto';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { Prisma, type AssetCategory, type Department } from '@prisma/client';
 import { AssetRepository } from '@modules/assets/repositories/asset.repository';
 import { DepartmentRepository } from '@modules/departments/repositories/department.repository';

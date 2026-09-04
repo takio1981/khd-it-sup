@@ -154,26 +154,29 @@ export class NotificationService {
       });
       if (settings.telegramEnabled) {
         await this.sendTelegram(text, 'RepairTicket', ticket.id);
-        for (const r of recipients) {
-          if (r.telegramChatId) await this.sendTelegramPersonal(r.telegramChatId, text, 'RepairTicket', ticket.id);
-        }
+        // ส่งหาผู้รับแต่ละคนพร้อมกัน (ไม่ใช่ทีละคนตามลำดับ) — ตอนที่ทำเป็น sequential loop เจอว่าถ้ามีผู้รับเยอะ
+        // (เช่น ไอที/ช่างทั้งหมด) ทำให้ตอบสนองการแจ้งซ่อมช้าลงมาก โดยเฉพาะช่วงคนใช้งานพร้อมกันหลายคน (วัดจาก load test)
+        await Promise.all(
+          recipients.map((r) => (r.telegramChatId ? this.sendTelegramPersonal(r.telegramChatId, text, 'RepairTicket', ticket.id) : Promise.resolve())),
+        );
       }
       if (settings.lineEnabled) {
         await this.sendLine(text, 'RepairTicket', ticket.id);
-        for (const r of recipients) {
-          if (r.lineUserId) await this.sendLinePersonal(r.lineUserId, text, 'RepairTicket', ticket.id);
-        }
+        await Promise.all(
+          recipients.map((r) => (r.lineUserId ? this.sendLinePersonal(r.lineUserId, text, 'RepairTicket', ticket.id) : Promise.resolve())),
+        );
       }
     }
 
     // แจ้งเตือนในแอป (bell) + realtime push ผ่าน Socket.IO ให้ผู้ใช้ที่เกี่ยวข้อง — ทำงานอิสระจากช่องทางภายนอก (email/telegram/line)
-    for (const r of recipients) {
-      try {
-        await this.pushInApp(r.userId, actionLabel, `[${ticket.ticketNumber}] ${statusNameTh}`, 'RepairTicket', ticket.id);
-      } catch {
-        // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
-      }
-    }
+    // ส่งพร้อมกันทุกคนเช่นกัน (เหตุผลเดียวกับ telegram/line ด้านบน)
+    await Promise.all(
+      recipients.map((r) =>
+        this.pushInApp(r.userId, actionLabel, `[${ticket.ticketNumber}] ${statusNameTh}`, 'RepairTicket', ticket.id).catch(() => {
+          // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
+        }),
+      ),
+    );
   }
 
   /** เรียกจาก RepairTicketService ตอนสร้าง ticket ใหม่ และตอนมีคนเข้าดูรายละเอียดเป็นคนแรก — ดัน realtime ไปหาแอดมิน/ช่างที่

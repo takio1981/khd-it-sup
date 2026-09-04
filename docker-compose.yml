@@ -36,15 +36,26 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      # เพิ่ม libuv threadpool จากค่าเริ่มต้น 4 เธรด — bcrypt (native) และงาน I/O อื่นๆ ที่ offload ไปที่ threadpool
+      # (เช่น การ hash/compare รหัสผ่านตอนช่วงคนล็อกอินพร้อมกันมาก) จะได้ทำงานคู่ขนานได้มากขึ้นแทนที่จะเข้าคิวรอ
+      UV_THREADPOOL_SIZE: '16'
       APP_NAME: KHD-IT-SUP
       API_PREFIX: ${API_PREFIX:-/api/v1}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost}
       DATABASE_URL: mysql://${MARIADB_USER:-khd_app}:${MARIADB_PASSWORD:-changeme}@mariadb:3306/${MARIADB_DATABASE:-khd_it_sup}
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
-      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-3000}
-      LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-50}
-      PIN_LOGIN_RATE_LIMIT_MAX: ${PIN_LOGIN_RATE_LIMIT_MAX:-100}
+      # เพดานรวมทุก endpoint ต่อ 1 IP ต่อหน้าต่าง 15 นาที — ต้องสูงพอสำหรับผู้ใช้งานจริงพร้อมกันหลายสิบ-100 คนที่อาจ
+      # ใช้ IP ขาออกร่วมกัน (NAT ของหน่วยงาน) ทดสอบด้วย load test จำลอง 100 ผู้ใช้พร้อมกันแล้วพบว่าค่าเดิม (3000/8000)
+      # ยังน้อยเกินไปสำหรับการใช้งานต่อเนื่อง — ตั้งไว้ให้มีระยะเผื่อเหนือปริมาณ request สูงสุดที่วัดได้จริงจากการทดสอบ
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-20000}
+      # express-rate-limit นับ request ที่ "กำลังทำงานอยู่" ทันทีที่เข้ามา (ก่อนรู้ผลว่าสำเร็จ) แล้วค่อยลดคืนทีหลัง
+      # เมื่อ response เสร็จ (skipSuccessfulRequests) — ถ้าคนพร้อมกันจำนวนมากล็อกอินพร้อมกันจริง ๆ (เช่น 100 คน
+      # เข้าใช้งานตอนเริ่มกะ) จำนวนที่ "ค้างอยู่พร้อมกัน" ชั่วขณะนั้นอาจเกินเพดานเดิมได้ ทั้งที่ทุกคนใส่รหัสถูกต้อง
+      # จึงต้องตั้งเพดานให้เผื่อพร้อมกันได้มากกว่าจำนวนผู้ใช้พร้อมกันสูงสุดที่ระบบต้องรองรับจริง (ทดสอบแล้วด้วย
+      # load test จำลอง 100 ผู้ใช้พร้อมกัน)
+      LOGIN_RATE_LIMIT_MAX: ${LOGIN_RATE_LIMIT_MAX:-200}
+      PIN_LOGIN_RATE_LIMIT_MAX: ${PIN_LOGIN_RATE_LIMIT_MAX:-200}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
