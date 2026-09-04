@@ -3,11 +3,15 @@
  * เพราะ Angular ไม่ใส่ scope attribute ให้กับ markup ที่แทรกด้วย innerHTML โดยตรง
  * ขอบเขตจำกัดอยู่แค่ใต้ .khd-mermaid-diagram ของ component นี้เท่านั้น ไม่รั่วไปหน้าอื่น
  *
- * เส้นเชื่อมที่ไหล (จุดวิ่ง) ใช้ฟีเจอร์ animate ของ mermaid เองผ่าน edge metadata
+ * เส้นเชื่อมที่ไหล (เส้นประวิ่ง) ใช้ฟีเจอร์ animate ของ mermaid เองผ่าน edge metadata
  * (`eN@{ animate: true }` ในนิยามผังแต่ละอัน) ไม่ได้ทำ CSS เองทั้งหมด — แต่ mermaid ตั้งความเร็ว
- * เริ่มต้นไว้ที่รอบละ 20 วินาที (แทบไม่เห็นการเคลื่อนไหว) จึงต้อง override animation-duration ให้เร็วขึ้น
+ * เริ่มต้นไว้ที่รอบละ 20 วินาที (แทบไม่เห็นการเคลื่อนไหว) จึงต้อง override animation-duration
  * ด้วย !important เพราะ <style> ที่ mermaid ฝังมาในตัว SVG เอง อยู่หลัง stylesheet นี้ใน DOM
- * (ชนะ tie-break ตามลำดับถ้าไม่ใช้ !important)
+ * (ชนะ tie-break ตามลำดับถ้าไม่ใช้ !important) — ให้จังหวะช้าๆ ตามที่ขอ ไม่เร่งจนลายตา
+ *
+ * จุดกระพริบเคลื่อนที่ (.khd-flow-dot) เป็น SVG <circle>+<animateMotion> ที่ฉีดเข้ามาทาง TS
+ * (ดู enhanceSvg() ใน .ts) เกาะไปตามเส้นจริงของแต่ละเส้นเชื่อมหลัก ให้เห็นทิศทาง "การเดินทางของข้อมูล"
+ * ชัดเจนกว่าเส้นไหลเฉยๆ
  */
 
 /* เส้นตัวอย่างในคำอธิบายสัญลักษณ์ด้านบนผัง — เป็น markup ของ component เอง (ไม่ใช่ innerHTML) จึงไม่ต้องใช้ ::ng-deep */
@@ -19,18 +23,7 @@
 
 .khd-legend-flow-line {
   stroke-dasharray: 4 3;
-  animation: khd-legend-flow 1s linear infinite;
-}
-
-@keyframes khd-node-in {
-  from {
-    opacity: 0;
-    transform: scale(0.88) translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  animation: khd-legend-flow 2.2s linear infinite;
 }
 
 ::ng-deep .khd-mermaid-diagram {
@@ -38,10 +31,10 @@
     display: block;
   }
 
-  /* เส้นลำดับขั้นตอนหลักที่ตั้ง animate:true ไว้ — เร่งจังหวะจุดไหลให้เห็นทิศทางข้อมูลชัดเจนภายในไม่กี่วินาที */
+  /* เส้นลำดับขั้นตอนหลักที่ตั้ง animate:true ไว้ — จังหวะช้าๆ ให้เห็นทิศทางข้อมูลได้ทัน ไม่เร่งจนตามไม่ทัน */
   .edge-animation-fast,
   .edge-animation-slow {
-    animation-duration: 1.4s !important;
+    animation-duration: 3s !important;
   }
 
   /* ป้ายกำกับเส้น (ข้อความบนเส้นเชื่อม) — เพิ่มพื้นหลังโค้งมนอ่านง่ายขึ้นเวลาเส้นไขว้กัน */
@@ -49,16 +42,31 @@
     border-radius: 4px;
   }
 
-  /* การ์ดโหนดแต่ละขั้นตอน — ทยอยปรากฏตอนโหลด (ลำดับกำหนดจาก animation-delay ที่ตั้งให้ทาง TS) */
+  /* จุดกระพริบเคลื่อนที่ไปตามเส้น — สีส้ม/เหลืองให้ตัดกับเส้นเขียวชัดเจนทั้งสองธีม พร้อมแสงเรืองเบาๆ ให้เห็นง่าย */
+  .khd-flow-dot {
+    fill: #f59e0b;
+    filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.85));
+  }
+
+  /* การ์ดโหนดแต่ละขั้นตอน — ทยอยปรากฏครั้งเดียวตอนโหลดหน้าจริง (เพิ่มคลาส .khd-in ทาง TS หลัง paint รอบแรก)
+   * ใช้ transition ที่ trigger จากคลาสแทน CSS `animation` ตรงๆ โดยตั้งใจ — เพราะ `animation` จะรีสตาร์ทเองทุกครั้งที่
+   * mat-tab-body สลับ display ทำให้สลับแท็บแล้วโหนดกระพริบ/กระตุกเหมือนโหลดใหม่ทุกรอบ (เป็นบั๊กที่เจอและแก้ไปแล้ว)
+   * ส่วน transition ที่ค่าสุดท้ายไม่เปลี่ยนอีกหลัง .khd-in ติดค้างถาวร จะไม่มีอะไรให้เล่นซ้ำตอนสลับแท็บอีก */
   .node {
-    animation: khd-node-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    opacity: 0;
+    transform: scale(0.88) translateY(6px);
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.15s ease;
+
+    &.khd-in {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
   }
 
   @media (hover: hover) {
     .node {
-      transition: filter 0.15s ease, transform 0.15s ease;
-      transform-box: fill-box;
-      transform-origin: center;
       cursor: default;
     }
     .node:hover {
@@ -69,9 +77,18 @@
 
   @media (prefers-reduced-motion: reduce) {
     .edge-animation-fast,
-    .edge-animation-slow,
-    .node {
+    .edge-animation-slow {
       animation: none !important;
+    }
+    /* .khd-flow-dot เป็น <circle> ที่มี <animateMotion>/<animate> แบบ SMIL อยู่ข้างใน — CSS สั่งปิด SMIL โดยตรงไม่ได้
+     * แต่ซ่อนตัว <circle> ทั้งก้อนด้วย display:none ก็เพียงพอ ไม่มีอะไรให้เห็นเคลื่อนไหวอีกต่อไป */
+    .khd-flow-dot {
+      display: none;
+    }
+    .node {
+      transition: none;
+      opacity: 1;
+      transform: none;
     }
   }
 }

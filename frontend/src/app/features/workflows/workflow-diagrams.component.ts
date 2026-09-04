@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, signal, effect } from '@angular/core';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -290,6 +290,8 @@ const DOCUMENT_DIAGRAM = `flowchart TD
 export class WorkflowDiagramsComponent {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly themeService = inject(ThemeService);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly loading = signal(true);
   readonly renderError = signal<string | null>(null);
@@ -427,6 +429,30 @@ export class WorkflowDiagramsComponent {
       const mode = this.themeService.mode();
       void this.renderAll(mode);
     });
+
+    // เฝ้าดู DOM เอง (แทนการเติมคลาส .khd-in ครั้งเดียวหลัง renderAll()) เพราะ mat-tab-group ไม่ได้ผูกเนื้อหาทุกแท็บ
+    // เข้า DOM พร้อมกันตอนโหลดหน้าแรก — แท็บที่ยังไม่เคยกดจะเพิ่งถูกสร้างขึ้นตอนคลิกเข้าไปครั้งแรกเท่านั้น (พิสูจน์แล้วจาก
+    // การทดสอบ: โหนดของแท็บที่ยังไม่เคยเปิดค้างอยู่ที่ opacity:0 ตลอดเพราะไม่เคยได้รับคลาสเลย) MutationObserver จับโหนด
+    // .node ทุกตัวที่เพิ่งถูกแทรกเข้า DOM ไม่ว่าจะเกิดตอนไหน (โหลดหน้าแรก, เปิดแท็บครั้งแรก, เปลี่ยนธีม) แล้วเติมคลาส
+    // .khd-in ให้ครั้งเดียวถาวร — เมื่อค่าสุดท้ายไม่เปลี่ยนอีก จะไม่มี transition ให้เล่นซ้ำตอนสลับแท็บไปมาอีกต่อไป
+    const observer = new MutationObserver((mutations) => {
+      const newNodeEls: Element[] = [];
+      for (const m of mutations) {
+        m.addedNodes.forEach((n) => {
+          if (!(n instanceof Element)) return;
+          if (n.matches('.node')) newNodeEls.push(n);
+          newNodeEls.push(...Array.from(n.querySelectorAll('.node')));
+        });
+      }
+      if (newNodeEls.length === 0) return;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          newNodeEls.forEach((el) => el.classList.add('khd-in'));
+        });
+      });
+    });
+    observer.observe(this.elementRef.nativeElement, { childList: true, subtree: true });
+    this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
   svgFor(key: string): SafeHtml | null {
@@ -451,10 +477,12 @@ export class WorkflowDiagramsComponent {
       const all = [this.overview, ...this.sections].filter((s) => s.definition);
       const svgs: Record<string, SafeHtml> = {};
       for (const section of all) {
-        const { svg } = await mermaid.render(`khd-mermaid-${section.key}-${mode}`, section.definition!);
-        svgs[section.key] = this.sanitizer.bypassSecurityTrustHtml(this.staggerEntranceAnimation(svg));
+        const definition = section.definition! + this.buildDecisionColorSuffix(section.key, mode);
+        const { svg } = await mermaid.render(`khd-mermaid-${section.key}-${mode}`, definition);
+        svgs[section.key] = this.sanitizer.bypassSecurityTrustHtml(this.enhanceSvg(svg, section.key));
       }
       this.svgByKey.set(svgs);
+      // การเติมคลาส .khd-in ให้โหนดที่เพิ่งแทรกเข้า DOM ทำผ่าน MutationObserver ใน constructor แทน (ดูคอมเมนต์ที่นั่น)
     } catch (err) {
       this.renderError.set('ไม่สามารถแสดงผังการทำงานได้ กรุณาลองโหลดหน้านี้ใหม่อีกครั้ง');
       console.error('[workflow-diagrams] mermaid render failed', err);
@@ -463,26 +491,87 @@ export class WorkflowDiagramsComponent {
     }
   }
 
-  /** ไล่เวลาหน่วง (animation-delay) ให้แต่ละโหนดค่อยๆ ปรากฏทีละตัวตามลำดับที่ mermaid วาดจริง แทนที่จะกระพริบพร้อมกันทั้งภาพ
-   * — ทำที่นี่แทนใน CSS เพราะจำนวนโหนดแต่ละผังไม่เท่ากัน กำหนดล่วงหน้าด้วย nth-child ไม่ครอบคลุม
-   * ใช้ div.innerHTML (parser แบบ HTML ที่ผ่อนปรน) แทน DOMParser('image/svg+xml') เพราะ SVG ที่ mermaid สร้างตอนเปิด
+  /** ปรับแต่ง SVG หลัง mermaid render เสร็จ: (1) ไล่เวลาหน่วงให้แต่ละโหนดค่อยๆ ปรากฏทีละตัว (2) เติมจุดกระพริบ
+   * เคลื่อนที่ไปตามเส้นเชื่อมหลักแต่ละเส้น (SMIL animateMotion เกาะกับเส้นจริงผ่าน mpath) ให้เห็นทิศทางข้อมูลชัดเจน
+   * — ใช้ div.innerHTML (parser แบบ HTML ที่ผ่อนปรน) แทน DOMParser('image/svg+xml') เพราะ SVG ที่ mermaid สร้างตอนเปิด
    * htmlLabels ไม่ใช่ XML ที่ well-formed จริง (มี foreignObject/div ปนอยู่) ทำให้ parse แบบ XML strict ล้มเหลวเงียบๆ
    * ล้มเหลวได้อย่างปลอดภัย: คืนค่า SVG เดิมถ้ามีปัญหา (แอนิเมชันเป็นแค่ของตกแต่ง ไม่ควรทำให้ผังทั้งหมดหายไป) */
-  private staggerEntranceAnimation(svg: string): string {
+  private enhanceSvg(svg: string, diagramKey: string): string {
     try {
       const container = document.createElement('div');
       container.innerHTML = svg;
 
       const STEP_MS = 35;
       const MAX_DELAY_MS = 500;
-      container.querySelectorAll('.node').forEach((node, i) => {
-        (node as SVGElement).style.animationDelay = `${Math.min(i * STEP_MS, MAX_DELAY_MS)}ms`;
+      container.querySelectorAll<HTMLElement>('.node').forEach((node, i) => {
+        node.style.transitionDelay = `${Math.min(i * STEP_MS, MAX_DELAY_MS)}ms`;
+      });
+
+      // จุดกระพริบเคลื่อนที่ — เฉพาะเส้นลำดับขั้นตอนหลักที่ตั้ง animate:true ไว้ (edge-animation-fast/-slow)
+      // ไม่ใส่บนเส้นผลข้างเคียง/แจ้งเตือน (เส้นประที่ไม่ animate) เพื่อให้ยังอ่านออกว่าเป็นเส้นทางรอง ไม่ใช่ลำดับหลัก
+      const svgEl = container.querySelector('svg');
+      const animatedPaths = Array.from(
+        container.querySelectorAll<SVGPathElement>('.edgePaths path.edge-animation-fast, .edgePaths path.edge-animation-slow'),
+      );
+      animatedPaths.forEach((path, i) => {
+        const pathId = `khd-edge-${diagramKey}-${i}`;
+        path.setAttribute('id', pathId);
+
+        const svgNs = 'http://www.w3.org/2000/svg';
+        const xlinkNs = 'http://www.w3.org/1999/xlink';
+        const dot = document.createElementNS(svgNs, 'circle');
+        dot.setAttribute('r', '5');
+        dot.setAttribute('class', 'khd-flow-dot');
+
+        const motion = document.createElementNS(svgNs, 'animateMotion');
+        motion.setAttribute('dur', '4.5s');
+        motion.setAttribute('repeatCount', 'indefinite');
+        motion.setAttribute('rotate', 'auto');
+        const mpath = document.createElementNS(svgNs, 'mpath');
+        mpath.setAttributeNS(xlinkNs, 'xlink:href', `#${pathId}`);
+        mpath.setAttribute('href', `#${pathId}`);
+        motion.appendChild(mpath);
+
+        const blink = document.createElementNS(svgNs, 'animate');
+        blink.setAttribute('attributeName', 'opacity');
+        blink.setAttribute('values', '0.2;1;0.2');
+        blink.setAttribute('dur', '1.6s');
+        blink.setAttribute('repeatCount', 'indefinite');
+
+        dot.appendChild(motion);
+        dot.appendChild(blink);
+        svgEl?.appendChild(dot);
       });
 
       return container.innerHTML;
     } catch {
       return svg;
     }
+  }
+
+  /** เติมสีให้เส้นทาง/โหนดของเงื่อนไขแบบ "ถูก-ผ่าน" (เขียว ค่าเริ่มต้นของธีมอยู่แล้ว ไม่ต้องเติม) กับ "ผิด-ถูกบล็อก"
+   * (แดง) เฉพาะจุดตัดสินใจที่เป็นจริง 2 ทางล้วนๆ และอีกทางหนึ่งคือการบล็อก/ปฏิเสธ/ยกเลิกชัดเจนเท่านั้น — จุดตัดสินใจ
+   * ที่แตกเป็นหลายทางแบบไม่มีทางไหน "ผิด" (เช่น เลือกประเภทธุรกรรม, เลือกช่องทางแจ้งเตือน) ปล่อยเป็นสีเขียวเหมือนกันหมด
+   * เพื่อไม่ให้สื่อความหมายผิดว่ามีทางใดทางหนึ่งเป็นข้อผิดพลาด
+   * ใช้ linkStyle (นับตำแหน่งเส้นตามลำดับที่ประกาศในนิยามผัง 0-based) + classDef/class ของ mermaid เอง แทนการเขียน CSS
+   * ทับเพราะสีต้องปรับตามธีมสว่าง/มืดด้วย (ตัวนิยามผังเป็น const เดียวใช้ร่วมกันทั้งสองธีม จึงต้อง inject ส่วนสีนี้แยก) */
+  private buildDecisionColorSuffix(key: string, mode: ThemeMode): string {
+    const rejectFill = mode === 'dark' ? '#4c1d1d' : '#FEE2E2';
+    const rejectStroke = mode === 'dark' ? '#f87171' : '#DC2626';
+    const rejectText = mode === 'dark' ? '#fecaca' : '#7f1d1d';
+    const classDef = `classDef khdBlocked fill:${rejectFill},stroke:${rejectStroke},color:${rejectText},stroke-width:2px;`;
+
+    const config: Record<string, { linkIndexes: number[]; nodeIds: string[] }> = {
+      ticket: { linkIndexes: [1], nodeIds: ['BLOCK'] },
+      loan: { linkIndexes: [1], nodeIds: ['BLOCK'] },
+      parts: { linkIndexes: [5], nodeIds: ['REJECT'] },
+    };
+    const c = config[key];
+    if (!c) return '';
+
+    const linkStyleLine = `linkStyle ${c.linkIndexes.join(',')} stroke:${rejectStroke},stroke-width:2.5px;`;
+    const classLine = `class ${c.nodeIds.join(',')} khdBlocked;`;
+    return `\n${classDef}\n${linkStyleLine}\n${classLine}`;
   }
 
   /** สีธีมของผัง mermaid — ยึดโทนเขียวของแบรนด์ (brand-primary #006C45) ให้เข้ากับสีระบบทั้งโหมดสว่าง/มืด */
