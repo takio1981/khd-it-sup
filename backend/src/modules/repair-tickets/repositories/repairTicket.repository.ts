@@ -112,7 +112,7 @@ export class RepairTicketRepository {
             brand: true,
             govAssetNumber: true,
             serialNumber: true,
-            category: { select: { nameTh: true, icon: true } },
+            category: { select: { code: true, nameTh: true, icon: true } },
             photos: { select: { id: true, fileUrl: true }, orderBy: { uploadedAt: 'desc' }, take: 1 },
           },
         },

@@ -67,7 +67,7 @@ export interface IRepairTicketDetail extends IRepairTicketListItem, IRepairSumma
     brand: string | null;
     govAssetNumber: string | null;
     serialNumber: string | null;
-    category: { nameTh: string; icon: string | null } | null;
+    category: { code: string; nameTh: string; icon: string | null } | null;
     photos: { id: string; fileUrl: string }[];
   } | null;
   attachments: { id: string; fileUrl: string; fileType: string | null; uploadedAt: string }[];

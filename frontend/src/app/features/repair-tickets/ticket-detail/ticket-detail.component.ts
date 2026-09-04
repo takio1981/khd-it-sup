@@ -20,6 +20,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
 import { TimelineComponent } from '../../../shared/components/timeline/timeline.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { TicketPrintPreviewComponent } from '../../../shared/components/ticket-print-preview/ticket-print-preview.component';
+import { TicketPrintPreviewGeneralComponent } from '../../../shared/components/ticket-print-preview-general/ticket-print-preview-general.component';
 import { AttachmentThumbnailComponent } from '../../../shared/components/attachment-thumbnail/attachment-thumbnail.component';
 import { AssetPhotoThumbnailComponent } from '../../../shared/components/asset-photo-thumbnail/asset-photo-thumbnail.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
@@ -286,10 +287,23 @@ export class TicketDetailComponent {
       .subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
   }
 
+  /** หมวดครุภัณฑ์ที่ถือว่า "ไม่ใช่งานคอมพิวเตอร์" ชัดเจน — ใช้แบบฟอร์มกระดาษของงานพัสดุ (ทั่วไป) แทน
+   *  ค่าอื่นทุกกรณี รวมถึงใบแจ้งซ่อมที่ไม่ได้ผูกกับครุภัณฑ์เลย (สร้างจากฟอร์มแจ้งซ่อมด้วยมือ ซึ่งเลือกได้แต่ประเภท
+   *  อุปกรณ์คอมพิวเตอร์) ยังคงใช้แบบฟอร์มคอมพิวเตอร์เดิมเป็นค่าเริ่มต้น เพราะไม่มีสัญญาณที่บ่งชี้ชัดพอว่าไม่ใช่งานคอมพิวเตอร์ */
+  private static readonly GENERAL_FORM_CATEGORY_CODES = new Set(['AC', 'MEDICAL', 'OTHER']);
+
   openPrintPreview(): void {
     const t = this.ticket();
     if (!t) return;
-    this.dialog.open(TicketPrintPreviewComponent, { width: '900px', maxWidth: '95vw', data: { ticket: t } });
+
+    const categoryCode = t.asset?.category?.code;
+    const isGeneralForm = !!categoryCode && TicketDetailComponent.GENERAL_FORM_CATEGORY_CODES.has(categoryCode);
+
+    if (isGeneralForm) {
+      this.dialog.open(TicketPrintPreviewGeneralComponent, { width: '900px', maxWidth: '95vw', data: { ticket: t } });
+    } else {
+      this.dialog.open(TicketPrintPreviewComponent, { width: '900px', maxWidth: '95vw', data: { ticket: t } });
+    }
   }
 
   openAssignDialog(): void {

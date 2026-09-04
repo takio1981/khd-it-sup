@@ -1,0 +1,198 @@
+<div class="khd-no-print flex items-center justify-between px-1 pb-2">
+  <h2 class="text-base font-semibold m-0">ตัวอย่างก่อนพิมพ์ใบแจ้งซ่อม (งานทั่วไป)</h2>
+  <button mat-icon-button (click)="close()" matTooltip="ปิด">
+    <khd-icon name="x-mark" [size]="20" />
+  </button>
+</div>
+
+<mat-dialog-content class="!max-h-[75vh]">
+  <div id="khd-print-area">
+    <div id="khd-print-main" class="khd-doc">
+      @let dateParts = thaiDateParts(data.ticket.createdAt);
+      <div class="khd-doc-header">
+        <img [src]="logoObjectUrl() || 'logo1.png'" alt="" class="khd-doc-logo" />
+        <div class="khd-doc-header-center">
+          <p class="khd-doc-title">ใบแจ้งซ่อม</p>
+          <p class="khd-doc-org">{{ orgName }}</p>
+        </div>
+        <div class="khd-doc-numbox">
+          <p class="khd-doc-numbox-inner">เลขทะเบียนรับ เลขที่ {{ data.ticket.ticketNumber }}</p>
+          <p class="khd-doc-datefield">วันที่ {{ dateParts.day }} เดือน {{ dateParts.month }} พ.ศ. {{ dateParts.year }}</p>
+        </div>
+      </div>
+
+      <div class="khd-doc-section">
+        <p class="khd-doc-section-title">ส่วนที่ 1 สำหรับกลุ่มงาน (ผู้แจ้งซ่อม)</p>
+
+        <div class="khd-doc-field khd-doc-field-inline">
+          <span class="khd-doc-label">ด้วยงาน</span>
+          <span class="khd-doc-value">{{ data.ticket.reportedBy.position?.nameTh ?? '-' }}</span>
+          <span class="khd-doc-label">กลุ่มงาน</span>
+          <span class="khd-doc-value">{{ data.ticket.department?.nameTh ?? '-' }}</span>
+        </div>
+        <p class="khd-doc-note !mt-1">มีความประสงค์ขอแจ้งซ่อมดังรายละเอียดต่อไปนี้</p>
+
+        <table class="khd-doc-table !mt-2">
+          <thead>
+            <tr>
+              <th style="width: 55%">รายการแจ้งซ่อม</th>
+              <th>รายละเอียด</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p class="khd-doc-label !mb-1">ประเภทงาน</p>
+                <div class="khd-doc-checklist khd-doc-checklist-col">
+                  @for (wt of workTypes; track wt.label) {
+                    <span class="khd-doc-checkitem">{{ check(isWorkTypeChecked(wt.matchesAc)) }} {{ wt.label }}</span>
+                  }
+                  <span class="khd-doc-checkitem">{{ check(false) }} อื่นๆ ระบุ ....................</span>
+                </div>
+
+                <div class="khd-doc-field khd-block !mt-2">
+                  <span class="khd-doc-label">รายการ</span>
+                  <p class="khd-doc-textblock">
+                    {{ data.ticket.asset ? (data.ticket.asset.category?.nameTh ?? '') + ' ' + data.ticket.asset.assetNumber : '' }}
+                  </p>
+                </div>
+
+                <div class="khd-doc-field khd-doc-field-inline !mt-2">
+                  <span class="khd-doc-label">ลักษณะ/ยี่ห้อ/รุ่น</span>
+                  <span class="khd-doc-value">{{ data.ticket.asset?.brand ?? '' }} {{ data.ticket.asset?.model ?? '' }}</span>
+                </div>
+                <div class="khd-doc-field khd-doc-field-inline !mt-1">
+                  <span class="khd-doc-label">สี</span>
+                  <span class="khd-doc-value">{{ data.ticket.deviceColor ?? '' }}</span>
+                </div>
+                <div class="khd-doc-field khd-doc-field-inline !mt-1">
+                  <span class="khd-doc-label">หมายเลขครุภัณฑ์</span>
+                  <span class="khd-doc-value">{{ data.ticket.asset?.assetNumber ?? '' }}</span>
+                </div>
+                <div class="khd-doc-field khd-doc-field-inline !mt-1">
+                  <span class="khd-doc-label">Serial No.</span>
+                  <span class="khd-doc-value">{{ data.ticket.asset?.serialNumber ?? '' }}</span>
+                </div>
+                <div class="khd-doc-field khd-doc-field-inline !mt-1">
+                  <span class="khd-doc-label">เลขสินทรัพย์</span>
+                  <span class="khd-doc-value">{{ data.ticket.asset?.govAssetNumber ?? '' }}</span>
+                </div>
+                <div class="khd-doc-field khd-doc-field-inline !mt-1">
+                  <span class="khd-doc-label">อาคาร/ห้อง</span>
+                  <span class="khd-doc-value">{{ data.ticket.locationNote ?? '' }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="khd-doc-field khd-block">
+                  <span class="khd-doc-label">ลักษณะการชำรุด</span>
+                  <p class="khd-doc-textblock khd-doc-textblock-tall">{{ data.ticket.description }}</p>
+                </div>
+
+                <div class="khd-doc-signstack !mt-4">
+                  <p class="khd-doc-signline">ลงชื่อ .................... ผู้แจ้งซ่อม</p>
+                  <p class="khd-doc-signname">({{ data.ticket.reportedBy.fullName }})</p>
+                  <p class="khd-doc-signdate">ตำแหน่ง {{ data.ticket.reportedBy.position?.nameTh ?? '....................' }}</p>
+                </div>
+                <div class="khd-doc-signstack !mt-4">
+                  <p class="khd-doc-signline">ลงชื่อ .................... หน.งาน/กลุ่มงาน</p>
+                  <p class="khd-doc-signname">({{ data.ticket.unitHeadApprovedBy?.fullName ?? '....................' }})</p>
+                  <p class="khd-doc-signdate">ตำแหน่ง ....................</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="khd-doc-section">
+        <p class="khd-doc-section-title">ส่วนที่ 2 สำหรับเจ้าหน้าที่พัสดุ (ซ่อมบำรุง)</p>
+
+        <table class="khd-doc-table">
+          <tbody>
+            <tr>
+              <td style="width: 55%">
+                <p class="khd-doc-label !mb-1">บันทึกรับงาน/ผู้ปฏิบัติงานตรวจสอบ</p>
+                <p class="khd-doc-checkitem">เริ่มดำเนินการ วันที่ ....................</p>
+
+                <p class="khd-doc-checkitem !mt-2">{{ check(false) }} ดำเนินการซ่อมเอง</p>
+                <p class="khd-doc-checkitem khd-doc-indent">
+                  ○ไม่เบิกวัสดุ &nbsp;○ขอเบิกวัสดุจากคลัง &nbsp;○ขออนุมัติซื้อวัสดุ ดังนี้
+                </p>
+                <div class="khd-doc-partslist">
+                  <p>1) .................... รหัส .................... จำนวน ....................</p>
+                  <p>2) .................... รหัส .................... จำนวน ....................</p>
+                  <p>3) .................... รหัส .................... จำนวน ....................</p>
+                </div>
+
+                <p class="khd-doc-checkitem !mt-2">◎ ดำเนินการเรียบร้อย สามารถใช้งานได้ปกติ วันที่ ....................</p>
+                <p class="khd-doc-checkitem !mt-1">{{ check(false) }} ไม่สามารถซ่อมเองได้ เห็นควรส่งซ่อมภายนอก เนื่องจาก ....................</p>
+                <p class="khd-doc-checkitem !mt-1">
+                  {{ check(false) }} ตรวจสอบแล้ว ซ่อมไม่คุ้มค่า เห็นควรซื้อใหม่ทดแทนและของเดิมรวบรวมเพื่อรอจำหน่ายต่อไป
+                </p>
+
+                <div class="khd-doc-signstack !mt-4">
+                  <p class="khd-doc-signline">ลงชื่อ .................... เจ้าหน้าที่ผู้ดำเนินการซ่อม</p>
+                </div>
+                <div class="khd-doc-signstack !mt-3">
+                  <p class="khd-doc-signline">ลงชื่อ .................... เจ้าหน้าที่กลุ่มงาน (ผู้แจ้งซ่อม)/ผู้รับงานซ่อม</p>
+                </div>
+
+                <p class="khd-doc-label !mb-1 !mt-3">ความเห็นช่างผู้ควบคุม</p>
+                <p class="khd-doc-checkitem">เห็นควรดำเนินการตามที่เจ้าหน้าที่เสนอ</p>
+                <div class="khd-doc-signstack !mt-3">
+                  <p class="khd-doc-signline">ลงชื่อ ....................</p>
+                  <p class="khd-doc-signdate">ตำแหน่ง ....................</p>
+                </div>
+              </td>
+              <td>
+                <p class="khd-doc-checkitem">● เรียน หัวหน้ากลุ่มงานบริหารทั่วไป</p>
+                <p class="khd-doc-checkitem khd-doc-indent">เพื่อโปรดพิจารณาดำเนินการตามที่เจ้าหน้าที่เสนอ</p>
+
+                <div class="khd-doc-signstack !mt-4">
+                  <p class="khd-doc-signname">({{ supplyHeadName }})</p>
+                  <p class="khd-doc-signdate">{{ supplyHeadPosition }}</p>
+                </div>
+
+                <p class="khd-doc-checkitem !mt-4">● เรียน นายแพทย์สาธารณสุขจังหวัดนครราชสีมา</p>
+                <p class="khd-doc-checkitem khd-doc-indent">เพื่อโปรดทราบและพิจารณาอนุมัติ</p>
+
+                <div class="khd-doc-signstack !mt-4">
+                  <p class="khd-doc-signname">({{ generalAdminHeadName }})</p>
+                  <p class="khd-doc-signdate">{{ generalAdminHeadPosition }}</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="khd-doc-footnote">
+        <p>หมายเหตุ :</p>
+        <p>1) กรณีส่งซ่อมภายนอก งานพัสดุจะพิจารณาแบบรวบยอดพร้อมขออนุมัติจ้างซ่อมภายนอกพร้อมแนบสำเนาใบแจ้งซ่อมนี้ด้วยทุกครั้ง</p>
+        <p>2) กรณีจัดซื้อใหม่ทดแทน ผู้แจ้งซ่อมกรุณาแนบสำเนาใบแจ้งซ่อมนี้พร้อมเสนอบันทึกขออนุมัติซื้อด้วยทุกครั้ง</p>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+@if (issuedRunningNumber(); as rn) {
+  <div class="khd-no-print px-1">
+    <p class="text-xs text-emerald-600 dark:text-emerald-400 text-right">ออกเลขที่เอกสารทางการแล้ว: {{ rn }}</p>
+  </div>
+}
+
+<mat-dialog-actions align="end" class="khd-no-print">
+  <button mat-button (click)="close()">ปิด</button>
+  <button mat-stroked-button [disabled]="exporting()" (click)="exportPdf()">
+    <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
+    {{ exporting() ? 'กำลังสร้าง PDF...' : 'ส่งออก PDF (พรีวิว)' }}
+  </button>
+  <button mat-stroked-button color="accent" [disabled]="issuing()" (click)="issueAndSave()">
+    <khd-icon name="document-text" [size]="18" class="!mr-1" />
+    {{ issuing() ? 'กำลังออกเลขที่...' : 'ออกเลขที่เอกสารและบันทึก' }}
+  </button>
+  <button mat-flat-button color="primary" (click)="print()">
+    <khd-icon name="printer" [size]="18" class="!mr-1" />
+    พิมพ์
+  </button>
+</mat-dialog-actions>

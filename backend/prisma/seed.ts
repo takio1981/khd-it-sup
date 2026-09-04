@@ -308,6 +308,9 @@ async function main(): Promise<void> {
   for (const seq of [
     { docType: 'TICKET', prefix: '', yearFormat: 'CE', resetYearly: true },
     { docType: 'ASSET', prefix: 'IT-', yearFormat: 'CE', resetYearly: false },
+    { docType: 'REPAIR_REQUEST', prefix: 'RR-', yearFormat: 'CE', resetYearly: true },
+    { docType: 'REPAIR_REQUEST_GENERAL', prefix: 'RG-', yearFormat: 'CE', resetYearly: true },
+    { docType: 'EXTERNAL_APPROVAL', prefix: 'EA-', yearFormat: 'CE', resetYearly: true },
   ]) {
     await prisma.runningNumberSequence.upsert({
       where: { docType: seq.docType },
