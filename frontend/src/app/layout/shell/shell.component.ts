@@ -121,14 +121,22 @@ export class ShellComponent {
     { requireSync: true },
   );
 
+  /** มือถือ: เปิด/ปิด sidenav แบบ overlay ทั้งแผง */
   readonly sidenavOpened = signal(true);
+  /** เดสก์ท็อป: "ซ่อนเมนู" ไม่ได้ซ่อนแผงทั้งหมดแล้ว แต่ย่อเหลือแค่แถบไอคอน (ยังเห็นป้ายแจ้งเตือนงานแจ้งซ่อมบนไอคอนอยู่) */
+  readonly sidebarCollapsed = signal(false);
+  readonly isSidebarExpanded = computed(() => (this.isMobile() ? this.sidenavOpened() : !this.sidebarCollapsed()));
 
   readonly navItems = computed(() =>
     NAV_ITEMS.filter((item) => !item.permissions?.length || this.authService.hasAnyPermission(item.permissions)),
   );
 
   toggleSidenav(): void {
-    this.sidenavOpened.update((v) => !v);
+    if (this.isMobile()) {
+      this.sidenavOpened.update((v) => !v);
+    } else {
+      this.sidebarCollapsed.update((v) => !v);
+    }
   }
 
   toggleTheme(): void {
