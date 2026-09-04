@@ -54,14 +54,10 @@
    * ส่วน transition ที่ค่าสุดท้ายไม่เปลี่ยนอีกหลัง .khd-in ติดค้างถาวร จะไม่มีอะไรให้เล่นซ้ำตอนสลับแท็บอีก */
   .node {
     opacity: 0;
-    transform: scale(0.88) translateY(6px);
-    transform-box: fill-box;
-    transform-origin: center;
-    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.15s ease;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.15s ease;
 
     &.khd-in {
       opacity: 1;
-      transform: scale(1) translateY(0);
     }
   }
 
@@ -70,7 +66,6 @@
       cursor: default;
     }
     .node:hover {
-      transform: scale(1.035);
       filter: drop-shadow(0 6px 14px rgba(0, 108, 69, 0.35));
     }
   }
