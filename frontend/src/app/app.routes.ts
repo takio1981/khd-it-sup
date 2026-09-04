@@ -209,6 +209,12 @@ export const routes: Routes = [
         data: { watermark: 'logo3.png' },
         loadComponent: () => import('./features/help/help.component').then((m) => m.HelpComponent),
       },
+      {
+        path: 'workflows',
+        data: { watermark: 'logo3.png' },
+        loadComponent: () =>
+          import('./features/workflows/workflow-diagrams.component').then((m) => m.WorkflowDiagramsComponent),
+      },
     ],
   },
   {

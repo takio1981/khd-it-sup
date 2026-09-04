@@ -1,0 +1,125 @@
+<div class="space-y-4 pb-6">
+  <div>
+    <h1 class="text-xl font-semibold">ผังการทำงานระบบ (SOP)</h1>
+    <p class="text-sm text-neutral-500">
+      แผนผังกระบวนการทำงานและการส่งข้อมูลของแต่ละระบบ ตามมาตรฐานผังงาน (Flowchart) — เลือกหัวข้อด้านล่างเพื่อดูรายละเอียด
+    </p>
+  </div>
+
+  <div class="khd-card">
+    <h2 class="text-sm font-medium mb-3 flex items-center gap-2">
+      <khd-icon name="clipboard-document-list" [size]="16" class="text-neutral-400" />
+      คำอธิบายสัญลักษณ์
+    </h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs text-neutral-600 dark:text-neutral-400">
+      <div class="flex items-center gap-2">
+        <span class="inline-block h-4 w-7 rounded-full border-2 border-brand-primary dark:border-emerald-400 shrink-0"></span>
+        จุดเริ่มต้น/สิ้นสุด
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-block h-4 w-7 border-2 border-brand-primary dark:border-emerald-400 shrink-0"></span>
+        ขั้นตอน/การดำเนินการ
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-block h-4 w-4 rotate-45 border-2 border-brand-primary dark:border-emerald-400 shrink-0"></span>
+        จุดตัดสินใจ
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-block h-4 w-7 border-2 border-brand-primary dark:border-emerald-400 shrink-0" style="clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%)"></span>
+        ข้อมูลเข้า/ออก
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-block h-1 w-7 bg-brand-primary dark:bg-emerald-400 shrink-0"></span>
+        ลำดับขั้นตอนหลัก
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-block h-0 w-7 border-t-2 border-dashed border-brand-primary dark:border-emerald-400 shrink-0"></span>
+        ผลข้างเคียง/แจ้งเตือน
+      </div>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="khd-card flex items-center justify-center gap-3 py-10 text-sm text-neutral-500">
+      <mat-spinner diameter="22" />
+      กำลังสร้างผังการทำงาน...
+    </div>
+  } @else if (renderError(); as err) {
+    <div class="khd-card flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400 py-6 justify-center">
+      <khd-icon name="exclamation-triangle" [size]="18" />
+      {{ err }}
+    </div>
+  } @else {
+    <div class="khd-card">
+      <div class="flex items-center gap-2 mb-1">
+        <khd-icon [name]="overview.icon" [size]="18" [class]="overview.iconColor" />
+        <h2 class="text-sm font-medium">{{ overview.title }}</h2>
+      </div>
+      <p class="text-xs text-neutral-500 mb-3">{{ overview.description }}</p>
+      <div class="overflow-x-auto rounded-xl bg-white dark:bg-neutral-900 border border-black/5 dark:border-white/10 p-3">
+        <div class="min-w-[720px] flex justify-center [&_svg]:max-w-none" [innerHTML]="svgFor(overview.key)"></div>
+      </div>
+      @if (overview.notes.length > 0) {
+        <ul class="list-disc list-inside space-y-1 text-xs text-neutral-500 mt-3">
+          @for (note of overview.notes; track note) {
+            <li>{{ note }}</li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="khd-card !p-0 overflow-hidden">
+      <mat-tab-group animationDuration="150ms" class="khd-workflow-tabs">
+        @for (section of sections; track section.key) {
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <khd-icon [name]="section.icon" [size]="16" [class]="section.iconColor" class="!mr-1.5" />
+              {{ section.title }}
+            </ng-template>
+
+            <div class="p-4 space-y-3">
+              <p class="text-xs text-neutral-500">{{ section.description }}</p>
+
+              @if (section.definition) {
+                <div class="overflow-x-auto rounded-xl bg-white dark:bg-neutral-900 border border-black/5 dark:border-white/10 p-3">
+                  <div class="min-w-[640px] flex justify-center [&_svg]:max-w-none" [innerHTML]="svgFor(section.key)"></div>
+                </div>
+              } @else if (section.key === 'roles') {
+                <div class="overflow-x-auto rounded-xl border border-black/5 dark:border-white/10">
+                  <table class="w-full text-xs text-left border-collapse min-w-[560px]">
+                    <thead class="bg-black/[0.03] dark:bg-white/[0.06] text-neutral-500">
+                      <tr>
+                        <th class="px-3 py-2 font-medium">บทบาท</th>
+                        <th class="px-3 py-2 font-medium">เห็นงานแจ้งซ่อม</th>
+                        <th class="px-3 py-2 font-medium">แก้ไขสถานะ/ผลตรวจ/สรุปผล</th>
+                        <th class="px-3 py-2 font-medium">จัดการผู้ใช้/ตั้งค่าระบบ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of roleMatrix; track row.role) {
+                        <tr class="border-t border-black/5 dark:border-white/10">
+                          <td class="px-3 py-2 font-medium whitespace-nowrap">{{ row.role }}</td>
+                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300">{{ row.viewTickets }}</td>
+                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300">{{ row.editTickets }}</td>
+                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300">{{ row.adminAccess }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+
+              @if (section.notes.length > 0) {
+                <ul class="list-disc list-inside space-y-1 text-xs text-neutral-500">
+                  @for (note of section.notes; track note) {
+                    <li>{{ note }}</li>
+                  }
+                </ul>
+              }
+            </div>
+          </mat-tab>
+        }
+      </mat-tab-group>
+    </div>
+  }
+</div>

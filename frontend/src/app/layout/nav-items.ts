@@ -23,4 +23,5 @@ export const NAV_ITEMS: INavItem[] = [
   { label: 'ประวัติการใช้งานระบบ', route: '/settings/audit-log', icon: 'clipboard-document-list', permissions: ['audit:view'] },
   { label: 'ประวัติเอกสารราชการ', route: '/settings/documents', icon: 'document-text', permissions: ['document:print', 'document:generate', 'audit:view'] },
   { label: 'คู่มือการใช้งาน', route: '/help', icon: 'document-text' },
+  { label: 'ผังการทำงานระบบ (SOP)', route: '/workflows', icon: 'share' },
 ];
