@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +14,10 @@ import { HasPermissionDirective } from '../../../shared/directives/has-permissio
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { IVendor } from '../../../core/models/vendor.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
+import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -22,6 +25,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
   selector: 'khd-vendor-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   imports: [
     FormsModule,
     ReactiveFormsModule,
@@ -34,6 +38,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
     MatSlideToggleModule,
     IconComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './vendor-list.component.html',
 })
@@ -182,7 +187,7 @@ export class VendorListComponent {
       const res = await firstValueFrom(this.vendorService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
       await exportTableToPdf({
         title: 'รายงานผู้ขาย/ผู้รับซ่อมภายนอก',
-        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(res.items.length)} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${formatKhdNumber(res.meta.total)} รายการ)` : ''}`,
         columns: ['รหัส', 'ชื่อบริษัท/ร้าน', 'ผู้ติดต่อ', 'เบอร์โทร', 'สถานะ'],
         rows: res.items.map((v) => [v.code, v.name, v.contactPerson ?? '-', v.phone ?? '-', v.isActive ? 'ใช้งานอยู่' : 'ปิดใช้งาน']),
         filename: `vendors-${Date.now()}.pdf`,

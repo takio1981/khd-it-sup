@@ -13,6 +13,7 @@ import { HasPermissionDirective } from '../../shared/directives/has-permission.d
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import type { IDepartment, IDivision } from '../../core/models/user.model';
+import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
 
 @Component({
   selector: 'khd-division-list',
@@ -28,6 +29,7 @@ import type { IDepartment, IDivision } from '../../core/models/user.model';
     MatButtonModule,
     IconComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './division-list.component.html',
 })

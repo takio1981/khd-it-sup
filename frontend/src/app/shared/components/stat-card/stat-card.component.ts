@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { IconComponent } from '../icon/icon.component';
+import { KhdNumberPipe } from '../../pipes/khd-number.pipe';
 
 export type StatCardColor = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'teal' | 'gray';
 
@@ -22,7 +23,7 @@ const SOLID_CLASSES: Record<StatCardColor, string> = {
   selector: 'khd-stat-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent],
+  imports: [IconComponent, KhdNumberPipe],
   template: `
     @if (variant() === 'solid') {
       <div
@@ -33,7 +34,7 @@ const SOLID_CLASSES: Record<StatCardColor, string> = {
           <khd-icon [name]="icon()" [size]="180" class="!translate-x-10" />
         </div>
         <div class="relative z-10 flex flex-col items-center gap-0">
-          <p class="m-0 text-5xl font-bold leading-none tabular-nums">{{ value() }}</p>
+          <p class="m-0 text-5xl font-bold leading-none tabular-nums">{{ value() | khdNumber }}</p>
           <p class="m-0 mt-1 text-xs font-medium leading-tight">{{ label() }}</p>
         </div>
       </div>
@@ -43,7 +44,7 @@ const SOLID_CLASSES: Record<StatCardColor, string> = {
           <khd-icon [name]="icon()" [size]="24" [style.color]="accentColor()" />
         </div>
         <div class="min-w-0">
-          <p class="text-2xl font-semibold leading-tight tabular-nums">{{ value() }}</p>
+          <p class="text-2xl font-semibold leading-tight tabular-nums">{{ value() | khdNumber }}</p>
           <p class="text-sm text-neutral-500 truncate">{{ label() }}</p>
         </div>
       </div>

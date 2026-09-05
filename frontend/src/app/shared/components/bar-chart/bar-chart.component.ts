@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { KhdNumberPipe } from '../../pipes/khd-number.pipe';
 
 export interface IBarChartDatum {
   label: string;
@@ -14,6 +15,7 @@ export interface IBarChartDatum {
   selector: 'khd-bar-chart',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [KhdNumberPipe],
   templateUrl: './bar-chart.component.html',
   styleUrl: './bar-chart.component.scss',
 })

@@ -149,9 +149,9 @@
         </div>
         @if (data.ticket.inspectionOutcome === 'IN_HOUSE' && data.ticket.requestPartsNeeded) {
           <div class="khd-doc-partslist">
-            <p>1) {{ data.ticket.requestedPart1Name || '-' }} จำนวน {{ data.ticket.requestedPart1Qty ?? '-' }}</p>
-            <p>2) {{ data.ticket.requestedPart2Name || '-' }} จำนวน {{ data.ticket.requestedPart2Qty ?? '-' }}</p>
-            <p>3) {{ data.ticket.requestedPart3Name || '-' }} จำนวน {{ data.ticket.requestedPart3Qty ?? '-' }}</p>
+            <p>1) {{ data.ticket.requestedPart1Name || '-' }} จำนวน {{ data.ticket.requestedPart1Qty | khdNumber }}</p>
+            <p>2) {{ data.ticket.requestedPart2Name || '-' }} จำนวน {{ data.ticket.requestedPart2Qty | khdNumber }}</p>
+            <p>3) {{ data.ticket.requestedPart3Name || '-' }} จำนวน {{ data.ticket.requestedPart3Qty | khdNumber }}</p>
           </div>
         }
         <div class="khd-doc-checklist khd-doc-checklist-col">

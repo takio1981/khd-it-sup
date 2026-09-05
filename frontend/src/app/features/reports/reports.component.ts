@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -24,6 +24,7 @@ import { BarChartComponent, type IBarChartDatum } from '../../shared/components/
 import { TechnicianWorkloadReportComponent } from '../../shared/components/technician-workload-report/technician-workload-report.component';
 import { URGENCY_LABEL_TH, URGENCY_COLOR } from '../../core/constants/status.const';
 import { downloadBlob } from '../../core/utils/download.util';
+import { provideKhdPaginatorIntl } from '../../core/utils/khd-paginator-intl.util';
 import type { IRepairTicketListItem } from '../../core/models/repair-ticket.model';
 import type { IAssetLoan, AssetLoanStatus } from '../../core/models/asset-loan.model';
 import type { IAsset } from '../../core/models/asset.model';
@@ -67,7 +68,7 @@ const LOAN_STATUS_LABEL_TH: Record<string, string> = {
     BarChartComponent,
     TechnicianWorkloadReportComponent,
   ],
-  providers: [provideNativeDateAdapter()],
+  providers: [provideNativeDateAdapter(), { provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   templateUrl: './reports.component.html',
 })
 export class ReportsComponent {

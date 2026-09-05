@@ -2,7 +2,7 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
       <h1 class="text-xl font-semibold">ประวัติเอกสารราชการที่ออกแล้ว</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} ฉบับ — เลขที่เอกสารออกจากระบบอัตโนมัติ ไม่ซ้ำ ไม่ข้าม</p>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} ฉบับ — เลขที่เอกสารออกจากระบบอัตโนมัติ ไม่ซ้ำ ไม่ข้าม</p>
     </div>
     <div class="flex gap-2">
       <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">

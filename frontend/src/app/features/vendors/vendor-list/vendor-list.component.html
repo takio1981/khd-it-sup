@@ -2,7 +2,7 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
       <h1 class="text-xl font-semibold">ผู้ขาย/ผู้รับซ่อมภายนอก</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} ราย</p>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} ราย</p>
     </div>
     <div class="flex gap-2">
       <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">

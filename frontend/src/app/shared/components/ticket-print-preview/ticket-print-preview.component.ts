@@ -16,6 +16,7 @@ import {
 } from '../../../core/constants/status.const';
 import { environment } from '../../../../environments/environment';
 import type { IRepairTicketDetail } from '../../../core/models/repair-ticket.model';
+import { KhdNumberPipe } from '../../pipes/khd-number.pipe';
 
 const REPAIR_REQUEST_TEMPLATE_CODE = 'REPAIR_REQUEST';
 
@@ -51,7 +52,7 @@ const UNCHECKED = '☐';
   selector: 'khd-ticket-print-preview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, MatDialogModule, MatButtonModule, IconComponent],
+  imports: [DatePipe, MatDialogModule, MatButtonModule, IconComponent, KhdNumberPipe],
   templateUrl: './ticket-print-preview.component.html',
   styleUrl: './ticket-print-preview.component.scss',
 })

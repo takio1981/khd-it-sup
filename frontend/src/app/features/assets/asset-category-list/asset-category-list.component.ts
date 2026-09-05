@@ -13,6 +13,7 @@ import { HasPermissionDirective } from '../../../shared/directives/has-permissio
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import type { IAssetCategory } from '../../../core/models/asset.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 
 @Component({
   selector: 'khd-asset-category-list',
@@ -28,6 +29,7 @@ import type { IAssetCategory } from '../../../core/models/asset.model';
     MatButtonModule,
     IconComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './asset-category-list.component.html',
 })

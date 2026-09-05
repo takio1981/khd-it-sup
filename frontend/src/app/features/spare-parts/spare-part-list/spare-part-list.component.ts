@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -16,7 +16,10 @@ import { HasPermissionDirective } from '../../../shared/directives/has-permissio
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { ISparePart, SparePartTxnType } from '../../../core/models/spare-part.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
+import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -39,12 +42,12 @@ interface IStockDialogData {
   selector: 'khd-stock-adjust-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule],
+  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, KhdNumberPipe],
   template: `
     <h2 mat-dialog-title>ปรับสต็อก: {{ data.sparePart.code }} - {{ data.sparePart.name }}</h2>
     <form [formGroup]="form">
       <mat-dialog-content class="!flex !flex-col !gap-1">
-        <p class="text-xs text-neutral-500 !mt-0 !mb-2">คงเหลือปัจจุบัน: {{ data.sparePart.quantityOnHand }} {{ data.sparePart.unit }}</p>
+        <p class="text-xs text-neutral-500 !mt-0 !mb-2">คงเหลือปัจจุบัน: {{ data.sparePart.quantityOnHand | khdNumber }} {{ data.sparePart.unit }}</p>
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>ประเภทรายการ</mat-label>
           <mat-select formControlName="type">
@@ -86,6 +89,7 @@ export class StockAdjustDialogComponent {
   selector: 'khd-spare-part-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   imports: [
     FormsModule,
     ReactiveFormsModule,
@@ -99,6 +103,7 @@ export class StockAdjustDialogComponent {
     MatMenuModule,
     IconComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './spare-part-list.component.html',
 })
@@ -261,7 +266,7 @@ export class SparePartListComponent {
       const res = await firstValueFrom(this.sparePartService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
       await exportTableToPdf({
         title: 'รายงานคลังอะไหล่',
-        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(res.items.length)} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${formatKhdNumber(res.meta.total)} รายการ)` : ''}`,
         columns: ['รหัส', 'ชื่ออะไหล่', 'คงเหลือ', 'จุดสั่งซื้อ', 'หน่วย'],
         rows: res.items.map((p) => [p.code, p.name, String(p.quantityOnHand), String(p.reorderLevel), p.unit]),
         filename: `spare-parts-${Date.now()}.pdf`,

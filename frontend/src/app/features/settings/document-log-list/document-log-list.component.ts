@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -11,7 +11,10 @@ import { DocumentService } from '../../../core/services/document.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { IGeneratedDocument } from '../../../core/models/document.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
+import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -19,7 +22,8 @@ const EXPORT_PDF_MAX_ROWS = 500;
   selector: 'khd-document-log-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, MatTableModule, MatPaginatorModule, MatButtonModule, MatMenuModule, IconComponent],
+  providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
+  imports: [DatePipe, MatTableModule, MatPaginatorModule, MatButtonModule, MatMenuModule, IconComponent, KhdNumberPipe],
   templateUrl: './document-log-list.component.html',
 })
 export class DocumentLogListComponent {
@@ -101,7 +105,7 @@ export class DocumentLogListComponent {
       const res = await firstValueFrom(this.documentService.list({ page: 1, limit: EXPORT_PDF_MAX_ROWS }));
       await exportTableToPdf({
         title: 'รายงานเอกสารราชการที่ออกแล้ว',
-        subtitle: `ทั้งหมด ${res.items.length} ฉบับ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} ฉบับ)` : ''}`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(res.items.length)} ฉบับ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${formatKhdNumber(res.meta.total)} ฉบับ)` : ''}`,
         columns: ['เลขที่เอกสาร', 'แบบฟอร์ม', 'ใบแจ้งซ่อมที่เกี่ยวข้อง', 'วันที่ออกเอกสาร'],
         rows: res.items.map((d) => [
           d.runningNumber,

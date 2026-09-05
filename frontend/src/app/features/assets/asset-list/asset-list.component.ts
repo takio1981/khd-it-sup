@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -22,6 +22,8 @@ import { DepartmentService } from '../../../core/services/department.service';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
+import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { QrPrintPreviewComponent } from '../../../shared/components/qr-print-preview/qr-print-preview.component';
 import type { IQrLabelData } from '../../../shared/components/qr-print-preview/qr-print-preview.model';
@@ -29,6 +31,7 @@ import { AssetFormComponent } from '../asset-form/asset-form.component';
 import { getStatusLabel, getAcquisitionTypeLabel, ACQUISITION_TYPE_LABEL_TH } from '../../../core/constants/status.const';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { AssetStatus, IAsset, IAssetCategory } from '../../../core/models/asset.model';
 import type { IDepartment } from '../../../core/models/user.model';
 
@@ -49,6 +52,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
   selector: 'khd-asset-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   imports: [
     RouterLink,
     FormsModule,
@@ -66,6 +70,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
     IconComponent,
     StatusBadgeComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './asset-list.component.html',
 })
@@ -407,7 +412,7 @@ export class AssetListComponent implements OnDestroy {
       const res = await firstValueFrom(this.assetService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
       await exportTableToPdf({
         title: 'รายงานครุภัณฑ์',
-        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(res.items.length)} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${formatKhdNumber(res.meta.total)} รายการ)` : ''}`,
         columns: ['เลขครุภัณฑ์', 'ประเภท', 'ยี่ห้อ/รุ่น', 'สถานะ', 'ประเภทการได้มา', 'หน่วยงาน', 'ผู้รับผิดชอบ', 'สถานที่'],
         rows: res.items.map((a) => [
           a.assetNumber,

@@ -40,7 +40,7 @@
           <div><dt class="text-neutral-400 text-xs">ผู้รับผิดชอบ</dt><dd>{{ a.owner?.fullName ?? '-' }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">วันที่จัดซื้อ</dt><dd>{{ a.purchaseDate ?? '-' }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">หมดประกัน</dt><dd>{{ a.warrantyExpireDate ?? '-' }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">ราคา</dt><dd>{{ a.price ?? '-' }}</dd></div>
+          <div><dt class="text-neutral-400 text-xs">ราคา</dt><dd>{{ a.price | khdNumber:2 }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">ประเภทการได้มา</dt><dd>{{ acquisitionTypeLabel(a.acquisitionType) }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">หน่วยนับ</dt><dd>{{ a.unitType ?? '-' }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">ปีงบประมาณ</dt><dd>{{ a.budgetYear ?? '-' }}</dd></div>

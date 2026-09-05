@@ -12,6 +12,7 @@ import { SignaturePadComponent } from '../../../shared/components/signature-pad/
 import type { IRepairSummaryPayload } from '../../../core/services/repair-ticket.service';
 import type { IInspectionPayload, InspectionOutcome } from '../../../core/models/repair-ticket.model';
 import type { ISparePart } from '../../../core/models/spare-part.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 
 /** Dialog เล็ก ๆ สำหรับใส่เหตุผลยกเลิกใบแจ้งซ่อม (บังคับกรอกตาม business rule) */
 @Component({
@@ -43,7 +44,7 @@ export class CancelTicketDialogComponent {
   selector: 'khd-assign-technician-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatSelectModule, MatButtonModule],
+  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatSelectModule, MatButtonModule, KhdNumberPipe],
   template: `
     <h2 mat-dialog-title>มอบหมายช่างผู้รับผิดชอบ</h2>
     <mat-dialog-content>
@@ -59,7 +60,7 @@ export class CancelTicketDialogComponent {
                   [style.background-color]="(t.availability === 'AVAILABLE' ? '#22C55E' : '#EF4444') + '1A'"
                   [style.color]="t.availability === 'AVAILABLE' ? '#22C55E' : '#EF4444'"
                 >
-                  {{ t.availability === 'AVAILABLE' ? 'ว่าง' : 'ไม่ว่าง' }} · {{ t.activeTicketCount }} งาน
+                  {{ t.availability === 'AVAILABLE' ? 'ว่าง' : 'ไม่ว่าง' }} · {{ t.activeTicketCount | khdNumber }} งาน
                 </span>
               </div>
             </mat-option>
@@ -264,7 +265,7 @@ export interface IIssuePartDialogResult {
   selector: 'khd-issue-part-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule],
+  imports: [ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, KhdNumberPipe],
   template: `
     <h2 mat-dialog-title>เบิกอะไหล่</h2>
     <form [formGroup]="form">
@@ -274,7 +275,7 @@ export interface IIssuePartDialogResult {
           <mat-select formControlName="sparePartId">
             @for (p of data.parts; track p.id) {
               <mat-option [value]="p.id" [disabled]="p.quantityOnHand <= 0">
-                {{ p.code }} - {{ p.name }} (คงเหลือ {{ p.quantityOnHand }} {{ p.unit }})
+                {{ p.code }} - {{ p.name }} (คงเหลือ {{ p.quantityOnHand | khdNumber }} {{ p.unit }})
               </mat-option>
             }
           </mat-select>

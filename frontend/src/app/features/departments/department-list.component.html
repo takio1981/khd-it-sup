@@ -2,7 +2,7 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
       <h1 class="text-xl font-semibold">จัดการสถานที่/หน่วยงาน</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ departments().length }} หน่วยงาน</p>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ departments().length | khdNumber }} หน่วยงาน</p>
     </div>
     <div class="flex items-center gap-2">
       <button mat-stroked-button *khdHasPermission="'department:manage'" routerLink="/departments/divisions">

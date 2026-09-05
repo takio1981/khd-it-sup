@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,7 +20,10 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 import { UserFormComponent } from '../user-form/user-form.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { IUserListItem } from '../../../core/models/user.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
+import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -28,6 +31,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
   selector: 'khd-user-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   imports: [
     RouterLink,
     FormsModule,
@@ -41,6 +45,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
     IconComponent,
     UserAvatarComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './user-list.component.html',
 })
@@ -147,7 +152,7 @@ export class UserListComponent {
       const res = await firstValueFrom(this.userService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
       await exportTableToPdf({
         title: 'รายงานผู้ใช้งาน',
-        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(res.items.length)} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${formatKhdNumber(res.meta.total)} รายการ)` : ''}`,
         columns: ['ชื่อ-นามสกุล', 'Username', 'สิทธิ์', 'หน่วยงาน', 'สถานะ'],
         rows: res.items.map((u) => [u.fullName, u.username, u.role.nameTh, u.department?.nameTh ?? '-', u.isActive ? 'ใช้งาน' : 'ระงับ']),
         filename: `users-${Date.now()}.pdf`,

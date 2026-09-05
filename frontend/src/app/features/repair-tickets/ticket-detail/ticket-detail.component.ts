@@ -40,6 +40,7 @@ import type { IRepairSummaryPayload } from '../../../core/services/repair-ticket
 import type { IInspectionPayload, IRepairTicketDetail, ITimelineEvent } from '../../../core/models/repair-ticket.model';
 import type { ISparePartTransaction } from '../../../core/models/spare-part.model';
 import type { IVendor, IVendorRepairOrder, VendorRepairStatus } from '../../../core/models/vendor.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 
 const VENDOR_ORDER_STATUSES: VendorRepairStatus[] = [
   'QUOTATION_REQUESTED',
@@ -88,6 +89,7 @@ const VENDOR_ORDER_STATUS_LABEL_TH: Record<string, string> = {
     AttachmentThumbnailComponent,
     AssetPhotoThumbnailComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './ticket-detail.component.html',
 })

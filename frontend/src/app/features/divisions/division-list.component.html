@@ -6,7 +6,7 @@
         กลับไปหน้าจัดการสถานที่/หน่วยงาน
       </a>
       <h1 class="text-xl font-semibold">แผนก</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ divisions().length }} แผนก</p>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ divisions().length | khdNumber }} แผนก</p>
     </div>
     <button mat-flat-button color="primary" *khdHasPermission="'department:manage'" (click)="showForm() ? cancelForm() : openCreateForm()">
       <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />

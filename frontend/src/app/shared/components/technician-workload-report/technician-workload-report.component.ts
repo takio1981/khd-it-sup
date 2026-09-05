@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { UserService, type ITechnicianWorkload } from '../../../core/services/user.service';
 import { StatCardComponent } from '../stat-card/stat-card.component';
+import { KhdNumberPipe } from '../../pipes/khd-number.pipe';
 
 /**
  * รายงานภาระงานช่างเทคนิค/เจ้าหน้าที่ไอที (เปรียบเทียบ workload + สถานะว่าง/ไม่ว่าง)
@@ -10,7 +11,7 @@ import { StatCardComponent } from '../stat-card/stat-card.component';
   selector: 'khd-technician-workload-report',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StatCardComponent],
+  imports: [StatCardComponent, KhdNumberPipe],
   template: `
     <div class="pt-4 space-y-4">
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl">
@@ -34,7 +35,7 @@ import { StatCardComponent } from '../stat-card/stat-card.component';
               <tr class="border-b border-black/5 dark:border-white/10 last:border-0">
                 <td class="px-4 py-2.5">{{ t.fullName }}</td>
                 <td class="px-4 py-2.5 text-neutral-500">{{ t.role.nameTh }}</td>
-                <td class="px-4 py-2.5">{{ t.activeTicketCount }}</td>
+                <td class="px-4 py-2.5">{{ t.activeTicketCount | khdNumber }}</td>
                 <td class="px-4 py-2.5">
                   <span
                     class="khd-status-badge"

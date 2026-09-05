@@ -22,7 +22,7 @@
             <div class="flex items-center gap-2 px-3 py-2 shrink-0">
               <span class="w-2.5 h-2.5 rounded-full shrink-0" [style.background-color]="column.colorCode"></span>
               <h2 class="text-sm font-medium truncate flex-1">{{ column.stepNameTh }}</h2>
-              <span class="text-xs text-neutral-500 bg-white dark:bg-neutral-700 rounded-full px-2 py-0.5">{{ column.tickets.length }}</span>
+              <span class="text-xs text-neutral-500 bg-white dark:bg-neutral-700 rounded-full px-2 py-0.5">{{ column.tickets.length | khdNumber }}</span>
             </div>
 
             <div

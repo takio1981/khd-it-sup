@@ -9,6 +9,7 @@ import { interval, startWith, switchMap, takeWhile } from 'rxjs';
 import { EquipmentSyncService } from '../../../core/services/equipment-sync.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import type { IEquipmentSyncStatus } from '../../../core/models/equipment-sync.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -16,7 +17,7 @@ const POLL_INTERVAL_MS = 3000;
   selector: 'khd-equipment-sync',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatButtonModule, MatProgressSpinnerModule, MatExpansionModule, IconComponent],
+  imports: [RouterLink, MatButtonModule, MatProgressSpinnerModule, MatExpansionModule, IconComponent, KhdNumberPipe],
   templateUrl: './equipment-sync.component.html',
 })
 export class EquipmentSyncComponent {

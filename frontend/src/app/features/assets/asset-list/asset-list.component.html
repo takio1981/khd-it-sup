@@ -2,13 +2,13 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
       <h1 class="text-xl font-semibold">ครุภัณฑ์</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} รายการ</p>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} รายการ</p>
     </div>
     <div class="flex items-center gap-2">
       @if (selectedIds().size > 0) {
         <button mat-stroked-button color="primary" *khdHasPermission="'qrcode:print'" [disabled]="printing()" (click)="printSelected()">
           <khd-icon name="printer" [size]="18" class="!mr-1" />
-          พิมพ์ QR ที่เลือก ({{ selectedIds().size }})
+          พิมพ์ QR ที่เลือก ({{ selectedIds().size | khdNumber }})
         </button>
       }
       <button mat-stroked-button *khdHasPermission="'asset:update'" routerLink="/assets/categories">
@@ -175,7 +175,7 @@
                     <div><span class="text-neutral-400">สถานที่:</span> {{ locationLabel(a) }}</div>
                   }
                   @if (a.price) {
-                    <div><span class="text-neutral-400">ราคา:</span> {{ a.price }}</div>
+                    <div><span class="text-neutral-400">ราคา:</span> {{ a.price | khdNumber:2 }}</div>
                   }
                   @if (a.purchaseDate) {
                     <div><span class="text-neutral-400">วันที่ซื้อ:</span> {{ a.purchaseDate | date: 'd MMM yyyy' }}</div>

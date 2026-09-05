@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +13,8 @@ import { NotificationService } from '../../../core/services/notification.service
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../../core/utils/number-format.util';
+import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 import type { INotificationLog, NotificationChannel, NotificationStatus } from '../../../core/models/notification.model';
 
 const EXPORT_PDF_MAX_ROWS = 500;
@@ -41,6 +43,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 @Component({
   selector: 'khd-notification-log-list',
+  providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, DatePipe, MatTableModule, MatPaginatorModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatMenuModule, IconComponent],
@@ -140,7 +143,7 @@ export class NotificationLogListComponent {
       const res = await firstValueFrom(this.notificationService.getLogs({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
       await exportTableToPdf({
         title: 'รายงานประวัติการแจ้งเตือน',
-        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(res.items.length)} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${formatKhdNumber(res.meta.total)} รายการ)` : ''}`,
         columns: ['ช่องทาง', 'ผู้รับ', 'หัวข้อ', 'สถานะ', 'เวลา'],
         rows: res.items.map((n) => [
           this.channelLabel[n.channel] ?? n.channel,

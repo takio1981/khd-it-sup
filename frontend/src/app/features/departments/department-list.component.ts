@@ -15,7 +15,9 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { downloadBlob } from '../../core/utils/download.util';
 import { exportTableToPdf } from '../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../core/utils/number-format.util';
 import type { IDepartment } from '../../core/models/user.model';
+import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
 
 @Component({
   selector: 'khd-department-list',
@@ -32,6 +34,7 @@ import type { IDepartment } from '../../core/models/user.model';
     MatMenuModule,
     IconComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './department-list.component.html',
 })
@@ -157,7 +160,7 @@ export class DepartmentListComponent {
       const items = this.departments();
       await exportTableToPdf({
         title: 'รายงานหน่วยงาน',
-        subtitle: `ทั้งหมด ${items.length} หน่วยงาน`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(items.length)} หน่วยงาน`,
         columns: ['รหัส', 'ชื่อหน่วยงาน', 'หน่วยงานแม่'],
         rows: items.map((d) => [d.code, d.nameTh, this.parentName(d.parentId)]),
         filename: `departments-${Date.now()}.pdf`,

@@ -14,7 +14,7 @@
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-semibold flex items-center gap-2">
           <khd-icon name="building-office-2" [size]="16" class="text-blue-500" />
-          อาคาร ({{ buildings().length }})
+          อาคาร ({{ buildings().length | khdNumber }})
         </h2>
         <button
           mat-icon-button
@@ -83,7 +83,7 @@
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-semibold flex items-center gap-2">
           <khd-icon name="adjustments-horizontal" [size]="16" class="text-teal-500" />
-          ชั้น ({{ floors().length }})
+          ชั้น ({{ floors().length | khdNumber }})
         </h2>
         @if (selectedBuildingId()) {
           <button mat-icon-button *khdHasPermission="'asset:create'" (click)="showFloorForm() ? cancelFloorForm() : openCreateFloorForm()">
@@ -154,7 +154,7 @@
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-semibold flex items-center gap-2">
           <khd-icon name="archive-box" [size]="16" class="text-violet-500" />
-          ห้อง ({{ rooms().length }})
+          ห้อง ({{ rooms().length | khdNumber }})
         </h2>
         @if (selectedFloorId()) {
           <button mat-icon-button *khdHasPermission="'asset:create'" (click)="showRoomForm() ? cancelRoomForm() : openCreateRoomForm()">

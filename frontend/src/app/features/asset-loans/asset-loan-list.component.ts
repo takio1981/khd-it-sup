@@ -4,7 +4,7 @@ import { forkJoin, type Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -20,10 +20,13 @@ import { HasPermissionDirective } from '../../shared/directives/has-permission.d
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { downloadBlob } from '../../core/utils/download.util';
 import { exportTableToPdf } from '../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../core/utils/number-format.util';
 
 import { AssetLoanFormComponent } from './asset-loan-form/asset-loan-form.component';
 import { AssetLoanReturnFormComponent } from './asset-loan-return-form/asset-loan-return-form.component';
 import type { IAssetLoan, AssetLoanStatus } from '../../core/models/asset-loan.model';
+import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
+import { provideKhdPaginatorIntl } from '../../core/utils/khd-paginator-intl.util';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -43,6 +46,7 @@ const STATUS_COLOR: Record<string, string> = {
   selector: 'khd-asset-loan-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   imports: [
     FormsModule,
     DatePipe,
@@ -55,6 +59,7 @@ const STATUS_COLOR: Record<string, string> = {
     MatMenuModule,
     IconComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './asset-loan-list.component.html',
 })
@@ -177,7 +182,7 @@ export class AssetLoanListComponent {
       const res = await firstValueFrom(this.assetLoanService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
       await exportTableToPdf({
         title: 'รายงานยืมครุภัณฑ์-อุปกรณ์',
-        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(res.items.length)} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${formatKhdNumber(res.meta.total)} รายการ)` : ''}`,
         columns: ['ครุภัณฑ์', 'ผู้ยืม', 'วันที่ยืม', 'กำหนดคืน', 'สถานะ'],
         rows: res.items.map((l) => [
           `${l.asset.assetNumber}${l.asset.brand ? ' - ' + l.asset.brand : ''}`,

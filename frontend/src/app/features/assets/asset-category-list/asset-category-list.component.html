@@ -6,7 +6,7 @@
         กลับไปรายการครุภัณฑ์
       </a>
       <h1 class="text-xl font-semibold">ประเภทครุภัณฑ์</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ categories().length }} ประเภท</p>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ categories().length | khdNumber }} ประเภท</p>
     </div>
     <button mat-flat-button color="primary" *khdHasPermission="'asset:create'" (click)="showForm() ? cancelForm() : openCreateForm()">
       <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />

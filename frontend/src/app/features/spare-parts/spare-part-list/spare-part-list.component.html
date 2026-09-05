@@ -2,7 +2,7 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
       <h1 class="text-xl font-semibold">คลังอะไหล่</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} รายการ</p>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} รายการ</p>
     </div>
     <div class="flex gap-2">
       <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
@@ -87,7 +87,7 @@
       <ng-container matColumnDef="quantityOnHand">
         <th mat-header-cell *matHeaderCellDef>คงเหลือ</th>
         <td mat-cell *matCellDef="let p">
-          <span [class.text-rose-600]="isLowStock(p)" [class.font-semibold]="isLowStock(p)">{{ p.quantityOnHand }}</span>
+          <span [class.text-rose-600]="isLowStock(p)" [class.font-semibold]="isLowStock(p)">{{ p.quantityOnHand | khdNumber }}</span>
           @if (isLowStock(p)) {
             <khd-icon name="exclamation-triangle" [size]="14" class="text-amber-500 !ml-1 !inline-block" />
           }
@@ -96,7 +96,7 @@
 
       <ng-container matColumnDef="reorderLevel">
         <th mat-header-cell *matHeaderCellDef>จุดสั่งซื้อ</th>
-        <td mat-cell *matCellDef="let p">{{ p.reorderLevel }}</td>
+        <td mat-cell *matCellDef="let p">{{ p.reorderLevel | khdNumber }}</td>
       </ng-container>
 
       <ng-container matColumnDef="unit">

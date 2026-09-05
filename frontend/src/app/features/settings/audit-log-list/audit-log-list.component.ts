@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -16,6 +16,8 @@ import { AuditLogService } from '../../../core/services/audit-log.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../../core/utils/number-format.util';
+import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 import type { AuditLogAction, IAuditLog } from '../../../core/models/audit-log.model';
 
 const EXPORT_PDF_MAX_ROWS = 500;
@@ -61,7 +63,7 @@ const ACTION_COLOR: Record<string, string> = {
     MatMenuModule,
     IconComponent,
   ],
-  providers: [provideNativeDateAdapter()],
+  providers: [provideNativeDateAdapter(), { provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   templateUrl: './audit-log-list.component.html',
 })
 export class AuditLogListComponent {
@@ -164,7 +166,7 @@ export class AuditLogListComponent {
       const res = await firstValueFrom(this.auditLogService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
       await exportTableToPdf({
         title: 'รายงานประวัติการใช้งานระบบ',
-        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(res.items.length)} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${formatKhdNumber(res.meta.total)} รายการ)` : ''}`,
         columns: ['เวลา', 'ผู้ใช้', 'การกระทำ', 'โมดูล', 'รายละเอียด'],
         rows: res.items.map((l) => [
           new Date(l.createdAt).toLocaleString('th-TH'),

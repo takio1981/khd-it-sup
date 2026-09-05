@@ -4,7 +4,7 @@ import { DatePipe, NgClass } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -22,7 +22,10 @@ import { URGENCY_LABEL_TH, URGENCY_COLOR } from '../../../core/constants/status.
 import { TicketFormComponent } from '../ticket-form/ticket-form.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
+import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { IRepairTicketListItem } from '../../../core/models/repair-ticket.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
+import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -30,6 +33,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
   selector: 'khd-ticket-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   imports: [
     RouterLink,
     FormsModule,
@@ -45,6 +49,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
     StatusBadgeComponent,
     IconComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './ticket-list.component.html',
 })
@@ -183,7 +188,7 @@ export class TicketListComponent {
       const res = await firstValueFrom(this.repairTicketService.list({ ...this.currentFilter(), page: 1, limit: EXPORT_PDF_MAX_ROWS }));
       await exportTableToPdf({
         title: 'รายงานงานแจ้งซ่อม',
-        subtitle: `ทั้งหมด ${res.items.length} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${res.meta.total} รายการ)` : ''}`,
+        subtitle: `ทั้งหมด ${formatKhdNumber(res.items.length)} รายการ${res.meta.total > res.items.length ? ` (จากทั้งหมด ${formatKhdNumber(res.meta.total)} รายการ)` : ''}`,
         columns: ['เลขที่', 'สถานะ', 'ความเร่งด่วน', 'รายละเอียด', 'ผู้แจ้ง', 'ช่างผู้รับผิดชอบ', 'วันที่แจ้ง'],
         rows: res.items.map((t) => [
           t.ticketNumber,

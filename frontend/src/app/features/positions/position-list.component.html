@@ -6,7 +6,7 @@
         กลับไปรายการผู้ใช้งาน
       </a>
       <h1 class="text-xl font-semibold">ตำแหน่งงาน</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ positions().length }} ตำแหน่ง</p>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ positions().length | khdNumber }} ตำแหน่ง</p>
     </div>
     <button mat-flat-button color="primary" *khdHasPermission="'user:create'" (click)="showForm() ? cancelForm() : openCreateForm()">
       <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />

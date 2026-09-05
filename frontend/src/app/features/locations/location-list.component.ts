@@ -13,6 +13,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import type { IBuilding, IFloor, IRoom } from '../../core/models/location.model';
 import type { IDepartment } from '../../core/models/user.model';
+import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
 
 @Component({
   selector: 'khd-location-list',
@@ -27,6 +28,7 @@ import type { IDepartment } from '../../core/models/user.model';
     MatButtonModule,
     IconComponent,
     HasPermissionDirective,
+    KhdNumberPipe,
   ],
   templateUrl: './location-list.component.html',
 })

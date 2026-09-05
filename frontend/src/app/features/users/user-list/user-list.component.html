@@ -2,7 +2,7 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
       <h1 class="text-xl font-semibold">ผู้ใช้งาน</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() }} คน</p>
+      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} คน</p>
     </div>
     <div class="flex items-center gap-2">
       <button mat-stroked-button *khdHasPermission="'user:update'" routerLink="/users/positions">

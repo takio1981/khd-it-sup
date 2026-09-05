@@ -10,6 +10,7 @@ import { WorkflowService } from '../../../core/services/workflow.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { URGENCY_LABEL_TH, URGENCY_COLOR } from '../../../core/constants/status.const';
 import type { IRepairTicketListItem } from '../../../core/models/repair-ticket.model';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 
 const BOARD_TEMPLATE_CODE = 'REPAIR_INTERNAL';
 /** DRAFT ไม่มี transition ใดๆ ในระบบเข้าไปถึง (ตั๋วจริงไม่เคยอยู่สถานะนี้) จึงไม่ต้องแสดงเป็นคอลัมน์ */
@@ -29,7 +30,7 @@ interface IKanbanColumn {
   selector: 'khd-ticket-board',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, CdkDropList, CdkDropListGroup, CdkDrag, MatButtonModule, MatProgressSpinnerModule, IconComponent],
+  imports: [RouterLink, CdkDropList, CdkDropListGroup, CdkDrag, MatButtonModule, MatProgressSpinnerModule, IconComponent, KhdNumberPipe],
   templateUrl: './ticket-board.component.html',
   styleUrl: './ticket-board.component.scss',
 })

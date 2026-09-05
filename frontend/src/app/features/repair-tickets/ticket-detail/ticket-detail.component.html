@@ -179,7 +179,7 @@
 
         <div class="pt-2 border-t border-black/5 dark:border-white/10">
           <div class="flex items-center justify-between mb-2">
-            <h3 class="text-xs font-medium text-neutral-500">ไฟล์แนบ ({{ t.attachments.length }})</h3>
+            <h3 class="text-xs font-medium text-neutral-500">ไฟล์แนบ ({{ t.attachments.length | khdNumber }})</h3>
             <button mat-button class="!text-xs" *khdHasPermission="'ticket:upload_attachment'" (click)="triggerFileInput()">
               <khd-icon name="paper-clip" [size]="14" class="!mr-1" />แนบไฟล์
             </button>
@@ -197,12 +197,12 @@
 
         @if (partsUsed().length > 0) {
           <div class="pt-2 border-t border-black/5 dark:border-white/10">
-            <h3 class="text-xs font-medium text-neutral-500 mb-2">อะไหล่ที่เบิกใช้ ({{ partsUsed().length }})</h3>
+            <h3 class="text-xs font-medium text-neutral-500 mb-2">อะไหล่ที่เบิกใช้ ({{ partsUsed().length | khdNumber }})</h3>
             <div class="space-y-1">
               @for (txn of partsUsed(); track txn.id) {
                 <div class="flex items-center justify-between text-xs">
                   <span>{{ txn.sparePart.code }} - {{ txn.sparePart.name }}</span>
-                  <span class="text-neutral-500">{{ txn.quantity }} {{ txn.sparePart.unit }}</span>
+                  <span class="text-neutral-500">{{ txn.quantity | khdNumber }} {{ txn.sparePart.unit }}</span>
                 </div>
               }
             </div>
@@ -236,9 +236,9 @@
                 <div>
                   <dt class="text-xs text-neutral-400 mb-0.5">รายการอะไหล่ที่ขออนุมัติซื้อ</dt>
                   <dd class="text-neutral-700 dark:text-neutral-200">
-                    @if (t.requestedPart1Name) { <span class="block">1. {{ t.requestedPart1Name }} จำนวน {{ t.requestedPart1Qty }}</span> }
-                    @if (t.requestedPart2Name) { <span class="block">2. {{ t.requestedPart2Name }} จำนวน {{ t.requestedPart2Qty }}</span> }
-                    @if (t.requestedPart3Name) { <span class="block">3. {{ t.requestedPart3Name }} จำนวน {{ t.requestedPart3Qty }}</span> }
+                    @if (t.requestedPart1Name) { <span class="block">1. {{ t.requestedPart1Name }} จำนวน {{ t.requestedPart1Qty | khdNumber }}</span> }
+                    @if (t.requestedPart2Name) { <span class="block">2. {{ t.requestedPart2Name }} จำนวน {{ t.requestedPart2Qty | khdNumber }}</span> }
+                    @if (t.requestedPart3Name) { <span class="block">3. {{ t.requestedPart3Name }} จำนวน {{ t.requestedPart3Qty | khdNumber }}</span> }
                   </dd>
                 </div>
               }
@@ -301,7 +301,7 @@
               @if (vo.quotationAmount) {
                 <div class="flex justify-between">
                   <dt class="text-xs text-neutral-400">ราคาประเมิน</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.quotationAmount }} บาท</dd>
+                  <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.quotationAmount | khdNumber:2 }} บาท</dd>
                 </div>
               }
               @if (vo.poNumber) {

@@ -16,6 +16,7 @@ import { HasPermissionDirective } from '../../../shared/directives/has-permissio
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { QrPrintPreviewComponent } from '../../../shared/components/qr-print-preview/qr-print-preview.component';
 import { AssetPhotoThumbnailComponent } from '../../../shared/components/asset-photo-thumbnail/asset-photo-thumbnail.component';
+import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 import type { IQrLabelData } from '../../../shared/components/qr-print-preview/qr-print-preview.model';
 import { AssetFormComponent } from '../asset-form/asset-form.component';
 import { downloadBlob } from '../../../core/utils/download.util';
@@ -37,6 +38,7 @@ import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/mo
     IconComponent,
     HasPermissionDirective,
     AssetPhotoThumbnailComponent,
+    KhdNumberPipe,
   ],
   templateUrl: './asset-detail.component.html',
 })
