@@ -19,15 +19,36 @@
         <div class="flex justify-center py-6">
           <mat-spinner diameter="28" />
         </div>
+      } @else if (statusLoadError()) {
+        <div class="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 space-y-2">
+          <p class="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+            <khd-icon name="exclamation-triangle" [size]="18" class="shrink-0" />
+            โหลดสถานะ PIN ไม่สำเร็จ
+          </p>
+          <button mat-stroked-button color="warn" type="button" class="!w-full" (click)="loadStatus()">ลองใหม่</button>
+        </div>
       } @else {
-        <div class="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 dark:border-neutral-700 px-4 py-3">
-          <div class="min-w-0">
-            <p class="text-sm font-medium text-neutral-800 dark:text-neutral-100">เข้าสู่ระบบด้วย PIN บนเครื่องนี้</p>
-            <p class="text-xs text-neutral-500 mt-0.5">
-              เปิดไว้เพื่อกรอกแค่ PIN 6 หลักในครั้งถัดไป โดยไม่ต้องพิมพ์รหัสผ่านซ้ำ
+        <!-- แถวสถานะ: อ่านจาก pinStatus() เท่านั้น ไม่เกี่ยวกับว่าฟอร์มเปิดอยู่หรือไม่ จึงไม่มีทางแสดงผลขัดกับความจริง -->
+        <div class="flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-700 px-4 py-3">
+          @if (pinStatus()?.available) {
+            <khd-icon name="shield-check" [size]="22" class="text-brand-primary dark:text-emerald-400 shrink-0" />
+          } @else if (pinStatus()?.hasHistory) {
+            <khd-icon name="arrow-path" [size]="22" class="text-amber-500 shrink-0" />
+          } @else {
+            <khd-icon name="x-circle" [size]="22" class="text-neutral-400 shrink-0" />
+          }
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-neutral-800 dark:text-neutral-100">
+              @if (pinStatus()?.available) {
+                PIN ใช้งานอยู่บนเครื่องนี้
+              } @else if (pinStatus()?.hasHistory) {
+                เคยตั้งค่า PIN ไว้ แต่ปิดใช้งานอยู่
+              } @else {
+                ยังไม่ได้ตั้งค่า PIN บนเครื่องนี้
+              }
             </p>
+            <p class="text-xs text-neutral-500 mt-0.5">กรอกแค่ PIN 6 หลักในครั้งถัดไป โดยไม่ต้องพิมพ์รหัสผ่านซ้ำ</p>
           </div>
-          <mat-slide-toggle [checked]="pinEnabled()" (change)="onToggleChange($event)" color="primary" />
         </div>
 
         @if (savedMessage()) {
@@ -41,47 +62,93 @@
           </div>
         }
 
-        @if (showSetupForm()) {
-          <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4 pt-1">
-            <p class="text-sm text-neutral-500 -mt-1">
-              เครื่องนี้ยังไม่มี PIN ที่ใช้งานได้อยู่ (ยังไม่เคยตั้งค่า หรือเคยตั้งไว้แต่ถูกยกเลิกไปแล้ว เช่น กด "ลืมอุปกรณ์นี้"
-              หรือ "ปิดใช้งาน PIN ทุกอุปกรณ์" ก่อนหน้านี้) — ตั้ง PIN 6 หลักสำหรับ<span class="font-medium">เครื่องนี้เท่านั้น</span>
-              เพื่อเริ่มใช้งานอีกครั้ง
-            </p>
-
-            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
-              <mat-label>รหัสผ่านปัจจุบัน</mat-label>
-              <input matInput type="password" formControlName="password" autocomplete="current-password" />
-            </mat-form-field>
-
-            <div>
-              <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">PIN ใหม่ (6 หลัก)</p>
-              <khd-pin-input formControlName="pin" (completed)="confirmPinInput.focusFirst()" />
-              @if (form.get('pin')?.hasError('weak') && form.get('pin')?.touched) {
-                <p class="text-xs text-red-500 text-center mt-2">PIN นี้คาดเดาง่ายเกินไป (เลขซ้ำหรือเรียงกัน) กรุณาเลือก PIN อื่น</p>
-              }
-            </div>
-
-            <div>
-              <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">ยืนยัน PIN</p>
-              <khd-pin-input #confirmPinInput formControlName="confirmPin" />
-            </div>
-            @if (form.errors?.['mismatch'] && form.get('confirmPin')?.touched) {
-              <p class="text-xs text-red-500 text-center">PIN และการยืนยันไม่ตรงกัน</p>
-            }
-
+        @switch (cardState()) {
+          @case ('never-configured') {
+            <button mat-flat-button color="primary" type="button" class="!w-full" (click)="openSetupForm(false)">
+              <khd-icon name="shield-check" [size]="18" class="!mr-1" />
+              ตั้งค่า PIN
+            </button>
+          }
+          @case ('disabled-with-history') {
             <div class="flex gap-2">
-              <button mat-stroked-button type="button" class="!flex-1" [disabled]="saving()" (click)="cancelSetupForm()">
-                ยกเลิก
-              </button>
-              <button mat-flat-button color="primary" type="submit" class="!flex-1" [disabled]="form.invalid || saving()">
-                @if (saving()) {
-                  <mat-spinner diameter="20" class="!inline-block !mr-2" />
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                class="!flex-1"
+                [disabled]="actionPending()"
+                (click)="confirmReactivate()"
+              >
+                @if (actionPending()) {
+                  <mat-spinner diameter="18" class="!inline-block !mr-2" />
                 }
-                บันทึก PIN
+                เปิดใช้งานอีกครั้ง
+              </button>
+              <button mat-stroked-button type="button" class="!flex-1" [disabled]="actionPending()" (click)="openSetupForm(true)">
+                ตั้ง PIN ใหม่แทน
               </button>
             </div>
-          </form>
+          }
+          @case ('active') {
+            <button
+              mat-stroked-button
+              color="warn"
+              type="button"
+              class="!w-full"
+              [disabled]="actionPending()"
+              (click)="confirmDisable()"
+            >
+              @if (actionPending()) {
+                <mat-spinner diameter="18" class="!inline-block !mr-2" />
+              }
+              ปิดใช้งาน PIN
+            </button>
+          }
+          @case ('setup-form') {
+            <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4 pt-1">
+              <p class="text-sm text-neutral-500 -mt-1">
+                @if (setupFormReplacesHistory()) {
+                  PIN เดิมของเครื่องนี้จะใช้ไม่ได้อีกต่อไปหลังตั้งค่าใหม่ — กรอกรหัสผ่านปัจจุบันและตั้ง PIN 6 หลักใหม่สำหรับ
+                  <span class="font-medium">เครื่องนี้เท่านั้น</span>
+                } @else {
+                  ตั้ง PIN 6 หลักสำหรับ<span class="font-medium">เครื่องนี้เท่านั้น</span> เพื่อเข้าสู่ระบบครั้งถัดไปโดยไม่ต้องพิมพ์รหัสผ่านซ้ำ
+                }
+              </p>
+
+              <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+                <mat-label>รหัสผ่านปัจจุบัน</mat-label>
+                <input matInput type="password" formControlName="password" autocomplete="current-password" />
+              </mat-form-field>
+
+              <div>
+                <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">PIN ใหม่ (6 หลัก)</p>
+                <khd-pin-input formControlName="pin" (completed)="confirmPinInput.focusFirst()" />
+                @if (form.get('pin')?.hasError('weak') && form.get('pin')?.touched) {
+                  <p class="text-xs text-red-500 text-center mt-2">PIN นี้คาดเดาง่ายเกินไป (เลขซ้ำหรือเรียงกัน) กรุณาเลือก PIN อื่น</p>
+                }
+              </div>
+
+              <div>
+                <p class="text-sm text-neutral-600 dark:text-neutral-300 mb-2">ยืนยัน PIN</p>
+                <khd-pin-input #confirmPinInput formControlName="confirmPin" />
+              </div>
+              @if (form.errors?.['mismatch'] && form.get('confirmPin')?.touched) {
+                <p class="text-xs text-red-500 text-center">PIN และการยืนยันไม่ตรงกัน</p>
+              }
+
+              <div class="flex gap-2">
+                <button mat-stroked-button type="button" class="!flex-1" [disabled]="saving()" (click)="cancelSetupForm()">
+                  ยกเลิก
+                </button>
+                <button mat-flat-button color="primary" type="submit" class="!flex-1" [disabled]="form.invalid || saving()">
+                  @if (saving()) {
+                    <mat-spinner diameter="20" class="!inline-block !mr-2" />
+                  }
+                  บันทึก PIN
+                </button>
+              </div>
+            </form>
+          }
         }
       }
     </div>

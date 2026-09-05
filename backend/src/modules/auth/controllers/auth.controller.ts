@@ -202,7 +202,12 @@ export const listPinDevices = asyncHandler(async (req: Request, res: Response) =
 
 export const revokePinDevice = asyncHandler(async (req: Request, res: Response) => {
   const currentDeviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
-  const { wasCurrentDevice } = await authService.revokePinDevice(req.user!.id, req.params.id, currentDeviceSecret);
+  const { wasCurrentDevice } = await authService.revokePinDevice(
+    req.user!.id,
+    req.params.id,
+    { ...getContext(req), user: req.user! },
+    currentDeviceSecret,
+  );
 
   if (wasCurrentDevice) {
     res.clearCookie(env.PIN_DEVICE_COOKIE_NAME, { path: pinDeviceCookiePath() });
@@ -211,14 +216,14 @@ export const revokePinDevice = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const disablePin = asyncHandler(async (req: Request, res: Response) => {
-  await authService.disablePin(req.user!.id);
+  await authService.disablePin(req.user!.id, { ...getContext(req), user: req.user! });
   res.clearCookie(env.PIN_DEVICE_COOKIE_NAME, { path: pinDeviceCookiePath() });
   sendSuccess(res, { message: 'ปิดใช้งาน PIN ทุกอุปกรณ์เรียบร้อยแล้ว' });
 });
 
 export const revokeCurrentPinDevice = asyncHandler(async (req: Request, res: Response) => {
   const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
-  await authService.revokeCurrentPinDevice(req.user!.id, deviceSecret);
+  await authService.revokeCurrentPinDevice(req.user!.id, deviceSecret, { ...getContext(req), user: req.user! });
   // ตั้งใจไม่ล้าง cookie ตรงนี้ (ต่างจาก disablePin/revokePinDevice) — เก็บไว้ให้สลับสวิตช์เปิดกลับมาใช้ PIN
   // เดิมได้ทันทีผ่าน /pin/reactivate-current โดยไม่ต้องตั้ง PIN ใหม่ cookie ที่ค้างไว้นี้ใช้ login ไม่ได้อยู่แล้ว
   // (แถวถูก revoke) จนกว่าเจ้าของบัญชีจะ login ด้วยรหัสผ่านแล้วกดเปิดใช้งาน PIN ซ้ำเองเท่านั้น
@@ -227,6 +232,6 @@ export const revokeCurrentPinDevice = asyncHandler(async (req: Request, res: Res
 
 export const reactivateCurrentPinDevice = asyncHandler(async (req: Request, res: Response) => {
   const deviceSecret = req.cookies?.[env.PIN_DEVICE_COOKIE_NAME] as string | undefined;
-  await authService.reactivateCurrentPinDevice(req.user!.id, deviceSecret);
+  await authService.reactivateCurrentPinDevice(req.user!.id, deviceSecret, { ...getContext(req), user: req.user! });
   sendSuccess(res, { message: 'เปิดใช้งาน PIN สำหรับเครื่องนี้อีกครั้งเรียบร้อยแล้ว' });
 });

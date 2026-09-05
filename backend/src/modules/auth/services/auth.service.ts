@@ -28,6 +28,12 @@ export interface ILoginContext {
   userAgent: string;
 }
 
+/** ใช้กับ endpoint จัดการ PIN ที่ authenticate อยู่แล้ว (มี req.user พร้อมใช้เป็น audit log actor ตรงๆ
+ * ไม่ต้อง query ผู้ใช้ซ้ำ) ต่างจาก ILoginContext ที่ใช้ตอนยังไม่ login (ยังไม่มี user ให้อ้างอิง) */
+export interface IPinActionContext extends ILoginContext {
+  user: IAuthUser;
+}
+
 export interface IPinSetupResult {
   deviceSecret: string;
   deviceLabel: string | null;
@@ -348,13 +354,18 @@ export class AuthService {
       if (existing && existing.userId === userId) {
         await this.repo.resetPinCredentialForReSetup(existing.id, { pinHash, expiresAt, deviceLabel });
         logger.info(`[auth] PIN re-setup for user ${userId} on existing device`);
+        await auditLogService.record(
+          { action: 'CREATE', module: 'auth', entityType: 'PinCredential', entityId: existing.id, description: `${user.username} ตั้งค่า PIN ใหม่ทับของเดิมสำหรับอุปกรณ์นี้` },
+          { user: toAuthUser(user), ipAddress: ctx.ipAddress, userAgent },
+        );
         return { deviceSecret: existingDeviceSecret, deviceLabel, expiresAt };
       }
     }
 
     const deviceSecret = crypto.randomBytes(32).toString('hex');
+    const pinCredentialId = randomUUID();
     await this.repo.createPinCredential({
-      id: randomUUID(),
+      id: pinCredentialId,
       userId,
       deviceSecretHash: hashToken(deviceSecret),
       pinHash,
@@ -364,6 +375,10 @@ export class AuthService {
       userAgent,
     });
     logger.info(`[auth] PIN setup for user ${userId} on new device`);
+    await auditLogService.record(
+      { action: 'CREATE', module: 'auth', entityType: 'PinCredential', entityId: pinCredentialId, description: `${user.username} ตั้งค่า PIN เข้าสู่ระบบสำหรับอุปกรณ์ใหม่` },
+      { user: toAuthUser(user), ipAddress: ctx.ipAddress, userAgent },
+    );
     return { deviceSecret, deviceLabel, expiresAt };
   }
 
@@ -450,7 +465,7 @@ export class AuthService {
    * เคยตั้งค่า PIN ไว้ก่อนแล้ว (revoked/expired) เพียงแค่ยกเลิกการ revoke + ต่ออายุ PIN hash เดิมยังใช้ได้ตามปกติ
    * ไม่มีความเสี่ยงเพิ่มขึ้น เพราะต้องผ่านการยืนยันตัวตนด้วย bearer token ที่ authenticate อยู่แล้วก่อนเรียก endpoint นี้
    */
-  async reactivateCurrentPinDevice(userId: string, deviceSecret: string | undefined): Promise<void> {
+  async reactivateCurrentPinDevice(userId: string, deviceSecret: string | undefined, ctx: IPinActionContext): Promise<void> {
     if (!deviceSecret) {
       throw new NotFoundError('ไม่พบประวัติการตั้งค่า PIN บนเครื่องนี้');
     }
@@ -462,6 +477,10 @@ export class AuthService {
 
     await this.repo.reactivatePinCredential(row.id, this.pinDeviceExpiresAt());
     logger.info(`[auth] PIN device reactivated (self-service, current device): ${row.id} (user ${userId})`);
+    await auditLogService.record(
+      { action: 'CONFIG_CHANGE', module: 'auth', entityType: 'PinCredential', entityId: row.id, description: `${ctx.user.username} เปิดใช้งาน PIN อีกครั้งสำหรับอุปกรณ์นี้` },
+      ctx,
+    );
   }
 
   /**
@@ -531,21 +550,29 @@ export class AuthService {
   }
 
   /** คืน wasCurrentDevice เพื่อให้ controller รู้ว่าต้องล้าง PIN cookie ของ request นี้ด้วยหรือไม่ */
-  async revokePinDevice(userId: string, id: string, currentDeviceSecret?: string): Promise<{ wasCurrentDevice: boolean }> {
+  async revokePinDevice(userId: string, id: string, ctx: IPinActionContext, currentDeviceSecret?: string): Promise<{ wasCurrentDevice: boolean }> {
     const row = await this.repo.findPinCredentialById(id);
     if (!row || row.userId !== userId) {
       throw new NotFoundError('ไม่พบอุปกรณ์ที่ต้องการยกเลิก');
     }
     await this.repo.revokePinCredential(id);
     logger.info(`[auth] PIN device revoked: ${id} (user ${userId})`);
+    await auditLogService.record(
+      { action: 'DELETE', module: 'auth', entityType: 'PinCredential', entityId: id, description: `${ctx.user.username} ลืม/ลบอุปกรณ์ PIN: ${row.deviceLabel ?? 'ไม่ทราบชนิดอุปกรณ์'}` },
+      ctx,
+    );
 
     const wasCurrentDevice = !!currentDeviceSecret && row.deviceSecretHash === hashToken(currentDeviceSecret);
     return { wasCurrentDevice };
   }
 
-  async disablePin(userId: string): Promise<void> {
+  async disablePin(userId: string, ctx: IPinActionContext): Promise<void> {
     await this.repo.revokeAllUserPinCredentials(userId);
     logger.info(`[auth] all PIN devices disabled for user ${userId}`);
+    await auditLogService.record(
+      { action: 'CONFIG_CHANGE', module: 'auth', entityType: 'PinCredential', description: `${ctx.user.username} ปิดใช้งาน PIN ทุกอุปกรณ์` },
+      ctx,
+    );
   }
 
   /**
@@ -553,7 +580,7 @@ export class AuthService {
    * ที่หน้าตั้งค่า PIN ไม่ต้องรู้ device id ล่วงหน้าเหมือน revokePinDevice เพราะ device ปัจจุบันระบุได้จาก
    * cookie อยู่แล้ว เป็น idempotent — ถ้าไม่มี cookie/หา row ไม่เจอ/ไม่ใช่ของ user นี้ ก็แค่ไม่ทำอะไร (ไม่ throw)
    */
-  async revokeCurrentPinDevice(userId: string, deviceSecret: string | undefined): Promise<void> {
+  async revokeCurrentPinDevice(userId: string, deviceSecret: string | undefined, ctx: IPinActionContext): Promise<void> {
     if (!deviceSecret) return;
 
     const row = await this.repo.findPinCredentialByDeviceSecretHash(hashToken(deviceSecret));
@@ -561,6 +588,10 @@ export class AuthService {
 
     await this.repo.revokePinCredential(row.id);
     logger.info(`[auth] PIN device revoked (self-service, current device): ${row.id} (user ${userId})`);
+    await auditLogService.record(
+      { action: 'CONFIG_CHANGE', module: 'auth', entityType: 'PinCredential', entityId: row.id, description: `${ctx.user.username} ปิดใช้งาน PIN สำหรับอุปกรณ์นี้` },
+      ctx,
+    );
   }
 
   private pinDeviceExpiresAt(): Date {
