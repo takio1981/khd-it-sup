@@ -37,7 +37,7 @@
     <table mat-table [dataSource]="users()" class="w-full">
       <ng-container matColumnDef="fullName">
         <th mat-header-cell *matHeaderCellDef>ชื่อ-นามสกุล</th>
-        <td mat-cell *matCellDef="let u">
+        <td mat-cell *matCellDef="let u" data-label="ชื่อ-นามสกุล">
           <div class="flex items-center gap-2">
             <khd-user-avatar [avatarUrl]="u.avatarUrl" [gender]="u.gender" [size]="28" />
             <span>{{ u.fullName }}</span>
@@ -47,7 +47,7 @@
 
       <ng-container matColumnDef="username">
         <th mat-header-cell *matHeaderCellDef>Username / อีเมล</th>
-        <td mat-cell *matCellDef="let u">
+        <td mat-cell *matCellDef="let u" data-label="Username / อีเมล">
           <p>{{ u.username }}</p>
           <p class="text-xs text-neutral-400">{{ u.email }}</p>
         </td>
@@ -55,17 +55,17 @@
 
       <ng-container matColumnDef="role">
         <th mat-header-cell *matHeaderCellDef>สิทธิ์</th>
-        <td mat-cell *matCellDef="let u">{{ u.role.nameTh }}</td>
+        <td mat-cell *matCellDef="let u" data-label="สิทธิ์">{{ u.role.nameTh }}</td>
       </ng-container>
 
       <ng-container matColumnDef="department">
         <th mat-header-cell *matHeaderCellDef>หน่วยงาน</th>
-        <td mat-cell *matCellDef="let u">{{ u.department?.nameTh ?? '-' }}</td>
+        <td mat-cell *matCellDef="let u" data-label="หน่วยงาน">{{ u.department?.nameTh ?? '-' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="status">
         <th mat-header-cell *matHeaderCellDef>สถานะ</th>
-        <td mat-cell *matCellDef="let u">
+        <td mat-cell *matCellDef="let u" data-label="สถานะ">
           <span
             class="khd-status-badge"
             [style.background-color]="(u.isActive ? '#22C55E' : '#9CA3AF') + '1A'"

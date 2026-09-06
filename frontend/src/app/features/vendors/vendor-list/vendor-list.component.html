@@ -83,27 +83,27 @@
     <table mat-table [dataSource]="vendors()" class="w-full">
       <ng-container matColumnDef="code">
         <th mat-header-cell *matHeaderCellDef>รหัส</th>
-        <td mat-cell *matCellDef="let v">{{ v.code }}</td>
+        <td mat-cell *matCellDef="let v" data-label="รหัส">{{ v.code }}</td>
       </ng-container>
 
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>ชื่อบริษัท/ร้าน</th>
-        <td mat-cell *matCellDef="let v">{{ v.name }}</td>
+        <td mat-cell *matCellDef="let v" data-label="ชื่อบริษัท/ร้าน">{{ v.name }}</td>
       </ng-container>
 
       <ng-container matColumnDef="contactPerson">
         <th mat-header-cell *matHeaderCellDef>ผู้ติดต่อ</th>
-        <td mat-cell *matCellDef="let v">{{ v.contactPerson ?? '-' }}</td>
+        <td mat-cell *matCellDef="let v" data-label="ผู้ติดต่อ">{{ v.contactPerson ?? '-' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="phone">
         <th mat-header-cell *matHeaderCellDef>เบอร์โทร</th>
-        <td mat-cell *matCellDef="let v">{{ v.phone ?? '-' }}</td>
+        <td mat-cell *matCellDef="let v" data-label="เบอร์โทร">{{ v.phone ?? '-' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="status">
         <th mat-header-cell *matHeaderCellDef>สถานะ</th>
-        <td mat-cell *matCellDef="let v">
+        <td mat-cell *matCellDef="let v" data-label="สถานะ">
           <span
             class="khd-status-badge"
             [style.background-color]="(v.isActive ? '#22C55E' : '#9CA3AF') + '1A'"

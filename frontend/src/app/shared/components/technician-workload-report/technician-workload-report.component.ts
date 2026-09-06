@@ -21,7 +21,7 @@ import { KhdNumberPipe } from '../../pipes/khd-number.pipe';
       </div>
 
       <div class="khd-card !p-0 overflow-x-auto">
-        <table class="w-full text-sm">
+        <table class="w-full text-sm khd-table-responsive">
           <thead>
             <tr class="border-b border-black/5 dark:border-white/10 text-left text-xs text-neutral-500">
               <th class="px-4 py-2.5 font-medium">ชื่อ-นามสกุล</th>
@@ -33,10 +33,10 @@ import { KhdNumberPipe } from '../../pipes/khd-number.pipe';
           <tbody>
             @for (t of workloadSorted(); track t.id) {
               <tr class="border-b border-black/5 dark:border-white/10 last:border-0">
-                <td class="px-4 py-2.5">{{ t.fullName }}</td>
-                <td class="px-4 py-2.5 text-neutral-500">{{ t.role.nameTh }}</td>
-                <td class="px-4 py-2.5">{{ t.activeTicketCount | khdNumber }}</td>
-                <td class="px-4 py-2.5">
+                <td class="px-4 py-2.5" data-label="ชื่อ-นามสกุล">{{ t.fullName }}</td>
+                <td class="px-4 py-2.5 text-neutral-500" data-label="สิทธิ์">{{ t.role.nameTh }}</td>
+                <td class="px-4 py-2.5" data-label="งานที่ยังไม่ปิด">{{ t.activeTicketCount | khdNumber }}</td>
+                <td class="px-4 py-2.5" data-label="สถานะ">
                   <span
                     class="khd-status-badge"
                     [style.background-color]="(t.availability === 'AVAILABLE' ? '#22C55E' : '#EF4444') + '1A'"

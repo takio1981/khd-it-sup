@@ -114,7 +114,7 @@
                 </div>
               } @else if (section.key === 'roles') {
                 <div class="overflow-x-auto rounded-xl border border-black/5 dark:border-white/10">
-                  <table class="w-full text-xs text-left border-collapse min-w-[560px]">
+                  <table class="w-full text-xs text-left border-collapse min-w-[560px] khd-table-responsive">
                     <thead class="bg-black/[0.03] dark:bg-white/[0.06] text-neutral-500">
                       <tr>
                         <th class="px-3 py-2 font-medium">บทบาท</th>
@@ -126,10 +126,10 @@
                     <tbody>
                       @for (row of roleMatrix; track row.role) {
                         <tr class="border-t border-black/5 dark:border-white/10">
-                          <td class="px-3 py-2 font-medium whitespace-nowrap">{{ row.role }}</td>
-                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300">{{ row.viewTickets }}</td>
-                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300">{{ row.editTickets }}</td>
-                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300">{{ row.adminAccess }}</td>
+                          <td class="px-3 py-2 font-medium whitespace-nowrap" data-label="บทบาท">{{ row.role }}</td>
+                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300" data-label="เห็นงานแจ้งซ่อม">{{ row.viewTickets }}</td>
+                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300" data-label="แก้ไขสถานะ/ผลตรวจ/สรุปผล">{{ row.editTickets }}</td>
+                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300" data-label="จัดการผู้ใช้/ตั้งค่าระบบ">{{ row.adminAccess }}</td>
                         </tr>
                       }
                     </tbody>

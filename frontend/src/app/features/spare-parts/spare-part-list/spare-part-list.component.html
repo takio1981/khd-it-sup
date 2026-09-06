@@ -76,17 +76,17 @@
     <table mat-table [dataSource]="parts()" class="w-full">
       <ng-container matColumnDef="code">
         <th mat-header-cell *matHeaderCellDef>รหัส</th>
-        <td mat-cell *matCellDef="let p">{{ p.code }}</td>
+        <td mat-cell *matCellDef="let p" data-label="รหัส">{{ p.code }}</td>
       </ng-container>
 
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>ชื่ออะไหล่</th>
-        <td mat-cell *matCellDef="let p">{{ p.name }}</td>
+        <td mat-cell *matCellDef="let p" data-label="ชื่ออะไหล่">{{ p.name }}</td>
       </ng-container>
 
       <ng-container matColumnDef="quantityOnHand">
         <th mat-header-cell *matHeaderCellDef>คงเหลือ</th>
-        <td mat-cell *matCellDef="let p">
+        <td mat-cell *matCellDef="let p" data-label="คงเหลือ">
           <span [class.text-rose-600]="isLowStock(p)" [class.font-semibold]="isLowStock(p)">{{ p.quantityOnHand | khdNumber }}</span>
           @if (isLowStock(p)) {
             <khd-icon name="exclamation-triangle" [size]="14" class="text-amber-500 !ml-1 !inline-block" />
@@ -96,12 +96,12 @@
 
       <ng-container matColumnDef="reorderLevel">
         <th mat-header-cell *matHeaderCellDef>จุดสั่งซื้อ</th>
-        <td mat-cell *matCellDef="let p">{{ p.reorderLevel | khdNumber }}</td>
+        <td mat-cell *matCellDef="let p" data-label="จุดสั่งซื้อ">{{ p.reorderLevel | khdNumber }}</td>
       </ng-container>
 
       <ng-container matColumnDef="unit">
         <th mat-header-cell *matHeaderCellDef>หน่วย</th>
-        <td mat-cell *matCellDef="let p">{{ p.unit }}</td>
+        <td mat-cell *matCellDef="let p" data-label="หน่วย">{{ p.unit }}</td>
       </ng-container>
 
       <ng-container matColumnDef="actions">

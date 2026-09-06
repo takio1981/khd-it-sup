@@ -72,17 +72,17 @@
     <table mat-table [dataSource]="departments()" class="w-full">
       <ng-container matColumnDef="code">
         <th mat-header-cell *matHeaderCellDef>รหัส</th>
-        <td mat-cell *matCellDef="let d">{{ d.code }}</td>
+        <td mat-cell *matCellDef="let d" data-label="รหัส">{{ d.code }}</td>
       </ng-container>
 
       <ng-container matColumnDef="nameTh">
         <th mat-header-cell *matHeaderCellDef>ชื่อหน่วยงาน</th>
-        <td mat-cell *matCellDef="let d">{{ d.nameTh }}</td>
+        <td mat-cell *matCellDef="let d" data-label="ชื่อหน่วยงาน">{{ d.nameTh }}</td>
       </ng-container>
 
       <ng-container matColumnDef="parent">
         <th mat-header-cell *matHeaderCellDef>หน่วยงานแม่</th>
-        <td mat-cell *matCellDef="let d">{{ parentName(d.parentId) }}</td>
+        <td mat-cell *matCellDef="let d" data-label="หน่วยงานแม่">{{ parentName(d.parentId) }}</td>
       </ng-container>
 
       <ng-container matColumnDef="actions">

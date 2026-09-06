@@ -21,17 +21,17 @@
     <table mat-table [dataSource]="docs()" class="w-full">
       <ng-container matColumnDef="runningNumber">
         <th mat-header-cell *matHeaderCellDef>เลขที่เอกสาร</th>
-        <td mat-cell *matCellDef="let d">{{ d.runningNumber }}</td>
+        <td mat-cell *matCellDef="let d" data-label="เลขที่เอกสาร">{{ d.runningNumber }}</td>
       </ng-container>
 
       <ng-container matColumnDef="templateCode">
         <th mat-header-cell *matHeaderCellDef>แบบฟอร์ม</th>
-        <td mat-cell *matCellDef="let d">{{ d.templateCode }}</td>
+        <td mat-cell *matCellDef="let d" data-label="แบบฟอร์ม">{{ d.templateCode }}</td>
       </ng-container>
 
       <ng-container matColumnDef="ticket">
         <th mat-header-cell *matHeaderCellDef>ใบแจ้งซ่อมที่เกี่ยวข้อง</th>
-        <td mat-cell *matCellDef="let d">
+        <td mat-cell *matCellDef="let d" data-label="ใบแจ้งซ่อมที่เกี่ยวข้อง">
           @if (d.ticket) {
             <button mat-button class="!text-xs !min-w-0 !px-2" (click)="viewTicket(d)">{{ d.ticket.ticketNumber }}</button>
           } @else {
@@ -42,7 +42,7 @@
 
       <ng-container matColumnDef="generatedAt">
         <th mat-header-cell *matHeaderCellDef>วันที่ออกเอกสาร</th>
-        <td mat-cell *matCellDef="let d">{{ d.generatedAt | date: 'd MMM yyyy, HH:mm' }}</td>
+        <td mat-cell *matCellDef="let d" data-label="วันที่ออกเอกสาร">{{ d.generatedAt | date: 'd MMM yyyy, HH:mm' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="actions">

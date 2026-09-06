@@ -55,22 +55,22 @@
     <table mat-table [dataSource]="categories()" class="w-full">
       <ng-container matColumnDef="code">
         <th mat-header-cell *matHeaderCellDef>รหัส</th>
-        <td mat-cell *matCellDef="let c">{{ c.code }}</td>
+        <td mat-cell *matCellDef="let c" data-label="รหัส">{{ c.code }}</td>
       </ng-container>
 
       <ng-container matColumnDef="nameTh">
         <th mat-header-cell *matHeaderCellDef>ชื่อประเภท (ไทย)</th>
-        <td mat-cell *matCellDef="let c">{{ c.nameTh }}</td>
+        <td mat-cell *matCellDef="let c" data-label="ชื่อประเภท (ไทย)">{{ c.nameTh }}</td>
       </ng-container>
 
       <ng-container matColumnDef="nameEn">
         <th mat-header-cell *matHeaderCellDef>ชื่อประเภท (อังกฤษ)</th>
-        <td mat-cell *matCellDef="let c">{{ c.nameEn }}</td>
+        <td mat-cell *matCellDef="let c" data-label="ชื่อประเภท (อังกฤษ)">{{ c.nameEn }}</td>
       </ng-container>
 
       <ng-container matColumnDef="requiresSerial">
         <th mat-header-cell *matHeaderCellDef>ต้องมี Serial</th>
-        <td mat-cell *matCellDef="let c">{{ c.requiresSerial ? 'ใช่' : 'ไม่ใช่' }}</td>
+        <td mat-cell *matCellDef="let c" data-label="ต้องมี Serial">{{ c.requiresSerial ? 'ใช่' : 'ไม่ใช่' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="actions">

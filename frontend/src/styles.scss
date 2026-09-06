@@ -112,6 +112,162 @@ html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
 }
 
 // =====================================================================================
+// Responsive tables — ต่ำกว่า lg (1024px, มือถือ+แท็บเล็ต) พับทุกแถวของทุก mat-table ในระบบ
+// เป็นการ์ดแนวตั้งอัตโนมัติ แทนตารางแนวนอนที่ต้องเลื่อนซ้าย-ขวา ใช้ label จาก attr(data-label)
+// ที่ต้องเติมไว้ที่ td มาตรฐานแต่ละคอลัมน์ (ดูตัวอย่างในแต่ละหน้า) แทนหัวตารางที่ถูกซ่อนไป
+// =====================================================================================
+@media (max-width: 1023.98px) {
+  .mat-mdc-table {
+    display: block !important;
+    width: 100%;
+    background: transparent;
+  }
+  .mat-mdc-table .mdc-data-table__content,
+  .mat-mdc-table tbody,
+  .mat-mdc-table thead {
+    display: block !important;
+  }
+  .mat-mdc-header-row {
+    display: none !important;
+  }
+  .mat-mdc-row {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    @apply khd-card;
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  .mat-mdc-row:last-child {
+    margin-bottom: 0 !important;
+  }
+  .mat-mdc-cell {
+    display: flex !important;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0.375rem 0;
+    text-align: right;
+    border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  }
+  .mat-mdc-cell:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .mat-mdc-cell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-align: left;
+    color: rgb(107 114 128);
+    flex-shrink: 0;
+    padding-top: 0.125rem;
+  }
+  html.dark-theme .mat-mdc-cell {
+    border-bottom-color: rgb(255 255 255 / 0.08);
+  }
+  html.dark-theme .mat-mdc-cell::before {
+    color: rgb(156 163 175);
+  }
+
+  // คอลัมน์ actions (ชื่อคอลัมน์นี้ซ้ำเหมือนกันทุกตาราง) — ไม่มีป้ายชื่อ ปุ่มจัดชิดขวาเป็นแถวท้ายการ์ด
+  .mat-column-actions {
+    justify-content: flex-end;
+    border-bottom: none !important;
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+    border-top: 1px dashed rgb(0 0 0 / 0.08);
+  }
+  .mat-column-actions::before {
+    content: none;
+  }
+  html.dark-theme .mat-column-actions {
+    border-top-color: rgb(255 255 255 / 0.1);
+  }
+
+  // checkbox เลือกหลายรายการ (เฉพาะตารางครุภัณฑ์) — ไม่มีป้ายชื่อ
+  .mat-column-select {
+    border-bottom: none !important;
+  }
+  .mat-column-select::before {
+    content: none;
+  }
+
+  // แถวรายละเอียดที่ขยายได้ (ตารางครุภัณฑ์ — multiTemplateDataRows) — ไม่ต้องห่อเป็นการ์ดซ้อนการ์ดอีกชั้น
+  // ปล่อยให้ใช้ layout เดิม (label:value แบบ inline) ที่มีอยู่แล้วในตัว td เอง ต่อท้ายใต้การ์ดของแถวหลัก
+  .mat-mdc-row.mat-row-detail {
+    padding: 0 !important;
+    margin-bottom: 0.75rem !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+  .mat-mdc-row.mat-row-detail .mat-mdc-cell {
+    display: block !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+  .mat-mdc-row.mat-row-detail .mat-mdc-cell::before {
+    content: none !important;
+  }
+
+  // ตาราง HTML ธรรมดา (ไม่ใช่ mat-table) ที่แปะ class นี้ตรงๆ — ใช้กลไกเดียวกันแต่ target tag ปกติ
+  table.khd-table-responsive {
+    display: block !important;
+    width: 100%;
+    min-width: 0 !important; // ทับ min-w-[…] ของ Tailwind ที่บางตารางตั้งไว้เพื่อบังคับเลื่อนแนวนอนตอนเป็นตารางจริง
+  }
+  table.khd-table-responsive thead {
+    display: none;
+  }
+  table.khd-table-responsive tbody {
+    display: block;
+  }
+  table.khd-table-responsive tr {
+    display: block;
+    height: auto !important;
+    @apply khd-card;
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  table.khd-table-responsive tr:last-child {
+    margin-bottom: 0 !important;
+  }
+  table.khd-table-responsive td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.375rem 0;
+    text-align: right;
+    border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  }
+  table.khd-table-responsive td:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  table.khd-table-responsive td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-align: left;
+    color: rgb(107 114 128);
+    flex-shrink: 0;
+    padding-top: 0.125rem;
+  }
+  html.dark-theme table.khd-table-responsive td {
+    border-bottom-color: rgb(255 255 255 / 0.08);
+  }
+  html.dark-theme table.khd-table-responsive td::before {
+    color: rgb(156 163 175);
+  }
+}
+
+// =====================================================================================
 // Print isolation — ใช้กับหน้าตัวอย่างก่อนพิมพ์ (QR Label) และเอกสารอื่นในอนาคต
 // ใส่ id="khd-print-area" ครอบเนื้อหาที่ต้องการพิมพ์ + class "khd-no-print" บนปุ่ม/ส่วนควบคุมที่ไม่ต้องการให้พิมพ์
 // ต้องอยู่ใน global stylesheet (ไม่ใช่ scoped component style) เพราะต้องซ่อนทุกอย่างนอก component ด้วย (เช่น sidebar/toolbar)
