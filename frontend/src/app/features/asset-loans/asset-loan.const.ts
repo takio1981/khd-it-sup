@@ -13,6 +13,10 @@ export const LOAN_CONDITION_OPTIONS: string[] = [
 
 export const OTHER_OPTION = 'อื่นๆ (ระบุเพิ่มเติม)';
 
+/** ค่าจำลอง (ไม่ใช่ UUID จริง) ใช้แทน "อื่นๆ (นอกสถานที่)" ใน dropdown สถานที่ใช้งาน (อาคาร) —
+ *  เมื่อเลือกค่านี้ ฝั่งฟอร์มจะไม่ส่ง buildingId/floorId/roomId จริงไปที่ backend เลย ส่งแค่ข้อความที่ระบุ (takenToNote/locationNote) แทน */
+export const OTHER_LOCATION_OPTION = '__OTHER_LOCATION__';
+
 /** แยกค่าที่บันทึกไว้แล้วว่าตรงกับตัวเลือกสำเร็จรูปหรือไม่ ถ้าไม่ตรงให้ถือเป็นค่ากำหนดเอง (Other) */
 export function resolveDropdownPrefill(value: string | null | undefined, options: string[]): { select: string; other: string } {
   if (!value) return { select: '', other: '' };

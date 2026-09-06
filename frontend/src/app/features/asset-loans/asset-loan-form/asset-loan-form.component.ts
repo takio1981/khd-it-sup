@@ -12,7 +12,7 @@ import { AssetLoanService } from '../../../core/services/asset-loan.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { UserService } from '../../../core/services/user.service';
 import { LocationService } from '../../../core/services/location.service';
-import { LOAN_CONDITION_OPTIONS, LOAN_PURPOSE_OPTIONS, OTHER_OPTION, resolveDropdownPrefill } from '../asset-loan.const';
+import { LOAN_CONDITION_OPTIONS, LOAN_PURPOSE_OPTIONS, OTHER_OPTION, OTHER_LOCATION_OPTION, resolveDropdownPrefill } from '../asset-loan.const';
 import type { IAsset } from '../../../core/models/asset.model';
 import type { IUserListItem } from '../../../core/models/user.model';
 import type { IAssetLoan } from '../../../core/models/asset-loan.model';
@@ -76,6 +76,7 @@ export class AssetLoanFormComponent {
   readonly purposeOptions = LOAN_PURPOSE_OPTIONS;
   readonly conditionOptions = LOAN_CONDITION_OPTIONS;
   readonly otherOption = OTHER_OPTION;
+  readonly otherLocationOption = OTHER_LOCATION_OPTION;
 
   readonly isEdit = !!this.data.loan;
   readonly showReturnFields = !!this.data.loan?.actualReturnDate;
@@ -116,7 +117,10 @@ export class AssetLoanFormComponent {
         this.form.patchValue({ takenToFloorId: '', takenToRoomId: '' }, { emitEvent: false });
         this.rooms.set([]);
         this.floors.set([]);
-        if (buildingId) this.locationService.listFloors(buildingId).subscribe((floors) => this.floors.set(floors));
+        if (buildingId && buildingId !== this.otherLocationOption) {
+          this.locationService.listFloors(buildingId).subscribe((floors) => this.floors.set(floors));
+        }
+        this.syncLocationOtherValidator();
       });
 
       this.form.controls.takenToFloorId.valueChanges.subscribe((floorId) => {
@@ -145,6 +149,17 @@ export class AssetLoanFormComponent {
     otherCtrl.updateValueAndValidity({ emitEvent: false });
   }
 
+  /** ต้องระบุสถานที่ใช้งาน (takenToNote) เสมอถ้าเลือก "อื่นๆ (นอกสถานที่)" ในช่องสถานที่ใช้งาน */
+  private syncLocationOtherValidator(): void {
+    const noteCtrl = this.form.controls.takenToNote;
+    if (this.form.controls.takenToBuildingId.value === this.otherLocationOption) {
+      noteCtrl.setValidators([Validators.required]);
+    } else {
+      noteCtrl.clearValidators();
+    }
+    noteCtrl.updateValueAndValidity({ emitEvent: false });
+  }
+
   submit(): void {
     if (this.form.invalid || this.saving()) return;
     this.saving.set(true);
@@ -171,9 +186,13 @@ export class AssetLoanFormComponent {
           expectedReturnDate,
           purpose: purpose || undefined,
           conditionOnBorrow: conditionOnBorrow || undefined,
-          takenToBuildingId: raw.takenToBuildingId || undefined,
-          takenToFloorId: raw.takenToFloorId || undefined,
-          takenToRoomId: raw.takenToRoomId || undefined,
+          ...(raw.takenToBuildingId === this.otherLocationOption
+            ? {}
+            : {
+                takenToBuildingId: raw.takenToBuildingId || undefined,
+                takenToFloorId: raw.takenToFloorId || undefined,
+                takenToRoomId: raw.takenToRoomId || undefined,
+              }),
           takenToNote: raw.takenToNote || undefined,
         });
 

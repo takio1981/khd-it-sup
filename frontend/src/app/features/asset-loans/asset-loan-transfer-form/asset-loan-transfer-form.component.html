@@ -16,19 +16,21 @@
       </mat-autocomplete>
     </mat-form-field>
 
+    <p class="text-xs font-medium text-neutral-500">สถานที่ใช้งานใหม่</p>
     <div class="grid grid-cols-3 gap-2">
       <mat-form-field appearance="outline">
-        <mat-label>อาคาร</mat-label>
+        <mat-label>สถานที่ใช้งาน</mat-label>
         <mat-select formControlName="buildingId">
           <mat-option value="">ไม่ระบุ</mat-option>
           @for (b of buildings(); track b.id) {
             <mat-option [value]="b.id">{{ b.name }}</mat-option>
           }
+          <mat-option [value]="otherLocationOption">อื่นๆ (นอกสถานที่)</mat-option>
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>ชั้น</mat-label>
-        <mat-select formControlName="floorId" [disabled]="!form.value.buildingId">
+        <mat-select formControlName="floorId" [disabled]="!form.value.buildingId || form.value.buildingId === otherLocationOption">
           <mat-option value="">ไม่ระบุ</mat-option>
           @for (f of floors(); track f.id) {
             <mat-option [value]="f.id">{{ f.name }}</mat-option>
@@ -37,7 +39,7 @@
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>ห้อง</mat-label>
-        <mat-select formControlName="roomId" [disabled]="!form.value.floorId">
+        <mat-select formControlName="roomId" [disabled]="!form.value.floorId || form.value.buildingId === otherLocationOption">
           <mat-option value="">ไม่ระบุ</mat-option>
           @for (r of rooms(); track r.id) {
             <mat-option [value]="r.id">{{ r.name }}</mat-option>
@@ -47,8 +49,11 @@
     </div>
 
     <mat-form-field appearance="outline" class="w-full">
-      <mat-label>รายละเอียดสถานที่เพิ่มเติม</mat-label>
+      <mat-label>{{ form.value.buildingId === otherLocationOption ? 'ระบุสถานที่ใช้งาน (บังคับ)' : 'รายละเอียดสถานที่เพิ่มเติม' }}</mat-label>
       <input matInput formControlName="locationNote" />
+      @if (form.value.buildingId === otherLocationOption && form.controls.locationNote.invalid && form.controls.locationNote.touched) {
+        <mat-error>กรุณาระบุสถานที่ใช้งาน</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="w-full">
@@ -59,7 +64,7 @@
 
   <mat-dialog-actions align="end">
     <button mat-button type="button" mat-dialog-close>ยกเลิก</button>
-    <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving() || form.invalid">
       @if (saving()) {
         <mat-spinner diameter="18" class="!inline-block !mr-2" />
       }

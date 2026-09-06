@@ -62,19 +62,24 @@
     }
 
     @if (!isEdit) {
+      <p class="text-xs font-medium text-neutral-500 !mt-1">สถานที่ใช้งาน</p>
       <div class="grid grid-cols-3 gap-2">
         <mat-form-field appearance="outline">
-          <mat-label>อาคาร (ที่จะนำไปใช้)</mat-label>
+          <mat-label>สถานที่ใช้งาน</mat-label>
           <mat-select formControlName="takenToBuildingId">
             <mat-option value="">ไม่ระบุ</mat-option>
             @for (b of buildings(); track b.id) {
               <mat-option [value]="b.id">{{ b.name }}</mat-option>
             }
+            <mat-option [value]="otherLocationOption">อื่นๆ (นอกสถานที่)</mat-option>
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>ชั้น</mat-label>
-          <mat-select formControlName="takenToFloorId" [disabled]="!form.value.takenToBuildingId">
+          <mat-select
+            formControlName="takenToFloorId"
+            [disabled]="!form.value.takenToBuildingId || form.value.takenToBuildingId === otherLocationOption"
+          >
             <mat-option value="">ไม่ระบุ</mat-option>
             @for (f of floors(); track f.id) {
               <mat-option [value]="f.id">{{ f.name }}</mat-option>
@@ -83,7 +88,10 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>ห้อง</mat-label>
-          <mat-select formControlName="takenToRoomId" [disabled]="!form.value.takenToFloorId">
+          <mat-select
+            formControlName="takenToRoomId"
+            [disabled]="!form.value.takenToFloorId || form.value.takenToBuildingId === otherLocationOption"
+          >
             <mat-option value="">ไม่ระบุ</mat-option>
             @for (r of rooms(); track r.id) {
               <mat-option [value]="r.id">{{ r.name }}</mat-option>
@@ -92,8 +100,15 @@
         </mat-form-field>
       </div>
       <mat-form-field appearance="outline" class="w-full">
-        <mat-label>รายละเอียดสถานที่เพิ่มเติม</mat-label>
-        <input matInput formControlName="takenToNote" placeholder="เช่น ห้องประชุมชั้น 3 ตึกผู้ป่วยนอก" />
+        <mat-label>{{ form.value.takenToBuildingId === otherLocationOption ? 'ระบุสถานที่ใช้งาน (บังคับ)' : 'รายละเอียดสถานที่เพิ่มเติม' }}</mat-label>
+        <input
+          matInput
+          formControlName="takenToNote"
+          placeholder="เช่น ห้องประชุมชั้น 3 ตึกผู้ป่วยนอก หรือ คลินิกชุมชนบ้านหนองบัว"
+        />
+        @if (form.value.takenToBuildingId === otherLocationOption && form.controls.takenToNote.invalid && form.controls.takenToNote.touched) {
+          <mat-error>กรุณาระบุสถานที่ใช้งาน</mat-error>
+        }
       </mat-form-field>
     }
 

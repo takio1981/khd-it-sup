@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, FormControl } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -11,6 +11,7 @@ import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs';
 import { AssetLoanService } from '../../../core/services/asset-loan.service';
 import { LocationService } from '../../../core/services/location.service';
 import { UserService } from '../../../core/services/user.service';
+import { OTHER_LOCATION_OPTION } from '../asset-loan.const';
 import type { IAssetLoan } from '../../../core/models/asset-loan.model';
 import type { IBuilding, IFloor, IRoom } from '../../../core/models/location.model';
 import type { IUserListItem } from '../../../core/models/user.model';
@@ -48,6 +49,7 @@ export class AssetLoanTransferFormComponent {
   readonly floors = signal<IFloor[]>([]);
   readonly rooms = signal<IRoom[]>([]);
   readonly holderOptions = signal<IUserListItem[]>([]);
+  readonly otherLocationOption = OTHER_LOCATION_OPTION;
 
   /** ช่องค้นหาผู้รับมอบใหม่ — เก็บแค่ข้อความค้นหา ไม่ใช่ค่าที่จะ submit (newHolderId ต่างหาก) */
   readonly holderSearch = new FormControl('', { nonNullable: true });
@@ -77,7 +79,10 @@ export class AssetLoanTransferFormComponent {
       this.form.patchValue({ floorId: '', roomId: '' }, { emitEvent: false });
       this.rooms.set([]);
       this.floors.set([]);
-      if (buildingId) this.locationService.listFloors(buildingId).subscribe((floors) => this.floors.set(floors));
+      if (buildingId && buildingId !== this.otherLocationOption) {
+        this.locationService.listFloors(buildingId).subscribe((floors) => this.floors.set(floors));
+      }
+      this.syncLocationOtherValidator();
     });
 
     this.form.controls.floorId.valueChanges.subscribe((floorId) => {
@@ -110,19 +115,31 @@ export class AssetLoanTransferFormComponent {
     return typeof user === 'string' ? user : user.fullName;
   }
 
+  /** ต้องระบุสถานที่ (locationNote) เสมอถ้าเลือก "อื่นๆ (นอกสถานที่)" ในช่องสถานที่ */
+  private syncLocationOtherValidator(): void {
+    const noteCtrl = this.form.controls.locationNote;
+    if (this.form.controls.buildingId.value === this.otherLocationOption) {
+      noteCtrl.setValidators([Validators.required]);
+    } else {
+      noteCtrl.clearValidators();
+    }
+    noteCtrl.updateValueAndValidity({ emitEvent: false });
+  }
+
   submit(): void {
-    if (this.saving()) return;
+    if (this.saving() || this.form.invalid) return;
 
     const raw = this.form.getRawValue();
-    if (!raw.newHolderId && !raw.buildingId && !raw.locationNote) return;
+    const isOtherLocation = raw.buildingId === this.otherLocationOption;
+    if (!raw.newHolderId && !isOtherLocation && !raw.buildingId && !raw.locationNote) return;
     this.saving.set(true);
 
     this.assetLoanService
       .transfer(this.data.loan.id, {
         newHolderId: raw.newHolderId || undefined,
-        buildingId: raw.buildingId || undefined,
-        floorId: raw.floorId || undefined,
-        roomId: raw.roomId || undefined,
+        ...(isOtherLocation
+          ? {}
+          : { buildingId: raw.buildingId || undefined, floorId: raw.floorId || undefined, roomId: raw.roomId || undefined }),
         locationNote: raw.locationNote || undefined,
         comment: raw.comment || undefined,
       })
