@@ -1,0 +1,69 @@
+<h2 mat-dialog-title>บันทึกการส่งต่อ/ย้ายครุภัณฑ์</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content class="!flex !flex-col !gap-1">
+    <p class="text-sm text-neutral-500 !mb-2">
+      ระบุผู้รับมอบใหม่และ/หรือสถานที่ใหม่ — เว้นว่างส่วนใดไว้ได้ถ้าไม่มีการเปลี่ยนแปลงในส่วนนั้น
+    </p>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>ส่งต่อให้ (ผู้ถือครองใหม่)</mat-label>
+      <input matInput [formControl]="holderSearch" [matAutocomplete]="holderAuto" placeholder="พิมพ์ชื่อเพื่อค้นหา" />
+      <mat-autocomplete #holderAuto="matAutocomplete" (optionSelected)="holderSelected($event)" [displayWith]="holderDisplayFn">
+        @for (u of holderOptions(); track u.id) {
+          <mat-option [value]="u">{{ u.fullName }} ({{ u.username }})</mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <div class="grid grid-cols-3 gap-2">
+      <mat-form-field appearance="outline">
+        <mat-label>อาคาร</mat-label>
+        <mat-select formControlName="buildingId">
+          <mat-option value="">ไม่ระบุ</mat-option>
+          @for (b of buildings(); track b.id) {
+            <mat-option [value]="b.id">{{ b.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ชั้น</mat-label>
+        <mat-select formControlName="floorId" [disabled]="!form.value.buildingId">
+          <mat-option value="">ไม่ระบุ</mat-option>
+          @for (f of floors(); track f.id) {
+            <mat-option [value]="f.id">{{ f.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>ห้อง</mat-label>
+        <mat-select formControlName="roomId" [disabled]="!form.value.floorId">
+          <mat-option value="">ไม่ระบุ</mat-option>
+          @for (r of rooms(); track r.id) {
+            <mat-option [value]="r.id">{{ r.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>รายละเอียดสถานที่เพิ่มเติม</mat-label>
+      <input matInput formControlName="locationNote" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>หมายเหตุ</mat-label>
+      <input matInput formControlName="comment" />
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>ยกเลิก</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+      @if (saving()) {
+        <mat-spinner diameter="18" class="!inline-block !mr-2" />
+      }
+      บันทึกการส่งต่อ/ย้าย
+    </button>
+  </mat-dialog-actions>
+</form>

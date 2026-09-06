@@ -92,10 +92,11 @@
     <mat-tab label="ยืมครุภัณฑ์-อุปกรณ์" *khdHasPermission="'asset:loan'">
       <div class="pt-4 space-y-4">
         @if (loanStats(); as ls) {
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <khd-stat-card variant="solid" color="blue" icon="arrow-path" label="ทั้งหมด" [value]="ls.total" />
             <khd-stat-card variant="solid" color="amber" icon="clock" label="กำลังยืม" [value]="ls.borrowed" />
             <khd-stat-card variant="solid" color="red" icon="exclamation-triangle" label="เกินกำหนด" [value]="ls.overdue" />
+            <khd-stat-card variant="solid" color="purple" icon="exclamation-triangle" label="เกินกำหนด+แจ้งเตือนซ้ำ" [value]="ls.overdueReminded" />
             <khd-stat-card variant="solid" color="green" icon="check-circle" label="คืนแล้ว" [value]="ls.returned" />
           </div>
         }

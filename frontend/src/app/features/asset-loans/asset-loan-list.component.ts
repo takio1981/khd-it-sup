@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, type Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
@@ -68,11 +68,12 @@ export class AssetLoanListComponent {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly statusLabel = STATUS_LABEL_TH;
   readonly statusColor = STATUS_COLOR;
 
-  readonly displayedColumns = ['asset', 'borrower', 'borrowDate', 'expectedReturnDate', 'status', 'actions'];
+  readonly displayedColumns = ['asset', 'borrower', 'currentHolder', 'borrowDate', 'expectedReturnDate', 'status', 'reminderCount', 'actions'];
   readonly loans = signal<IAssetLoan[]>([]);
   readonly total = signal(0);
   readonly pageSize = signal(20);
@@ -134,6 +135,15 @@ export class AssetLoanListComponent {
       const ref = this.dialog.open(AssetLoanFormComponent, { width: '480px', data: { loan, borrowedAssetIds } });
       ref.afterClosed().subscribe((result) => result && this.fetch());
     });
+  }
+
+  goToDetail(loan: IAssetLoan): void {
+    this.router.navigate(['/asset-loans', loan.id]);
+  }
+
+  locationLabel(loan: IAssetLoan): string | null {
+    const parts = [loan.currentBuilding?.name, loan.currentFloor?.name, loan.currentRoom?.name].filter(Boolean);
+    return parts.length > 0 ? parts.join(' / ') : (loan.currentLocationNote ?? null);
   }
 
   returnLoan(loan: IAssetLoan): void {

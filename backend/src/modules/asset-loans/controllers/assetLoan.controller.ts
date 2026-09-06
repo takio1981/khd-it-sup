@@ -6,6 +6,7 @@ import type {
   ExportAssetLoansQueryDto,
   ListAssetLoansQueryDto,
   ReturnAssetLoanDto,
+  TransferAssetLoanDto,
   UpdateAssetLoanDto,
 } from '@modules/asset-loans/dto/assetLoan.dto';
 import { asyncHandler } from '@common/utils/asyncHandler';
@@ -26,10 +27,12 @@ const EXPORT_COLUMNS: IExportColumn[] = [
   { header: 'ยี่ห้อ/รุ่น', key: 'assetModel', width: 22 },
   { header: 'หมวดหมู่', key: 'category', width: 20 },
   { header: 'ผู้ยืม', key: 'borrower', width: 20 },
+  { header: 'อยู่ที่/กับ', key: 'currentHolder', width: 20 },
   { header: 'วันที่ยืม', key: 'borrowDate', width: 18 },
   { header: 'กำหนดคืน', key: 'expectedReturnDate', width: 18 },
   { header: 'วันที่คืนจริง', key: 'actualReturnDate', width: 18 },
   { header: 'สถานะ', key: 'statusTh', width: 14 },
+  { header: 'แจ้งเตือนแล้ว (ครั้ง)', key: 'reminderCount', width: 16 },
   { header: 'ผู้บันทึก', key: 'recordedBy', width: 18 },
   { header: 'ผู้รับคืน', key: 'returnedBy', width: 18 },
   { header: 'วัตถุประสงค์', key: 'purpose', width: 26 },
@@ -61,10 +64,12 @@ export const exportAssetLoans = asyncHandler(async (req: Request, res: Response)
     assetModel: [l.asset.brand, l.asset.model].filter(Boolean).join(' '),
     category: l.asset.category?.nameTh ?? '',
     borrower: l.borrower.fullName,
+    currentHolder: l.status !== 'RETURNED' ? (l.currentHolder?.fullName ?? l.borrower.fullName) : '',
     borrowDate: formatDateTh(l.borrowDate),
     expectedReturnDate: formatDateTh(l.expectedReturnDate),
     actualReturnDate: formatDateTh(l.actualReturnDate),
     statusTh: STATUS_LABEL_TH[l.status] ?? l.status,
+    reminderCount: l.status === 'OVERDUE' && l.reminderCount > 0 ? l.reminderCount : '',
     recordedBy: l.recorder?.fullName ?? '',
     returnedBy: l.returner?.fullName ?? '',
     purpose: l.purpose ?? '',
@@ -123,5 +128,14 @@ export const deleteAssetLoan = asyncHandler(async (req: Request, res: Response) 
 
 export const returnAssetLoan = asyncHandler(async (req: Request, res: Response) => {
   const loan = await assetLoanService.returnLoan(req.params.id, req.body as ReturnAssetLoanDto, contextOf(req));
+  sendSuccess(res, loan);
+});
+
+export const getAssetLoanTimeline = asyncHandler(async (req: Request, res: Response) => {
+  sendSuccess(res, await assetLoanService.getTimeline(req.params.id));
+});
+
+export const transferAssetLoan = asyncHandler(async (req: Request, res: Response) => {
+  const loan = await assetLoanService.transferLoan(req.params.id, req.body as TransferAssetLoanDto, contextOf(req));
   sendSuccess(res, loan);
 });

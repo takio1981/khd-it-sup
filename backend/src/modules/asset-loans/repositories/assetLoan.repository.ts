@@ -1,12 +1,22 @@
 import type { Prisma } from '@prisma/client';
-import { prisma } from '@infrastructure/database/prisma';
+import { prisma, type PrismaClientOrTx } from '@infrastructure/database/prisma';
 
 const loanInclude = {
   asset: { select: { id: true, assetNumber: true, brand: true, model: true, category: { select: { nameTh: true } } } },
   borrower: { select: { id: true, fullName: true, email: true } },
   recorder: { select: { id: true, fullName: true } },
   returner: { select: { id: true, fullName: true } },
+  currentHolder: { select: { id: true, fullName: true } },
+  takenToBuilding: { select: { id: true, name: true } },
+  takenToFloor: { select: { id: true, name: true } },
+  takenToRoom: { select: { id: true, name: true } },
+  currentBuilding: { select: { id: true, name: true } },
+  currentFloor: { select: { id: true, name: true } },
+  currentRoom: { select: { id: true, name: true } },
 } satisfies Prisma.AssetLoanInclude;
+
+/** จำนวนครั้งแจ้งเตือนเกินกำหนดคืนขั้นต่ำ ที่ถือว่าน่าจะ "ลืมคืน" — ใช้ในการ์ดสรุปบน dashboard */
+const OVERDUE_REMINDED_THRESHOLD = 3;
 
 export interface IAssetLoanFilter {
   status?: 'BORROWED' | 'OVERDUE' | 'RETURNED';
@@ -70,12 +80,12 @@ export class AssetLoanRepository {
     return prisma.assetLoan.findFirst({ where: { assetId, actualReturnDate: null } });
   }
 
-  async create(data: Prisma.AssetLoanUncheckedCreateInput) {
-    return prisma.assetLoan.create({ data, include: loanInclude });
+  async create(data: Prisma.AssetLoanUncheckedCreateInput, db: PrismaClientOrTx = prisma) {
+    return db.assetLoan.create({ data, include: loanInclude });
   }
 
-  async markReturned(id: string, returnedBy: string, conditionOnReturn?: string) {
-    return prisma.assetLoan.update({
+  async markReturned(id: string, returnedBy: string, conditionOnReturn?: string, db: PrismaClientOrTx = prisma) {
+    return db.assetLoan.update({
       where: { id },
       data: { actualReturnDate: new Date(), returnedBy, conditionOnReturn },
       include: loanInclude,
@@ -86,18 +96,41 @@ export class AssetLoanRepository {
     return prisma.assetLoan.update({ where: { id }, data, include: loanInclude });
   }
 
+  /** ใช้โดย transferLoan() — อัปเดตเฉพาะผู้ถือครอง/สถานที่ปัจจุบัน (ไม่แตะฟิลด์อื่น) */
+  async updateCurrentState(
+    id: string,
+    data: Pick<
+      Prisma.AssetLoanUncheckedUpdateInput,
+      'currentHolderId' | 'currentBuildingId' | 'currentFloorId' | 'currentRoomId' | 'currentLocationNote'
+    >,
+    db: PrismaClientOrTx = prisma,
+  ) {
+    return db.assetLoan.update({ where: { id }, data, include: loanInclude });
+  }
+
+  /** ใช้โดย assetLoanReminder.job.ts ทุกครั้งที่แจ้งเตือนยืมเกินกำหนดคืนสำเร็จ */
+  async incrementReminder(id: string, db: PrismaClientOrTx = prisma) {
+    return db.assetLoan.update({
+      where: { id },
+      data: { reminderCount: { increment: 1 }, lastReminderAt: new Date() },
+    });
+  }
+
   async delete(id: string) {
     await prisma.assetLoan.delete({ where: { id } });
   }
 
   async getStats() {
-    const [total, returned, overdue] = await Promise.all([
+    const [total, returned, overdue, overdueReminded] = await Promise.all([
       prisma.assetLoan.count(),
       prisma.assetLoan.count({ where: { actualReturnDate: { not: null } } }),
       prisma.assetLoan.count({ where: { actualReturnDate: null, expectedReturnDate: { lt: new Date() } } }),
+      prisma.assetLoan.count({
+        where: { actualReturnDate: null, expectedReturnDate: { lt: new Date() }, reminderCount: { gte: OVERDUE_REMINDED_THRESHOLD } },
+      }),
     ]);
     const borrowed = total - returned;
-    return { total, borrowed: borrowed - overdue, overdue, returned };
+    return { total, borrowed: borrowed - overdue, overdue, returned, overdueReminded };
   }
 
   /** ใช้โดย job แจ้งเตือนยืมเกินกำหนดคืนรายวัน (ดู services/assetLoanReminder.job.ts) */

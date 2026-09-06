@@ -108,6 +108,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/asset-loans/asset-loan-list.component').then((m) => m.AssetLoanListComponent),
       },
       {
+        path: 'asset-loans/:id',
+        canActivate: [permissionGuard],
+        data: { permissions: ['asset:loan'], watermark: 'logo2.png' },
+        loadComponent: () =>
+          import('./features/asset-loans/asset-loan-detail/asset-loan-detail.component').then((m) => m.AssetLoanDetailComponent),
+      },
+      {
         path: 'spare-parts',
         canActivate: [permissionGuard],
         data: { permissions: ['spare_part:view', 'spare_part:manage', 'spare_part:issue'], watermark: 'logo2.png' },

@@ -17,6 +17,17 @@ export interface IAssetLoan {
   conditionOnBorrow: string | null;
   conditionOnReturn: string | null;
   status: AssetLoanStatus;
+  takenToBuilding: { id: string; name: string } | null;
+  takenToFloor: { id: string; name: string } | null;
+  takenToRoom: { id: string; name: string } | null;
+  takenToNote: string | null;
+  currentHolder: { id: string; fullName: string } | null;
+  currentBuilding: { id: string; name: string } | null;
+  currentFloor: { id: string; name: string } | null;
+  currentRoom: { id: string; name: string } | null;
+  currentLocationNote: string | null;
+  reminderCount: number;
+  lastReminderAt: string | null;
 }
 
 export interface ICreateAssetLoanPayload {
@@ -25,6 +36,10 @@ export interface ICreateAssetLoanPayload {
   expectedReturnDate?: string;
   purpose?: string;
   conditionOnBorrow?: string;
+  takenToBuildingId?: string;
+  takenToFloorId?: string;
+  takenToRoomId?: string;
+  takenToNote?: string;
 }
 
 export interface IUpdateAssetLoanPayload {
@@ -41,6 +56,16 @@ export interface IAssetLoanStats {
   borrowed: number;
   overdue: number;
   returned: number;
+  overdueReminded: number;
+}
+
+export interface ITransferAssetLoanPayload {
+  newHolderId?: string;
+  buildingId?: string;
+  floorId?: string;
+  roomId?: string;
+  locationNote?: string;
+  comment?: string;
 }
 
 export interface IAssetLoanChartData {

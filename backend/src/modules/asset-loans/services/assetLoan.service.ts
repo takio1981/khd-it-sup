@@ -2,10 +2,12 @@ import { randomUUID } from 'node:crypto';
 import type { AssetLoan } from '@prisma/client';
 import { prisma } from '@infrastructure/database/prisma';
 import { AssetLoanRepository, type IAssetLoanFilter } from '@modules/asset-loans/repositories/assetLoan.repository';
+import { assetLoanTimelineService } from '@modules/asset-loans/services/assetLoanTimeline.service';
 import type {
   CreateAssetLoanDto,
   ListAssetLoansQueryDto,
   ReturnAssetLoanDto,
+  TransferAssetLoanDto,
   UpdateAssetLoanDto,
 } from '@modules/asset-loans/dto/assetLoan.dto';
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '@common/errors';
@@ -66,6 +68,48 @@ export class AssetLoanService {
     return withStatus(loan);
   }
 
+  /** ถ้ายังไม่มี event เลย (รายการเก่าก่อนมีฟีเจอร์ timeline) จำลอง BORROW/RETURN จากฟิลด์แถวเดิมเพื่อแสดงผล
+   *  (ไม่เขียนแถวปลอมลง DB จริง — ทำเฉพาะตอนอ่านเท่านั้น) */
+  async getTimeline(id: string) {
+    const loan = await this.repo.findById(id);
+    if (!loan) throw new NotFoundError('ไม่พบรายการยืม');
+
+    const events = await assetLoanTimelineService.findByLoanId(id);
+    if (events.length > 0) return events;
+
+    const synthesized: Array<Record<string, unknown>> = [
+      {
+        id: `synthetic-borrow-${loan.id}`,
+        loanId: loan.id,
+        eventTime: loan.borrowDate,
+        eventType: 'BORROW',
+        holder: loan.borrower,
+        building: null,
+        floor: null,
+        room: null,
+        locationNote: null,
+        responsible: loan.recorder,
+        comment: null,
+      },
+    ];
+    if (loan.actualReturnDate) {
+      synthesized.push({
+        id: `synthetic-return-${loan.id}`,
+        loanId: loan.id,
+        eventTime: loan.actualReturnDate,
+        eventType: 'RETURN',
+        holder: null,
+        building: null,
+        floor: null,
+        room: null,
+        locationNote: null,
+        responsible: loan.returner,
+        comment: null,
+      });
+    }
+    return synthesized;
+  }
+
   async getChartData() {
     const loans = await this.repo.findAllForChart();
     const byAsset = new Map<string, number>();
@@ -119,14 +163,43 @@ export class AssetLoanService {
     const activeLoan = await this.repo.findActiveByAsset(dto.assetId);
     if (activeLoan) throw new ConflictError('ครุภัณฑ์นี้ถูกยืมอยู่แล้ว ยังไม่ได้คืน');
 
-    const loan = await this.repo.create({
-      id: randomUUID(),
-      assetId: dto.assetId,
-      borrowerId: dto.borrowerId,
-      recordedBy: ctx.user.id,
-      expectedReturnDate: dto.expectedReturnDate,
-      purpose: dto.purpose,
-      conditionOnBorrow: dto.conditionOnBorrow,
+    const loanId = randomUUID();
+    const loan = await prisma.$transaction(async (tx) => {
+      const created = await this.repo.create(
+        {
+          id: loanId,
+          assetId: dto.assetId,
+          borrowerId: dto.borrowerId,
+          recordedBy: ctx.user.id,
+          expectedReturnDate: dto.expectedReturnDate,
+          purpose: dto.purpose,
+          conditionOnBorrow: dto.conditionOnBorrow,
+          takenToBuildingId: dto.takenToBuildingId,
+          takenToFloorId: dto.takenToFloorId,
+          takenToRoomId: dto.takenToRoomId,
+          takenToNote: dto.takenToNote,
+          currentHolderId: dto.borrowerId,
+          currentBuildingId: dto.takenToBuildingId,
+          currentFloorId: dto.takenToFloorId,
+          currentRoomId: dto.takenToRoomId,
+          currentLocationNote: dto.takenToNote,
+        },
+        tx,
+      );
+      await assetLoanTimelineService.recordEvent(
+        {
+          loanId,
+          eventType: 'BORROW',
+          holderId: dto.borrowerId,
+          buildingId: dto.takenToBuildingId,
+          floorId: dto.takenToFloorId,
+          roomId: dto.takenToRoomId,
+          locationNote: dto.takenToNote,
+          responsibleUserId: ctx.user.id,
+        },
+        tx,
+      );
+      return created;
     });
 
     await auditLogService.record(
@@ -156,7 +229,19 @@ export class AssetLoanService {
       throw new ForbiddenError('สิทธิ์ยืม-คืนของคุณอนุญาตให้บันทึกการคืนสำหรับรายการของตัวเองเท่านั้น');
     }
 
-    const loan = await this.repo.markReturned(id, ctx.user.id, dto.conditionOnReturn);
+    const loan = await prisma.$transaction(async (tx) => {
+      const updated = await this.repo.markReturned(id, ctx.user.id, dto.conditionOnReturn, tx);
+      await assetLoanTimelineService.recordEvent(
+        {
+          loanId: id,
+          eventType: 'RETURN',
+          responsibleUserId: ctx.user.id,
+          comment: dto.conditionOnReturn ? `สภาพตอนคืน: ${dto.conditionOnReturn}` : null,
+        },
+        tx,
+      );
+      return updated;
+    });
 
     await auditLogService.record(
       {
@@ -170,6 +255,73 @@ export class AssetLoanService {
     );
 
     void this.notifySafe('RETURNED', loan);
+
+    return withStatus(loan);
+  }
+
+  /** บันทึกการส่งต่อ/ย้ายครุภัณฑ์ระหว่างที่ยืมอยู่ — เปลี่ยนผู้ถือครอง/สถานที่ปัจจุบัน
+   *  สิทธิ์: Admin/IT (asset:loan) หรือผู้ถือครองปัจจุบันของรายการนี้ (แม้ไม่มีสิทธิ์ asset:loan/asset:loan_self เลยก็ตาม
+   *  เช่นกรณี IT บันทึกยืมแทนให้ตั้งแต่แรก) — ตรวจที่นี่เท่านั้น ไม่ผ่าน route middleware (ดู routes.ts) */
+  async transferLoan(id: string, dto: TransferAssetLoanDto, ctx: IRequestContext) {
+    const existing = await this.repo.findById(id);
+    if (!existing) throw new NotFoundError('ไม่พบรายการยืม');
+    if (existing.actualReturnDate) throw new BadRequestError('รายการนี้คืนแล้ว ไม่สามารถบันทึกการย้าย/ส่งต่อได้');
+
+    const hasFullPerm = ctx.user.permissions.includes(PERMISSIONS.ASSET_LOAN);
+    const isCurrentHolder = existing.currentHolderId === ctx.user.id;
+    if (!hasFullPerm && !isCurrentHolder) {
+      throw new ForbiddenError('คุณไม่มีสิทธิ์บันทึกการย้าย/ส่งต่อครุภัณฑ์รายการนี้');
+    }
+
+    let newHolder: { id: string; fullName: string } | null = null;
+    if (dto.newHolderId) {
+      newHolder = await prisma.user.findFirst({
+        where: { id: dto.newHolderId, deletedAt: null },
+        select: { id: true, fullName: true },
+      });
+      if (!newHolder) throw new NotFoundError('ไม่พบผู้รับมอบที่ระบุ');
+    }
+    const newHolderId = dto.newHolderId ?? existing.currentHolderId ?? existing.borrowerId;
+
+    const loan = await prisma.$transaction(async (tx) => {
+      const updated = await this.repo.updateCurrentState(
+        id,
+        {
+          currentHolderId: newHolderId,
+          currentBuildingId: dto.buildingId ?? existing.currentBuildingId,
+          currentFloorId: dto.floorId ?? existing.currentFloorId,
+          currentRoomId: dto.roomId ?? existing.currentRoomId,
+          currentLocationNote: dto.locationNote ?? (dto.buildingId ? null : existing.currentLocationNote),
+        },
+        tx,
+      );
+      await assetLoanTimelineService.recordEvent(
+        {
+          loanId: id,
+          eventType: 'TRANSFER',
+          holderId: newHolderId,
+          buildingId: dto.buildingId ?? null,
+          floorId: dto.floorId ?? null,
+          roomId: dto.roomId ?? null,
+          locationNote: dto.locationNote ?? null,
+          responsibleUserId: ctx.user.id,
+          comment: dto.comment ?? null,
+        },
+        tx,
+      );
+      return updated;
+    });
+
+    await auditLogService.record(
+      {
+        action: 'UPDATE',
+        module: 'asset',
+        entityType: 'AssetLoan',
+        entityId: id,
+        description: `บันทึกย้าย/ส่งต่อครุภัณฑ์ ${existing.asset.assetNumber}${newHolder ? ` ไปยัง ${newHolder.fullName}` : ''}`,
+      },
+      ctx,
+    );
 
     return withStatus(loan);
   }

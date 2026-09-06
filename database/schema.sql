@@ -319,6 +319,77 @@ CREATE TABLE `asset_loans` (
   CONSTRAINT `fk_asset_loans_returned_by` FOREIGN KEY (`returned_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+ALTER TABLE `asset_loans`
+  ADD COLUMN `taken_to_building_id` CHAR(36)     NULL     AFTER `condition_on_borrow`,
+  ADD COLUMN `taken_to_floor_id`    CHAR(36)     NULL     AFTER `taken_to_building_id`,
+  ADD COLUMN `taken_to_room_id`     CHAR(36)     NULL     AFTER `taken_to_floor_id`,
+  ADD COLUMN `taken_to_note`        VARCHAR(255) NULL     AFTER `taken_to_room_id`,
+  ADD COLUMN `current_holder_id`    CHAR(36)     NULL     AFTER `taken_to_note`,
+  ADD COLUMN `current_building_id`  CHAR(36)     NULL     AFTER `current_holder_id`,
+  ADD COLUMN `current_floor_id`     CHAR(36)     NULL     AFTER `current_building_id`,
+  ADD COLUMN `current_room_id`      CHAR(36)     NULL     AFTER `current_floor_id`,
+  ADD COLUMN `current_location_note` VARCHAR(255) NULL    AFTER `current_room_id`,
+  ADD COLUMN `reminder_count`       INT          NOT NULL DEFAULT 0 AFTER `current_location_note`,
+  ADD COLUMN `last_reminder_at`     DATETIME(3)  NULL     AFTER `reminder_count`;
+
+ALTER TABLE `asset_loans`
+  ADD KEY `idx_asset_loans_current_holder` (`current_holder_id`),
+  ADD CONSTRAINT `fk_asset_loans_taken_to_building` FOREIGN KEY (`taken_to_building_id`) REFERENCES `buildings` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_asset_loans_taken_to_floor`    FOREIGN KEY (`taken_to_floor_id`)    REFERENCES `floors` (`id`)   ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_asset_loans_taken_to_room`     FOREIGN KEY (`taken_to_room_id`)     REFERENCES `rooms` (`id`)   ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_asset_loans_current_holder`    FOREIGN KEY (`current_holder_id`)    REFERENCES `users` (`id`)   ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_asset_loans_current_building`  FOREIGN KEY (`current_building_id`)  REFERENCES `buildings` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_asset_loans_current_floor`     FOREIGN KEY (`current_floor_id`)     REFERENCES `floors` (`id`)   ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_asset_loans_current_room`      FOREIGN KEY (`current_room_id`)      REFERENCES `rooms` (`id`)   ON DELETE SET NULL;
+
+-- Backfill: รายการที่ยังไม่คืน ให้ผู้ถือครองปัจจุบัน = ผู้ยืมเดิมเป็นค่าเริ่มต้น
+-- (สถานที่ปัจจุบัน/ปลายทางของรายการเก่าไม่ทราบจริง เว้นว่างไว้ตามจริง)
+UPDATE `asset_loans`
+SET `current_holder_id` = `borrower_id`
+WHERE `actual_return_date` IS NULL AND `current_holder_id` IS NULL;
+
+CREATE TABLE `asset_loan_timeline` (
+  `id`                   CHAR(36)     NOT NULL,
+  `loan_id`              CHAR(36)     NOT NULL,
+  `event_time`           DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `event_type`           VARCHAR(50)  NOT NULL COMMENT 'BORROW, TRANSFER, REMINDER_SENT, RETURN, NOTE',
+  `holder_id`            CHAR(36)     NULL COMMENT 'ผู้ถือครองหลัง event นี้ (BORROW/TRANSFER)',
+  `building_id`          CHAR(36)     NULL,
+  `floor_id`             CHAR(36)     NULL,
+  `room_id`              CHAR(36)     NULL,
+  `location_note`        VARCHAR(255) NULL,
+  `responsible_user_id`  CHAR(36)     NULL COMMENT 'ผู้บันทึก event นี้ (อาจไม่ใช่ผู้ถือครอง เช่น ไอทีบันทึกแทน)',
+  `comment`              TEXT         NULL,
+  `created_at`           DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `idx_loan_timeline_loan` (`loan_id`, `event_time`),
+  KEY `idx_loan_timeline_type` (`event_type`),
+  KEY `idx_loan_timeline_holder` (`holder_id`),
+  CONSTRAINT `fk_loan_timeline_loan`        FOREIGN KEY (`loan_id`)             REFERENCES `asset_loans` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_loan_timeline_holder`      FOREIGN KEY (`holder_id`)           REFERENCES `users` (`id`)       ON DELETE SET NULL,
+  CONSTRAINT `fk_loan_timeline_responsible` FOREIGN KEY (`responsible_user_id`) REFERENCES `users` (`id`)       ON DELETE SET NULL,
+  CONSTRAINT `fk_loan_timeline_building`    FOREIGN KEY (`building_id`)         REFERENCES `buildings` (`id`)   ON DELETE SET NULL,
+  CONSTRAINT `fk_loan_timeline_floor`       FOREIGN KEY (`floor_id`)            REFERENCES `floors` (`id`)      ON DELETE SET NULL,
+  CONSTRAINT `fk_loan_timeline_room`        FOREIGN KEY (`room_id`)             REFERENCES `rooms` (`id`)       ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Immutability enforcement: ห้าม UPDATE / DELETE แถวใน timeline โดยเด็ดขาด (insert-only ledger)
+DELIMITER $$
+CREATE TRIGGER `trg_loan_timeline_no_update`
+BEFORE UPDATE ON `asset_loan_timeline`
+FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'asset_loan_timeline is append-only: UPDATE is not permitted';
+END$$
+
+CREATE TRIGGER `trg_loan_timeline_no_delete`
+BEFORE DELETE ON `asset_loan_timeline`
+FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'asset_loan_timeline is append-only: DELETE is not permitted';
+END$$
+DELIMITER ;
+
 CREATE TABLE `asset_photos` (
   `id`          CHAR(36)     NOT NULL,
   `asset_id`    CHAR(36)     NOT NULL,

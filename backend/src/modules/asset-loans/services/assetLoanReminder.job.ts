@@ -1,5 +1,7 @@
 import { AssetLoanRepository } from '@modules/asset-loans/repositories/assetLoan.repository';
+import { assetLoanTimelineService } from '@modules/asset-loans/services/assetLoanTimeline.service';
 import { notificationService } from '@modules/notifications/services/notification.service';
+import { prisma } from '@infrastructure/database/prisma';
 import { logger } from '@infrastructure/logger/logger';
 
 const repo = new AssetLoanRepository();
@@ -17,6 +19,13 @@ export async function checkOverdueLoansAndNotify(): Promise<{ checked: number; n
   for (const loan of overdueLoans) {
     try {
       await notificationService.notifyAssetLoanEvent('OVERDUE', loan);
+      await prisma.$transaction(async (tx) => {
+        await repo.incrementReminder(loan.id, tx);
+        await assetLoanTimelineService.recordEvent(
+          { loanId: loan.id, eventType: 'REMINDER_SENT', holderId: loan.currentHolderId },
+          tx,
+        );
+      });
       notified += 1;
     } catch (err) {
       logger.error(`[asset-loan-reminder] แจ้งเตือนเกินกำหนดคืนล้มเหลว (loan ${loan.id}): ${err instanceof Error ? err.message : String(err)}`);

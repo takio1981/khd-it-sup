@@ -61,6 +61,42 @@
       </mat-form-field>
     }
 
+    @if (!isEdit) {
+      <div class="grid grid-cols-3 gap-2">
+        <mat-form-field appearance="outline">
+          <mat-label>อาคาร (ที่จะนำไปใช้)</mat-label>
+          <mat-select formControlName="takenToBuildingId">
+            <mat-option value="">ไม่ระบุ</mat-option>
+            @for (b of buildings(); track b.id) {
+              <mat-option [value]="b.id">{{ b.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>ชั้น</mat-label>
+          <mat-select formControlName="takenToFloorId" [disabled]="!form.value.takenToBuildingId">
+            <mat-option value="">ไม่ระบุ</mat-option>
+            @for (f of floors(); track f.id) {
+              <mat-option [value]="f.id">{{ f.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>ห้อง</mat-label>
+          <mat-select formControlName="takenToRoomId" [disabled]="!form.value.takenToFloorId">
+            <mat-option value="">ไม่ระบุ</mat-option>
+            @for (r of rooms(); track r.id) {
+              <mat-option [value]="r.id">{{ r.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>รายละเอียดสถานที่เพิ่มเติม</mat-label>
+        <input matInput formControlName="takenToNote" placeholder="เช่น ห้องประชุมชั้น 3 ตึกผู้ป่วยนอก" />
+      </mat-form-field>
+    }
+
     @if (showReturnFields) {
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>สภาพเครื่องตอนคืน</mat-label>

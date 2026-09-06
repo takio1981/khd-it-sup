@@ -133,6 +133,21 @@
               อุปกรณ์นี้ถูกยืมอยู่โดย <span class="font-medium">{{ loan.borrowerName }}</span>
             </p>
           </div>
+          @if (loan.currentHolderId !== loan.borrowerId) {
+            <p class="text-xs text-amber-700/80 dark:text-amber-400/80 !mt-1">
+              ตอนนี้อยู่กับ <span class="font-medium">{{ loan.currentHolderName }}</span>
+            </p>
+          }
+          @if (loan.currentLocationLabel) {
+            <p class="text-xs text-amber-700/80 dark:text-amber-400/80 !mt-1">อยู่ที่ {{ loan.currentLocationLabel }}</p>
+          }
+        </div>
+      }
+
+      @if (transferDone()) {
+        <div class="khd-card text-center border border-emerald-500/30">
+          <khd-icon name="check-circle" [size]="40" class="mx-auto mb-2 text-emerald-500" />
+          <p class="font-medium">บันทึกการย้าย/ส่งต่อสำเร็จ</p>
         </div>
       }
 
@@ -252,6 +267,39 @@
             </button>
           </div>
         </form>
+      } @else if (showTransferForm()) {
+        <form [formGroup]="transferForm" (ngSubmit)="submitTransfer()" class="khd-card space-y-3">
+          <h2 class="text-sm font-medium">ย้าย/ส่งต่ออุปกรณ์ — {{ a.assetNumber }}</h2>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>ส่งต่อให้ (ถ้ามี)</mat-label>
+            <input matInput [formControl]="transferHolderSearch" [matAutocomplete]="transferHolderAuto" placeholder="พิมพ์ชื่อเพื่อค้นหา" />
+            <mat-autocomplete
+              #transferHolderAuto="matAutocomplete"
+              (optionSelected)="transferHolderSelected($event)"
+              [displayWith]="transferHolderDisplayFn"
+            >
+              @for (u of transferHolderOptions(); track u.id) {
+                <mat-option [value]="u">{{ u.fullName }} ({{ u.username }})</mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>สถานที่ใหม่ (ถ้ามี)</mat-label>
+            <input matInput formControlName="locationNote" />
+          </mat-form-field>
+
+          <div class="flex gap-2">
+            <button mat-stroked-button type="button" class="!flex-1" (click)="showTransferForm.set(false)">ยกเลิก</button>
+            <button mat-flat-button color="primary" type="submit" class="!flex-1" [disabled]="submittingTransfer()">
+              @if (submittingTransfer()) {
+                <mat-spinner diameter="18" class="!inline-block !mr-2" />
+              }
+              บันทึกการย้าย/ส่งต่อ
+            </button>
+          </div>
+        </form>
       } @else if (showLoanForm()) {
         <form [formGroup]="loanForm" (ngSubmit)="submitLoan()" class="khd-card space-y-3">
           <h2 class="text-sm font-medium">{{ isBorrowMode(a) ? 'ยืมอุปกรณ์' : 'คืนอุปกรณ์' }} — {{ a.assetNumber }}</h2>
@@ -270,6 +318,11 @@
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>สภาพตอนยืม (ถ้ามี)</mat-label>
               <textarea matInput formControlName="conditionOnBorrow" rows="2"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>สถานที่ที่จะนำไปใช้ (ถ้ามี)</mat-label>
+              <input matInput formControlName="takenToNote" placeholder="เช่น ห้องประชุมชั้น 3 ตึกผู้ป่วยนอก" />
             </mat-form-field>
           } @else {
             <mat-form-field appearance="outline" class="w-full">
@@ -300,6 +353,12 @@
             <khd-icon name="arrow-path" [size]="18" class="!mr-2" />
             {{ isBorrowMode(a) ? 'ยืมอุปกรณ์นี้' : 'คืนอุปกรณ์นี้' }}
           </button>
+          @if (a.activeLoan) {
+            <button mat-stroked-button class="!w-full !h-11" (click)="openTransferForm()">
+              <khd-icon name="paper-airplane" [size]="18" class="!mr-2" />
+              ย้าย/ส่งต่ออุปกรณ์นี้
+            </button>
+          }
         </div>
       }
     }

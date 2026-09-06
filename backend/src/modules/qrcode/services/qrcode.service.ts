@@ -146,6 +146,12 @@ export class QrCodeService {
           borrowerName: loans[0].borrower.fullName,
           borrowDate: loans[0].borrowDate,
           expectedReturnDate: loans[0].expectedReturnDate,
+          currentHolderId: loans[0].currentHolder?.id ?? loans[0].borrower.id,
+          currentHolderName: loans[0].currentHolder?.fullName ?? loans[0].borrower.fullName,
+          currentLocationLabel:
+            [loans[0].currentBuilding?.name, loans[0].currentFloor?.name, loans[0].currentRoom?.name].filter(Boolean).join(' / ') ||
+            loans[0].currentLocationNote ||
+            null,
         }
       : null;
 

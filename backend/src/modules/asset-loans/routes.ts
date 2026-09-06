@@ -7,6 +7,7 @@ import {
   exportAssetLoansQuerySchema,
   listAssetLoansQuerySchema,
   returnAssetLoanSchema,
+  transferAssetLoanSchema,
   updateAssetLoanSchema,
 } from '@modules/asset-loans/dto/assetLoan.dto';
 import { authenticate, requirePermission, validateRequest } from '@common/middleware';
@@ -92,6 +93,21 @@ router.get('/:id', requirePermission(FULL_PERM), validateRequest({ params: asset
 
 /**
  * @openapi
+ * /asset-loans/{id}/timeline:
+ *   get:
+ *     tags: [AssetLoans]
+ *     summary: ประวัติเหตุการณ์ของรายการยืม-คืน (ยืม/ย้าย-ส่งต่อ/แจ้งเตือน/คืน)
+ *     security: [{ bearerAuth: [] }]
+ */
+router.get(
+  '/:id/timeline',
+  requirePermission(FULL_PERM),
+  validateRequest({ params: assetLoanIdParamSchema }),
+  assetLoanController.getAssetLoanTimeline,
+);
+
+/**
+ * @openapi
  * /asset-loans:
  *   post:
  *     tags: [AssetLoans]
@@ -143,6 +159,24 @@ router.post(
   requirePermission(...CREATE_RETURN_PERMS),
   validateRequest({ params: assetLoanIdParamSchema, body: returnAssetLoanSchema }),
   assetLoanController.returnAssetLoan,
+);
+
+/**
+ * @openapi
+ * /asset-loans/{id}/transfer:
+ *   patch:
+ *     tags: [AssetLoans]
+ *     summary: บันทึกการย้าย/ส่งต่อครุภัณฑ์ระหว่างที่ยืมอยู่ (เปลี่ยนผู้ถือครอง/สถานที่ปัจจุบัน)
+ *     security: [{ bearerAuth: [] }]
+ */
+// จงใจไม่ใส่ requirePermission() เหมือน route อื่นในไฟล์นี้ — สิทธิ์ผูกกับ current_holder_id ของ "แถวนี้"
+// ไม่ใช่สิทธิ์ในตาราง role_permissions (ผู้ถือครองปัจจุบันอาจไม่มีสิทธิ์ asset:loan/asset:loan_self เลย
+// ถ้า IT บันทึกยืมแทนให้ตั้งแต่แรก) ตรวจสิทธิ์เต็มรูปแบบใน service.transferLoan() แทน
+// (authenticate ยังบังคับผ่าน router.use(authenticate) ด้านบนอยู่ดี)
+router.patch(
+  '/:id/transfer',
+  validateRequest({ params: assetLoanIdParamSchema, body: transferAssetLoanSchema }),
+  assetLoanController.transferAssetLoan,
 );
 
 export default router;

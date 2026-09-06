@@ -11,10 +11,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AssetLoanService } from '../../../core/services/asset-loan.service';
 import { AssetService } from '../../../core/services/asset.service';
 import { UserService } from '../../../core/services/user.service';
+import { LocationService } from '../../../core/services/location.service';
 import { LOAN_CONDITION_OPTIONS, LOAN_PURPOSE_OPTIONS, OTHER_OPTION, resolveDropdownPrefill } from '../asset-loan.const';
 import type { IAsset } from '../../../core/models/asset.model';
 import type { IUserListItem } from '../../../core/models/user.model';
 import type { IAssetLoan } from '../../../core/models/asset-loan.model';
+import type { IBuilding, IFloor, IRoom } from '../../../core/models/location.model';
 
 /** แปลง ISO date string จาก backend เป็น Date แบบ local calendar day (ไม่ผ่าน UTC เพื่อกันวันเลื่อน) */
 function toCalendarDate(iso: string | null | undefined): Date | null {
@@ -59,6 +61,7 @@ export class AssetLoanFormComponent {
   private readonly assetLoanService = inject(AssetLoanService);
   private readonly assetService = inject(AssetService);
   private readonly userService = inject(UserService);
+  private readonly locationService = inject(LocationService);
   readonly dialogRef = inject(MatDialogRef<AssetLoanFormComponent>);
   readonly data = inject<IAssetLoanFormDialogData>(MAT_DIALOG_DATA);
 
@@ -66,6 +69,9 @@ export class AssetLoanFormComponent {
   readonly assets = signal<IAsset[]>([]);
   readonly users = signal<IUserListItem[]>([]);
   readonly availableAssets = signal<IAsset[]>([]);
+  readonly buildings = signal<IBuilding[]>([]);
+  readonly floors = signal<IFloor[]>([]);
+  readonly rooms = signal<IRoom[]>([]);
 
   readonly purposeOptions = LOAN_PURPOSE_OPTIONS;
   readonly conditionOptions = LOAN_CONDITION_OPTIONS;
@@ -88,6 +94,10 @@ export class AssetLoanFormComponent {
     conditionOnBorrowOther: [this.conditionBorrowPrefill.other],
     conditionOnReturn: [this.conditionReturnPrefill.select],
     conditionOnReturnOther: [this.conditionReturnPrefill.other],
+    takenToBuildingId: [this.data.loan?.takenToBuilding?.id ?? ''],
+    takenToFloorId: [this.data.loan?.takenToFloor?.id ?? ''],
+    takenToRoomId: [this.data.loan?.takenToRoom?.id ?? ''],
+    takenToNote: [this.data.loan?.takenToNote ?? ''],
   });
 
   constructor() {
@@ -98,6 +108,23 @@ export class AssetLoanFormComponent {
       );
     });
     this.userService.list({ page: 1, limit: 200 }).subscribe((res) => this.users.set(res.items));
+
+    if (!this.isEdit) {
+      this.locationService.listBuildings().subscribe((buildings) => this.buildings.set(buildings));
+
+      this.form.controls.takenToBuildingId.valueChanges.subscribe((buildingId) => {
+        this.form.patchValue({ takenToFloorId: '', takenToRoomId: '' }, { emitEvent: false });
+        this.rooms.set([]);
+        this.floors.set([]);
+        if (buildingId) this.locationService.listFloors(buildingId).subscribe((floors) => this.floors.set(floors));
+      });
+
+      this.form.controls.takenToFloorId.valueChanges.subscribe((floorId) => {
+        this.form.patchValue({ takenToRoomId: '' }, { emitEvent: false });
+        this.rooms.set([]);
+        if (floorId) this.locationService.listRooms(floorId).subscribe((rooms) => this.rooms.set(rooms));
+      });
+    }
 
     this.syncOtherValidator('purpose', 'purposeOther');
     this.syncOtherValidator('conditionOnBorrow', 'conditionOnBorrowOther');
@@ -144,6 +171,10 @@ export class AssetLoanFormComponent {
           expectedReturnDate,
           purpose: purpose || undefined,
           conditionOnBorrow: conditionOnBorrow || undefined,
+          takenToBuildingId: raw.takenToBuildingId || undefined,
+          takenToFloorId: raw.takenToFloorId || undefined,
+          takenToRoomId: raw.takenToRoomId || undefined,
+          takenToNote: raw.takenToNote || undefined,
         });
 
     request$.subscribe({

@@ -25,6 +25,7 @@ import { TechnicianWorkloadReportComponent } from '../../shared/components/techn
 import { URGENCY_LABEL_TH, URGENCY_COLOR } from '../../core/constants/status.const';
 import { downloadBlob } from '../../core/utils/download.util';
 import { provideKhdPaginatorIntl } from '../../core/utils/khd-paginator-intl.util';
+import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
 import type { IRepairTicketListItem } from '../../core/models/repair-ticket.model';
 import type { IAssetLoan, AssetLoanStatus } from '../../core/models/asset-loan.model';
 import type { IAsset } from '../../core/models/asset.model';
@@ -67,6 +68,7 @@ const LOAN_STATUS_LABEL_TH: Record<string, string> = {
     StatusBadgeComponent,
     BarChartComponent,
     TechnicianWorkloadReportComponent,
+    KhdNumberPipe,
   ],
   providers: [provideNativeDateAdapter(), { provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   templateUrl: './reports.component.html',
@@ -105,7 +107,7 @@ export class ReportsComponent {
   private readonly ticketAssetKeyword$ = new Subject<string>();
 
   // --- ประวัติการยืม-คืน ---
-  readonly loanColumns = ['asset', 'borrower', 'borrowDate', 'expectedReturnDate', 'status'];
+  readonly loanColumns = ['asset', 'borrower', 'currentHolder', 'borrowDate', 'expectedReturnDate', 'status', 'reminderCount'];
   readonly loans = signal<IAssetLoan[]>([]);
   readonly loanTotal = signal(0);
   readonly loanPageSize = signal(20);

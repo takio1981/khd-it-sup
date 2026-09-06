@@ -10,7 +10,9 @@ import type {
   AssetLoanStatus,
   ICreateAssetLoanPayload,
   IUpdateAssetLoanPayload,
+  ITransferAssetLoanPayload,
 } from '../models/asset-loan.model';
+import type { IAssetLoanTimelineEvent } from '../models/asset-loan-timeline.model';
 
 export interface IListAssetLoansParams {
   page?: number;
@@ -84,6 +86,16 @@ export class AssetLoanService {
   returnLoan(id: string, conditionOnReturn?: string): Observable<IAssetLoan> {
     return this.http
       .post<IApiSuccessResponse<IAssetLoan>>(`${this.base}/${id}/return`, { conditionOnReturn })
+      .pipe(map((res) => res.data));
+  }
+
+  getTimeline(id: string): Observable<IAssetLoanTimelineEvent[]> {
+    return this.http.get<IApiSuccessResponse<IAssetLoanTimelineEvent[]>>(`${this.base}/${id}/timeline`).pipe(map((res) => res.data));
+  }
+
+  transfer(id: string, payload: ITransferAssetLoanPayload): Observable<IAssetLoan> {
+    return this.http
+      .patch<IApiSuccessResponse<IAssetLoan>>(`${this.base}/${id}/transfer`, payload)
       .pipe(map((res) => res.data));
   }
 

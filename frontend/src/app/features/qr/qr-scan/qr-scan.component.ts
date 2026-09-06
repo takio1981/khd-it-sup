@@ -1,17 +1,19 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { map, of, type Observable } from 'rxjs';
+import { MatAutocompleteModule, type MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { debounceTime, distinctUntilChanged, map, of, switchMap, type Observable } from 'rxjs';
 import { QrCodeService, type IQrScanResult } from '../../../core/services/qrcode.service';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
 import { AssetLoanService } from '../../../core/services/asset-loan.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { UserService } from '../../../core/services/user.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
@@ -22,6 +24,7 @@ import {
 import { URGENCY_LABEL_TH } from '../../../core/constants/status.const';
 import { getCategoryIconName } from '../../../core/utils/category-icon.util';
 import type { ICreateTicketPayload } from '../../../core/models/repair-ticket.model';
+import type { IUserListItem } from '../../../core/models/user.model';
 
 type LoanAction = 'borrow' | 'return';
 
@@ -103,6 +106,7 @@ export class QrLoginDialogComponent {
     MatSelectModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    MatAutocompleteModule,
     StatusBadgeComponent,
     IconComponent,
     PageWatermarkComponent,
@@ -113,6 +117,7 @@ export class QrScanComponent {
   private readonly qrCodeService = inject(QrCodeService);
   private readonly repairTicketService = inject(RepairTicketService);
   private readonly assetLoanService = inject(AssetLoanService);
+  private readonly userService = inject(UserService);
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
 
@@ -158,6 +163,18 @@ export class QrScanComponent {
     expectedReturnDate: [''],
     conditionOnBorrow: [''],
     conditionOnReturn: [''],
+    takenToNote: [''],
+  });
+
+  /** ย้าย/ส่งต่ออุปกรณ์ระหว่างที่ยืมอยู่ — ผู้ถือครองปัจจุบันหรือ IT/Admin ทำได้ (ดู transferLoan() ฝั่ง backend) */
+  readonly showTransferForm = signal(false);
+  readonly submittingTransfer = signal(false);
+  readonly transferDone = signal(false);
+  readonly transferHolderOptions = signal<IUserListItem[]>([]);
+  readonly transferHolderSearch = new FormControl('', { nonNullable: true });
+  readonly transferForm = this.fb.nonNullable.group({
+    newHolderId: [''],
+    locationNote: [''],
   });
 
   constructor() {
@@ -178,6 +195,19 @@ export class QrScanComponent {
         },
       });
     });
+
+    this.transferHolderSearch.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((value) => {
+          if (typeof value !== 'string') return [];
+          this.transferForm.patchValue({ newHolderId: '' }, { emitEvent: false });
+          if (value.length < 2) return [];
+          return this.userService.list({ keyword: value, limit: 10 });
+        }),
+      )
+      .subscribe((res) => this.transferHolderOptions.set(res.items));
   }
 
   /** เปิด dialog ถามชื่อผู้ใช้/รหัสผ่านเฉพาะตอนยังไม่ login — เรียกตอนกดปุ่ม "บันทึก" เท่านั้น ไม่ใช่ตอนเปิดหน้า/เลือกฟอร์ม */
@@ -344,7 +374,7 @@ export class QrScanComponent {
   }
 
   openLoanForm(): void {
-    this.loanForm.reset({ purpose: '', expectedReturnDate: '', conditionOnBorrow: '', conditionOnReturn: '' });
+    this.loanForm.reset({ purpose: '', expectedReturnDate: '', conditionOnBorrow: '', conditionOnReturn: '', takenToNote: '' });
     this.showLoanForm.set(true);
   }
 
@@ -374,6 +404,7 @@ export class QrScanComponent {
           expectedReturnDate: raw.expectedReturnDate || undefined,
           purpose: raw.purpose || undefined,
           conditionOnBorrow: raw.conditionOnBorrow || undefined,
+          takenToNote: raw.takenToNote || undefined,
         })
       : this.assetLoanService.returnLoan(asset.activeLoan!.id, raw.conditionOnReturn || undefined);
     const action: LoanAction = isBorrow ? 'borrow' : 'return';
@@ -389,6 +420,52 @@ export class QrScanComponent {
       error: () => {
         this.submittingLoan.set(false);
       },
+    });
+  }
+
+  openTransferForm(): void {
+    this.transferForm.reset({ newHolderId: '', locationNote: '' });
+    this.transferHolderSearch.setValue('', { emitEvent: false });
+    this.transferHolderOptions.set([]);
+    this.showTransferForm.set(true);
+  }
+
+  transferHolderSelected(event: MatAutocompleteSelectedEvent): void {
+    const user = event.option.value as IUserListItem;
+    this.transferForm.patchValue({ newHolderId: user.id });
+  }
+
+  transferHolderDisplayFn(user: IUserListItem | string | null): string {
+    if (!user) return '';
+    return typeof user === 'string' ? user : user.fullName;
+  }
+
+  submitTransfer(): void {
+    const asset = this.asset();
+    if (!asset?.activeLoan || this.submittingTransfer()) return;
+    const raw0 = this.transferForm.getRawValue();
+    if (!raw0.newHolderId && !raw0.locationNote) return;
+
+    this.submittingTransfer.set(true);
+    this.ensureAuthenticated('การย้าย/ส่งต่ออุปกรณ์').subscribe((ok) => {
+      if (!ok) {
+        this.submittingTransfer.set(false);
+        return;
+      }
+      const raw = this.transferForm.getRawValue();
+      this.assetLoanService
+        .transfer(asset.activeLoan!.id, { newHolderId: raw.newHolderId || undefined, locationNote: raw.locationNote || undefined })
+        .subscribe({
+          next: () => {
+            this.submittingTransfer.set(false);
+            this.transferDone.set(true);
+            this.showTransferForm.set(false);
+            this.qrCodeService.resolve(this.token()).subscribe((result) => this.asset.set(result));
+          },
+          error: () => {
+            this.submittingTransfer.set(false);
+          },
+        });
     });
   }
 }

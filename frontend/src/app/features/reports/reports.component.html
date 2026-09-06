@@ -215,6 +215,13 @@
               <td mat-cell *matCellDef="let l">{{ l.borrower.fullName }}</td>
             </ng-container>
 
+            <ng-container matColumnDef="currentHolder">
+              <th mat-header-cell *matHeaderCellDef>อยู่ที่/กับ</th>
+              <td mat-cell *matCellDef="let l">
+                {{ l.status !== 'RETURNED' ? (l.currentHolder?.fullName ?? l.borrower.fullName) : '-' }}
+              </td>
+            </ng-container>
+
             <ng-container matColumnDef="borrowDate">
               <th mat-header-cell *matHeaderCellDef>วันที่ยืม</th>
               <td mat-cell *matCellDef="let l">{{ l.borrowDate | date: 'd MMM yyyy' }}</td>
@@ -234,6 +241,13 @@
                   [style.color]="l.status === 'RETURNED' ? '#22C55E' : l.status === 'OVERDUE' ? '#EF4444' : '#3B82F6'"
                   >{{ loanStatusLabel[l.status] }}</span
                 >
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="reminderCount">
+              <th mat-header-cell *matHeaderCellDef>แจ้งเตือนแล้ว</th>
+              <td mat-cell *matCellDef="let l">
+                {{ l.status === 'OVERDUE' && l.reminderCount > 0 ? (l.reminderCount | khdNumber) + ' ครั้ง' : '-' }}
               </td>
             </ng-container>
 

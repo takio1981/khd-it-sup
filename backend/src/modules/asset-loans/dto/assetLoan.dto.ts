@@ -6,13 +6,38 @@ export const createAssetLoanSchema = z.object({
   expectedReturnDate: z.coerce.date().optional(),
   purpose: z.string().max(500).optional(),
   conditionOnBorrow: z.string().max(500).optional(),
+  takenToBuildingId: z.string().uuid('takenToBuildingId ต้องเป็น UUID').optional(),
+  takenToFloorId: z.string().uuid('takenToFloorId ต้องเป็น UUID').optional(),
+  takenToRoomId: z.string().uuid('takenToRoomId ต้องเป็น UUID').optional(),
+  takenToNote: z.string().max(255).optional(),
 });
 export type CreateAssetLoanDto = z.infer<typeof createAssetLoanSchema>;
 
-export const updateAssetLoanSchema = createAssetLoanSchema.partial().extend({
-  conditionOnReturn: z.string().max(500).optional(),
-});
+/**
+ * ตัด takenTo* ออกก่อน .partial() โดยตั้งใจ — ฟิลด์ "ปลายทางตอนยืม" ควรคงที่หลังสร้างรายการแล้ว
+ * (เปลี่ยนสถานที่/ผู้ถือครองปัจจุบันระหว่างยืมต้องผ่าน POST /:id/transfer เท่านั้น ไม่ใช่ PATCH นี้)
+ */
+export const updateAssetLoanSchema = createAssetLoanSchema
+  .omit({ takenToBuildingId: true, takenToFloorId: true, takenToRoomId: true, takenToNote: true })
+  .partial()
+  .extend({
+    conditionOnReturn: z.string().max(500).optional(),
+  });
 export type UpdateAssetLoanDto = z.infer<typeof updateAssetLoanSchema>;
+
+export const transferAssetLoanSchema = z
+  .object({
+    newHolderId: z.string().uuid('newHolderId ต้องเป็น UUID').optional(),
+    buildingId: z.string().uuid('buildingId ต้องเป็น UUID').optional(),
+    floorId: z.string().uuid('floorId ต้องเป็น UUID').optional(),
+    roomId: z.string().uuid('roomId ต้องเป็น UUID').optional(),
+    locationNote: z.string().max(255).optional(),
+    comment: z.string().max(1000).optional(),
+  })
+  .refine((v) => v.newHolderId || v.buildingId || v.locationNote, {
+    message: 'ต้องระบุผู้รับมอบใหม่หรือสถานที่ใหม่อย่างน้อยหนึ่งอย่าง',
+  });
+export type TransferAssetLoanDto = z.infer<typeof transferAssetLoanSchema>;
 
 export const returnAssetLoanSchema = z.object({
   conditionOnReturn: z.string().max(500).optional(),

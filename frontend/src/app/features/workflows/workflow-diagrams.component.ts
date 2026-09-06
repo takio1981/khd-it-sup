@@ -145,17 +145,23 @@ const LOAN_DIAGRAM = `flowchart TD
   START(["สแกน QR หรือเลือกครุภัณฑ์ที่ต้องการยืม"])
   CHECK{"ครุภัณฑ์นี้ถูกยืมอยู่แล้วหรือไม่?"}
   BLOCK(["ระบบบล็อก + แสดงชื่อผู้ยืมปัจจุบัน"])
-  FORM[/"กรอกวัตถุประสงค์ / กำหนดคืน / สภาพตอนยืม"/]
-  BORROWED["กำลังยืม (BORROWED)<br/>แจ้งเตือนผู้ยืม + เจ้าหน้าที่ไอที"]
+  FORM[/"กรอกวัตถุประสงค์ / กำหนดคืน / สภาพตอนยืม / สถานที่ที่จะนำไปใช้"/]
+  BORROWED["กำลังยืม (BORROWED)<br/>บันทึก Timeline: BORROW<br/>แจ้งเตือนผู้ยืม + เจ้าหน้าที่ไอที"]
+  TRANSFER[/"บันทึกส่งต่อ/ย้าย (ผู้ถือครองปัจจุบัน หรือ IT/Admin)<br/>เปลี่ยนผู้ถือครอง/สถานที่ปัจจุบัน + บันทึก Timeline: TRANSFER"/]
   NOTE1[/"เกินวันกำหนดคืน → ระบบคำนวณและแสดงป้าย<br/>'เกินกำหนดคืน' ให้ทันที โดยไม่ต้องมีคนกดเปลี่ยนสถานะ"/]
+  REMIND["งานอัตโนมัติแจ้งเตือนซ้ำทุกวัน<br/>นับจำนวนครั้ง + บันทึก Timeline: REMINDER_SENT"]
   RETURNFORM[/"กรอกสภาพตอนคืน"/]
-  RETURNED(["คืนแล้ว (RETURNED)<br/>แจ้งเตือนคืนสำเร็จ"])
+  RETURNED(["คืนแล้ว (RETURNED)<br/>บันทึก Timeline: RETURN<br/>แจ้งเตือนคืนสำเร็จ"])
 
   START e1@--> CHECK
   CHECK e2@-->|"ถูกยืมอยู่"| BLOCK
   CHECK e3@-->|"ว่าง"| FORM
   FORM e4@--> BORROWED
+  BORROWED e8@-.-> TRANSFER
+  TRANSFER e9@-.-> BORROWED
   BORROWED e7@-.-> NOTE1
+  NOTE1 e10@-.-> REMIND
+  REMIND e11@-.-> REMIND
   BORROWED e5@-->|"คืนอุปกรณ์"| RETURNFORM
   RETURNFORM e6@--> RETURNED
   e1@{ animate: true }
@@ -164,7 +170,11 @@ const LOAN_DIAGRAM = `flowchart TD
   e4@{ animate: true }
   e5@{ animate: true }
   e6@{ animate: true }
-  e7@{ animate: true, animation: slow }`;
+  e7@{ animate: true, animation: slow }
+  e8@{ animate: true, animation: slow }
+  e9@{ animate: true, animation: slow }
+  e10@{ animate: true, animation: slow }
+  e11@{ animate: true, animation: slow }`;
 
 const VENDOR_DIAGRAM = `flowchart TD
   TRIGGER(["ผลตรวจสอบเบื้องต้น = ส่งซ่อมภายนอก<br/>(จากผัง SOP งานแจ้งซ่อม)"])
@@ -367,6 +377,9 @@ export class WorkflowDiagramsComponent {
       notes: [
         'สิทธิ์แบบ "ยืม-คืนด้วยตนเอง" (self-service ผ่านสแกน QR) บันทึกได้เฉพาะรายการของตัวเองเท่านั้น ส่วนเจ้าหน้าที่ที่มีสิทธิ์เต็มบันทึกแทนผู้อื่นได้',
         '"เกินกำหนดคืน" เป็นป้ายที่คำนวณสดจากวันที่ ไม่ใช่สถานะที่ถูกบันทึกลงฐานข้อมูลจริง',
+        'ระหว่างที่ยืมอยู่ อุปกรณ์สามารถ "ส่งต่อ/ย้ายมือ" ได้ — บันทึกได้ทั้งผู้ถือครองปัจจุบัน (แม้ไม่มีสิทธิ์ระบบเลยก็ตาม ถ้า IT บันทึกยืมแทนให้ตั้งแต่แรก) และ IT/Admin ทำให้ระบบรู้เสมอว่าตอนนี้อุปกรณ์อยู่ที่ไหน อยู่กับใคร',
+        'ทุกเหตุการณ์ของรายการยืม (ยืม/ส่งต่อ-ย้าย/แจ้งเตือน/คืน) บันทึกลง Timeline แบบถาวร แก้ไขหรือลบย้อนหลังไม่ได้ ดูได้จากหน้ารายละเอียดรายการยืมแต่ละรายการ',
+        'จำนวนครั้งที่ถูกแจ้งเตือนเกินกำหนดคืนสะสมไว้ต่อรายการ ใช้เป็นสัญญาณให้ผู้ดูแลระบบสังเกตว่าผู้ยืมน่าจะลืมคืนหรือไม่',
       ],
       definition: LOAN_DIAGRAM,
     },

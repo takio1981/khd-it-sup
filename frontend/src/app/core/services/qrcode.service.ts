@@ -18,6 +18,9 @@ export interface IQrScanActiveLoan {
   borrowerName: string;
   borrowDate: string;
   expectedReturnDate: string | null;
+  currentHolderId: string;
+  currentHolderName: string;
+  currentLocationLabel: string | null;
 }
 
 /** ใบแจ้งซ่อมล่าสุดที่ยังไม่ปิดงาน (ไม่ใช่ CLOSED/CANCELLED) ของครุภัณฑ์นี้ — null = ไม่มีงานค้างอยู่ แจ้งซ่อมใหม่ได้ */

@@ -54,6 +54,20 @@
         <td mat-cell *matCellDef="let l">{{ l.borrower.fullName }}</td>
       </ng-container>
 
+      <ng-container matColumnDef="currentHolder">
+        <th mat-header-cell *matHeaderCellDef>อยู่ที่/กับ</th>
+        <td mat-cell *matCellDef="let l">
+          @if (l.status !== 'RETURNED') {
+            <p class="font-medium">{{ l.currentHolder?.fullName ?? l.borrower.fullName }}</p>
+            @if (locationLabel(l); as label) {
+              <p class="text-xs text-neutral-400">{{ label }}</p>
+            }
+          } @else {
+            <span class="text-neutral-400">-</span>
+          }
+        </td>
+      </ng-container>
+
       <ng-container matColumnDef="borrowDate">
         <th mat-header-cell *matHeaderCellDef>วันที่ยืม</th>
         <td mat-cell *matCellDef="let l">{{ l.borrowDate | date: 'd MMM yyyy' }}</td>
@@ -73,9 +87,20 @@
         </td>
       </ng-container>
 
+      <ng-container matColumnDef="reminderCount">
+        <th mat-header-cell *matHeaderCellDef>แจ้งเตือนแล้ว</th>
+        <td mat-cell *matCellDef="let l">
+          @if (l.status === 'OVERDUE' && l.reminderCount > 0) {
+            <span class="khd-status-badge" style="background-color: #EF44441A; color: #EF4444">{{ l.reminderCount | khdNumber }} ครั้ง</span>
+          } @else {
+            <span class="text-neutral-400">-</span>
+          }
+        </td>
+      </ng-container>
+
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let l">
+        <td mat-cell *matCellDef="let l" (click)="$event.stopPropagation()">
           <div class="flex items-center gap-2 justify-end">
             @if (l.status !== 'RETURNED') {
               <button
@@ -105,7 +130,12 @@
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer"
+        (click)="goToDetail(row)"
+      ></tr>
     </table>
 
     @if (!loading() && loans().length === 0) {

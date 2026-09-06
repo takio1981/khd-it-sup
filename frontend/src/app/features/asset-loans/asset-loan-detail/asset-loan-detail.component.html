@@ -1,0 +1,155 @@
+@if (loading()) {
+  <div class="flex justify-center py-16">
+    <mat-spinner diameter="36" />
+  </div>
+} @else if (loan(); as l) {
+  <div class="space-y-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <button mat-button class="!px-0 !min-w-0" [routerLink]="['/asset-loans']">
+          <khd-icon name="chevron-left" [size]="16" class="!mr-1" />
+          กลับไปหน้ารายการ
+        </button>
+        <h1 class="text-xl font-semibold">{{ l.asset.assetNumber }} — {{ l.asset.brand }} {{ l.asset.model }}</h1>
+        <p class="text-sm text-neutral-500">ผู้ยืม: {{ l.borrower.fullName }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="khd-status-badge" [style.background-color]="statusColor[l.status] + '1A'" [style.color]="statusColor[l.status]">
+          {{ statusLabel[l.status] }}
+        </span>
+        @if (canTransfer()) {
+          <button mat-stroked-button (click)="openTransferForm()">
+            <khd-icon name="paper-airplane" [size]="16" class="!mr-1" />
+            ส่งต่อ/ย้าย
+          </button>
+        }
+        @if (canReturn()) {
+          <button mat-flat-button color="primary" (click)="openReturnForm()">
+            <khd-icon name="check-circle" [size]="16" class="!mr-1" />
+            รับคืน
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="khd-card !p-4 space-y-3 lg:col-span-1">
+        <h2 class="font-medium text-sm text-neutral-500">รายละเอียดการยืม</h2>
+        <dl class="space-y-2 text-sm">
+          <div class="flex justify-between gap-2">
+            <dt class="text-neutral-500">วันที่ยืม</dt>
+            <dd>{{ l.borrowDate | date: 'd MMM yyyy HH:mm' }}</dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-neutral-500">กำหนดคืน</dt>
+            <dd>{{ l.expectedReturnDate ? (l.expectedReturnDate | date: 'd MMM yyyy') : '-' }}</dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-neutral-500">วัตถุประสงค์</dt>
+            <dd class="text-right">{{ l.purpose ?? '-' }}</dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-neutral-500">สภาพตอนยืม</dt>
+            <dd class="text-right">{{ l.conditionOnBorrow ?? '-' }}</dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-neutral-500">ยืมไปที่</dt>
+            <dd class="text-right">
+              {{ takenToLocationLabel(l) ?? '-' }}
+              @if (l.takenToNote) {
+                <br /><span class="text-xs text-neutral-400">{{ l.takenToNote }}</span>
+              }
+            </dd>
+          </div>
+          <div class="flex justify-between gap-2">
+            <dt class="text-neutral-500">ผู้บันทึก</dt>
+            <dd>{{ l.recorder.fullName }}</dd>
+          </div>
+        </dl>
+
+        @if (l.status === 'RETURNED') {
+          <hr class="border-neutral-200 dark:border-neutral-700" />
+          <h2 class="font-medium text-sm text-neutral-500">การคืน</h2>
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-2">
+              <dt class="text-neutral-500">วันที่คืน</dt>
+              <dd>{{ l.actualReturnDate | date: 'd MMM yyyy HH:mm' }}</dd>
+            </div>
+            <div class="flex justify-between gap-2">
+              <dt class="text-neutral-500">คืนกับ</dt>
+              <dd>{{ l.returner?.fullName ?? '-' }}</dd>
+            </div>
+            <div class="flex justify-between gap-2">
+              <dt class="text-neutral-500">สภาพตอนคืน</dt>
+              <dd class="text-right">{{ l.conditionOnReturn ?? '-' }}</dd>
+            </div>
+          </dl>
+        } @else {
+          <hr class="border-neutral-200 dark:border-neutral-700" />
+          <h2 class="font-medium text-sm text-neutral-500">สถานะปัจจุบัน (ยังไม่คืน)</h2>
+          <dl class="space-y-2 text-sm">
+            <div class="flex justify-between gap-2">
+              <dt class="text-neutral-500">อยู่กับ</dt>
+              <dd>{{ l.currentHolder?.fullName ?? l.borrower.fullName }}</dd>
+            </div>
+            <div class="flex justify-between gap-2">
+              <dt class="text-neutral-500">อยู่ที่</dt>
+              <dd class="text-right">{{ currentLocationLabel(l) ?? '-' }}</dd>
+            </div>
+            @if (l.status === 'OVERDUE') {
+              <div class="flex justify-between gap-2">
+                <dt class="text-neutral-500">แจ้งเตือนไปแล้ว</dt>
+                <dd [class.text-red-600]="l.reminderCount > 0">{{ l.reminderCount | khdNumber }} ครั้ง</dd>
+              </div>
+              @if (l.lastReminderAt) {
+                <div class="flex justify-between gap-2">
+                  <dt class="text-neutral-500">แจ้งเตือนล่าสุด</dt>
+                  <dd>{{ l.lastReminderAt | date: 'd MMM yyyy HH:mm' }}</dd>
+                </div>
+              }
+            }
+          </dl>
+        }
+      </div>
+
+      <div class="khd-card !p-4 lg:col-span-2">
+        <h2 class="font-medium text-sm text-neutral-500 !mb-3">ไทม์ไลน์</h2>
+        @if (timeline().length === 0) {
+          <p class="text-sm text-neutral-400">ยังไม่มีประวัติเหตุการณ์</p>
+        } @else {
+          <ol class="space-y-4">
+            @for (e of timeline(); track e.id) {
+              <li class="flex gap-3">
+                <div class="flex flex-col items-center">
+                  <span class="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
+                    <khd-icon [name]="eventIcon[e.eventType]" [size]="16" />
+                  </span>
+                </div>
+                <div class="flex-1 pb-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="font-medium text-sm">{{ eventLabel[e.eventType] }}</p>
+                    <p class="text-xs text-neutral-400">{{ e.eventTime | date: 'd MMM yyyy HH:mm' }}</p>
+                  </div>
+                  <p class="text-sm text-neutral-500">
+                    @if (e.holder) {
+                      ผู้ถือครอง: {{ e.holder.fullName }}
+                    }
+                    @if (eventLocationLabel(e); as loc) {
+                      <span> · สถานที่: {{ loc }}</span>
+                    }
+                  </p>
+                  @if (e.comment) {
+                    <p class="text-sm text-neutral-500 italic">"{{ e.comment }}"</p>
+                  }
+                  @if (e.responsible) {
+                    <p class="text-xs text-neutral-400">บันทึกโดย {{ e.responsible.fullName }}</p>
+                  }
+                </div>
+              </li>
+            }
+          </ol>
+        }
+      </div>
+    </div>
+  </div>
+}
