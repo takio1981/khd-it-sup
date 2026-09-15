@@ -15,6 +15,8 @@ const ACTION_LABEL_TH: Record<string, string> = {
   EXPORT: 'ส่งออกข้อมูล',
   APPROVE: 'อนุมัติ',
   CONFIG_CHANGE: 'เปลี่ยนแปลงการตั้งค่า',
+  BACKUP: 'สำรองข้อมูล',
+  RESTORE: 'กู้คืนข้อมูล',
 };
 
 const EXPORT_COLUMNS: IExportColumn[] = [

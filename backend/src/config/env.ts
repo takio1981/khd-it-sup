@@ -35,6 +35,9 @@ const envSchema = z.object({
   UPLOAD_DIR: z.string().default('./uploads'),
   UPLOAD_MAX_FILE_SIZE_MB: z.coerce.number().int().positive().default(10),
 
+  BACKUP_DIR: z.string().default('./backups'),
+  BACKUP_RETENTION_DAYS: z.coerce.number().int().positive().default(30),
+
   SMTP_HOST: z.string().default('smtp.gmail.com'),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   // หมายเหตุ: ห้ามใช้ z.coerce.boolean() กับ env string — Boolean("false") ใน JS เป็น true เสมอ (บั๊กเงียบ)

@@ -85,25 +85,28 @@ container ด้านในไม่รู้จัก prefix นี้เล�
 
 ## 7.4 Backup
 
-### Manual Backup
+### ผ่านหน้าเว็บ (แนะนำ)
+
+หน้า **สำรอง/กู้คืนข้อมูล** (`/settings/backup`, permission `backup:manage` — เฉพาะ SUPER_ADMIN ตามค่าเริ่มต้น) รองรับ:
+- สำรองข้อมูลได้ทั้งฐานข้อมูลหรือเลือกเฉพาะบางตาราง ทั้งกดเอง (manual) และตั้งเวลาอัตโนมัติทุกวัน 03:00 น. (เวลาไทย, เปิด/ปิดและปรับขอบเขตได้ในแท็บ "ตั้งค่าอัตโนมัติ")
+- ดาวน์โหลด/ลบไฟล์สำรองข้อมูลเก่า พร้อม retention policy ลบไฟล์อัตโนมัติที่เก่าเกินกำหนด (ค่าเริ่มต้น 30 วัน, ปรับได้)
+- กู้คืนข้อมูลจากไฟล์สำรองที่มีอยู่ — ต้องยืนยันรหัสผ่านซ้ำ + พิมพ์ชื่อไฟล์ยืนยัน ระบบจะสำรองข้อมูลนิรภัยแบบเต็มให้ก่อนกู้คืนเสมอโดยอัตโนมัติ (ไม่มีทางปิดได้)
+
+Backend container ต้องมี `mariadb-client` ติดตั้งอยู่แล้ว (ดู `backend/Dockerfile`) และไฟล์สำรองข้อมูลเก็บอยู่ใน volume `backend-backups` (แยกจาก `backend-uploads`)
+
+### Manual Backup (สำรองผ่าน command line — ทางเลือกสำรอง)
 
 ```bash
 docker exec khd_it_sup_db mariadb-dump -u root -p"$MARIADB_ROOT_PASSWORD" khd_it_sup > backup_$(date +%Y%m%d_%H%M%S).sql
 ```
 
-### Automatic Backup (แนะนำ)
-
-เพิ่ม cron job บนเครื่อง host (ระบบ Backup อัตโนมัติเต็มรูปแบบผ่าน UI อยู่ใน Phase 10+ ตาม roadmap):
-
-```cron
-0 2 * * * docker exec khd_it_sup_db mariadb-dump -u root -p"$MARIADB_ROOT_PASSWORD" khd_it_sup | gzip > /backups/khd_$(date +\%Y\%m\%d).sql.gz
-```
-
-### Restore
+### Restore (กู้คืนผ่าน command line — ทางเลือกสำรอง)
 
 ```bash
-gunzip -c /backups/khd_20260101.sql.gz | docker exec -i khd_it_sup_db mariadb -u root -p"$MARIADB_ROOT_PASSWORD" khd_it_sup
+docker exec -i khd_it_sup_db mariadb -u root -p"$MARIADB_ROOT_PASSWORD" khd_it_sup < backup_20260101_020000.sql
 ```
+
+> ใช้วิธีนี้เฉพาะกรณีเข้าหน้าเว็บไม่ได้เท่านั้น (เช่น backend ล่ม) — ปกติแนะนำให้กู้คืนผ่านหน้าเว็บเสมอ เพราะมีการยืนยันตัวตนซ้ำและสำรองข้อมูลนิรภัยให้ก่อนอัตโนมัติ
 
 อย่าลืมสำรอง volume `backend-uploads` ด้วย (ไฟล์แนบ/รูปครุภัณฑ์ไม่ได้อยู่ในฐานข้อมูล):
 

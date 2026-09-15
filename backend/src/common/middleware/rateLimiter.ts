@@ -39,3 +39,18 @@ export const pinLoginRateLimiter = rateLimit({
     error: { code: 'TOO_MANY_PIN_ATTEMPTS', message: 'พยายามเข้าสู่ระบบด้วย PIN ผิดหลายครั้งเกินไป กรุณาลองใหม่ภายหลัง' },
   },
 });
+
+/**
+ * Rate limit เข้มที่สุดในระบบ — ใช้กับ POST /backup/:id/restore เท่านั้น เพราะเป็นปฏิบัติการทำลายข้อมูลจริงได้
+ * ไม่ skipSuccessfulRequests (นับทั้งพยายามสำเร็จและล้มเหลว) เพื่อจำกัดทั้ง brute-force รหัสผ่านยืนยันและกันกดรัว
+ */
+export const backupRestoreRateLimiter = rateLimit({
+  windowMs: env.RATE_LIMIT_WINDOW_MS,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: { code: 'TOO_MANY_RESTORE_ATTEMPTS', message: 'พยายามกู้คืนข้อมูลหลายครั้งเกินไป กรุณาลองใหม่ภายหลัง' },
+  },
+});

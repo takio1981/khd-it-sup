@@ -43,6 +43,7 @@ export const PERMISSIONS = {
   SETTINGS_MANAGE: 'settings:manage',
   AUDIT_VIEW: 'audit:view',
   WORKFLOW_CONFIGURE: 'workflow:configure',
+  BACKUP_MANAGE: 'backup:manage',
 
   DOCUMENT_PRINT: 'document:print',
   DOCUMENT_GENERATE: 'document:generate',

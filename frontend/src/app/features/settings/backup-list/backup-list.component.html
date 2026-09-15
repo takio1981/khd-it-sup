@@ -1,0 +1,188 @@
+<div class="space-y-4">
+  @if (status(); as st) {
+    @if (!st.mariadbClientAvailable) {
+      <div class="khd-card !p-3 flex items-start gap-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
+        <khd-icon name="exclamation-triangle" [size]="18" class="text-amber-500 shrink-0 mt-0.5" />
+        <p class="text-sm text-amber-700 dark:text-amber-300">
+          ไม่พบโปรแกรม mariadb-dump/mariadb (หรือ mysqldump/mysql) บนเครื่องนี้ — สำรอง/กู้คืนข้อมูลจะไม่สามารถใช้งานได้
+          กรุณาติดตั้ง MariaDB Client Tools แล้ว restart backend (ดูคู่มือติดตั้งระบบ)
+        </p>
+      </div>
+    }
+    @if (st.isRunning) {
+      <div class="khd-card !p-3 flex items-center gap-2 bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900">
+        <mat-spinner diameter="18" />
+        <p class="text-sm text-sky-700 dark:text-sky-300">
+          กำลัง{{ st.currentOperation === 'RESTORE' ? 'กู้คืน' : 'สำรอง' }}ข้อมูลอยู่ กรุณารอสักครู่...
+        </p>
+      </div>
+    }
+  }
+
+  @if (canManage()) {
+    <mat-accordion class="khd-card !p-0 block overflow-hidden">
+      <mat-expansion-panel [disabled]="running()">
+        <mat-expansion-panel-header>
+          <mat-panel-title class="!flex !items-center !gap-2">
+            <khd-icon name="circle-stack" [size]="18" class="text-emerald-500" />
+            สำรองข้อมูลตอนนี้
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <div class="space-y-3 pt-2">
+          <mat-form-field appearance="outline" class="w-48 !mb-[-1.25em]">
+            <mat-label>ขอบเขต</mat-label>
+            <mat-select [(ngModel)]="runScope">
+              <mat-option value="FULL">ทั้งหมด</mat-option>
+              <mat-option value="PARTIAL">เฉพาะบางตาราง</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          @if (runScope === 'PARTIAL') {
+            <khd-backup-table-picker [groups]="tableGroups()" [selected]="runIncludedTables" (selectedChange)="runIncludedTables = $event" />
+          }
+
+          <div class="flex justify-end">
+            <button mat-flat-button color="primary" [disabled]="triggering() || running()" (click)="runBackupNow()">
+              @if (triggering()) {
+                <mat-spinner diameter="16" class="!inline-block !mr-1" />
+              }
+              เริ่มสำรองข้อมูล
+            </button>
+          </div>
+        </div>
+      </mat-expansion-panel>
+    </mat-accordion>
+  }
+
+  <div class="khd-card !p-3 flex flex-col sm:flex-row flex-wrap gap-3">
+    <mat-form-field appearance="outline" class="sm:w-44 !mb-[-1.25em]">
+      <mat-label>ประเภทการกระทำ</mat-label>
+      <mat-select [(ngModel)]="actionFilter" (ngModelChange)="onFilterChange()">
+        <mat-option value="">ทั้งหมด</mat-option>
+        <mat-option value="BACKUP">สำรองข้อมูล</mat-option>
+        <mat-option value="RESTORE">กู้คืนข้อมูล</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="sm:w-44 !mb-[-1.25em]">
+      <mat-label>ที่มา</mat-label>
+      <mat-select [(ngModel)]="typeFilter" (ngModelChange)="onFilterChange()">
+        <mat-option value="">ทั้งหมด</mat-option>
+        <mat-option value="MANUAL">กดเอง</mat-option>
+        <mat-option value="AUTOMATIC">อัตโนมัติ</mat-option>
+        <mat-option value="SAFETY">นิรภัย (ก่อนกู้คืน)</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="sm:w-40 !mb-[-1.25em]">
+      <mat-label>สถานะ</mat-label>
+      <mat-select [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+        <mat-option value="">ทั้งหมด</mat-option>
+        <mat-option value="SUCCESS">สำเร็จ</mat-option>
+        <mat-option value="FAILED">ล้มเหลว</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="khd-card !p-0 overflow-x-auto">
+    <table mat-table [dataSource]="logs()" class="w-full">
+      <ng-container matColumnDef="startedAt">
+        <th mat-header-cell *matHeaderCellDef>เวลา</th>
+        <td mat-cell *matCellDef="let l" data-label="เวลา">{{ l.startedAt | date: 'd MMM yyyy, HH:mm' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="action">
+        <th mat-header-cell *matHeaderCellDef>การกระทำ</th>
+        <td mat-cell *matCellDef="let l" data-label="การกระทำ">
+          <span class="khd-status-badge" [style.background-color]="actionColor[l.action] + '1A'" [style.color]="actionColor[l.action]">
+            {{ actionLabel[l.action] }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="type">
+        <th mat-header-cell *matHeaderCellDef>ที่มา</th>
+        <td mat-cell *matCellDef="let l" data-label="ที่มา">{{ typeLabel[l.type] }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="scope">
+        <th mat-header-cell *matHeaderCellDef>ขอบเขต</th>
+        <td mat-cell *matCellDef="let l" data-label="ขอบเขต">
+          {{ l.scope === 'FULL' ? 'ทั้งหมด' : 'เฉพาะบางตาราง (' + (l.includedTables?.length ?? 0) + ')' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="fileName">
+        <th mat-header-cell *matHeaderCellDef>ไฟล์</th>
+        <td mat-cell *matCellDef="let l" data-label="ไฟล์" class="max-w-xs truncate font-mono text-xs">{{ l.fileName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="fileSizeBytes">
+        <th mat-header-cell *matHeaderCellDef>ขนาด</th>
+        <td mat-cell *matCellDef="let l" data-label="ขนาด">{{ formatBytes(l.fileSizeBytes) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>สถานะ</th>
+        <td mat-cell *matCellDef="let l" data-label="สถานะ">
+          <span class="khd-status-badge" [style.background-color]="statusColor[l.status] + '1A'" [style.color]="statusColor[l.status]">
+            {{ statusLabel[l.status] }}
+          </span>
+          @if (l.status === 'FAILED' && l.errorMessage) {
+            <span class="block text-xs text-rose-500 mt-0.5 max-w-xs truncate" [title]="l.errorMessage">{{ l.errorMessage }}</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="triggeredByUser">
+        <th mat-header-cell *matHeaderCellDef>ผู้ดำเนินการ</th>
+        <td mat-cell *matCellDef="let l" data-label="ผู้ดำเนินการ">{{ l.triggeredByUser?.fullName ?? '-' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let l" data-label="">
+          <div class="flex justify-end gap-1">
+            @if (l.action === 'BACKUP' && l.status === 'SUCCESS') {
+              <button mat-icon-button [matMenuTriggerFor]="rowMenu" [attr.aria-label]="'ตัวเลือกไฟล์ ' + l.fileName">
+                <khd-icon name="chevron-down" [size]="18" />
+              </button>
+              <mat-menu #rowMenu="matMenu">
+                <button mat-menu-item (click)="download(l)">
+                  <khd-icon name="arrow-down-tray" [size]="16" class="!mr-2" />
+                  ดาวน์โหลด
+                </button>
+                @if (canManage()) {
+                  <button mat-menu-item (click)="restore(l)">
+                    <khd-icon name="arrow-path" [size]="16" class="!mr-2" />
+                    กู้คืนจากไฟล์นี้
+                  </button>
+                  <button mat-menu-item (click)="deleteBackup(l)">
+                    <khd-icon name="x-circle" [size]="16" class="!mr-2 text-rose-500" />
+                    ลบไฟล์
+                  </button>
+                }
+              </mat-menu>
+            }
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+    </table>
+
+    @if (!loading() && logs().length === 0) {
+      <p class="text-center text-sm text-neutral-400 py-10">ยังไม่มีประวัติการสำรอง/กู้คืนข้อมูล</p>
+    }
+
+    <mat-paginator
+      [length]="total()"
+      [pageSize]="pageSize()"
+      [pageIndex]="pageIndex()"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPage($event)"
+    />
+  </div>
+</div>

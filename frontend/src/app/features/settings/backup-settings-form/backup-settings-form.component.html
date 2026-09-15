@@ -1,0 +1,59 @@
+@if (loading()) {
+  <div class="flex justify-center py-16">
+    <p class="text-sm text-neutral-400">กำลังโหลด...</p>
+  </div>
+} @else if (settings(); as s) {
+  <div class="space-y-4 max-w-2xl">
+    <div class="khd-card">
+      <div class="flex items-center gap-2 mb-1">
+        <khd-icon name="circle-stack" [size]="18" class="text-emerald-500" />
+        <h2 class="text-sm font-medium">สำรองข้อมูลอัตโนมัติ</h2>
+      </div>
+      <p class="text-xs text-neutral-500 mb-4">สำรองข้อมูลทุกวันเวลา 03:00 น. (เวลาไทย) ตามขอบเขตที่กำหนดไว้ด้านล่าง</p>
+
+      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
+        <div>
+          <p class="text-sm font-medium">เปิดใช้งาน</p>
+          <p class="text-xs text-neutral-500">ปิดอยู่ตามค่าเริ่มต้น — ต้องเปิดเองจึงจะเริ่มสำรองข้อมูลอัตโนมัติ</p>
+        </div>
+        <mat-slide-toggle [checked]="s.enabled" [disabled]="!canManage() || saving()" (change)="toggleEnabled()" />
+      </div>
+
+      <div class="py-3 border-b border-black/5 dark:border-white/10">
+        <mat-form-field appearance="outline" class="w-48 !mb-[-1.25em]">
+          <mat-label>ขอบเขต</mat-label>
+          <mat-select [value]="s.scope" [disabled]="!canManage() || saving()" (selectionChange)="onScopeChange($event.value)">
+            <mat-option value="FULL">ทั้งหมด</mat-option>
+            <mat-option value="PARTIAL">เฉพาะบางตาราง</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      @if (s.scope === 'PARTIAL') {
+        <div class="py-3 border-b border-black/5 dark:border-white/10">
+          <p class="text-xs text-neutral-500 mb-2">เลือกตารางที่ต้องการสำรองข้อมูลอัตโนมัติ</p>
+          <khd-backup-table-picker
+            [groups]="tableGroups()"
+            [selected]="s.includedTables"
+            [disabled]="!canManage() || saving()"
+            (selectedChange)="onTablesChange($event)"
+          />
+        </div>
+      }
+
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-2">
+        <div>
+          <p class="text-sm font-medium">เก็บไฟล์สำรองข้อมูลอัตโนมัติไว้กี่วัน</p>
+          <p class="text-xs text-neutral-500">ไฟล์ที่เก่ากว่านี้จะถูกลบอัตโนมัติ (ไม่กระทบไฟล์ที่กดสำรองเองหรือไฟล์สำรองนิรภัยก่อนกู้คืน)</p>
+        </div>
+        <mat-form-field appearance="outline" class="w-full sm:w-24 shrink-0 !mb-[-1.25em]">
+          <input matInput type="number" min="1" max="365" [(ngModel)]="retentionDaysInput" [disabled]="!canManage() || saving()" (blur)="saveRetentionDays()" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    @if (!canManage()) {
+      <p class="text-xs text-neutral-400">คุณมีสิทธิ์ดูการตั้งค่าเท่านั้น ไม่สามารถแก้ไขได้</p>
+    }
+  </div>
+}

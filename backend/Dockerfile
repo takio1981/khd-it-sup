@@ -27,7 +27,7 @@ RUN npm ci --omit=dev && npx prisma generate
 
 # ---- Stage 4: runtime (image สุดท้ายที่ deploy จริง) ----
 FROM node:20-alpine AS runtime
-RUN apk add --no-cache dumb-init openssl && addgroup -S nodejs && adduser -S khd -G nodejs
+RUN apk add --no-cache dumb-init openssl mariadb-client && addgroup -S nodejs && adduser -S khd -G nodejs
 WORKDIR /app
 ENV NODE_ENV=production
 
@@ -37,7 +37,7 @@ COPY --chown=khd:nodejs --from=build /app/dist ./dist
 COPY --chown=khd:nodejs --from=build /app/prisma ./prisma
 COPY --chown=khd:nodejs package.json ./
 
-RUN mkdir -p uploads logs && chown -R khd:nodejs uploads logs
+RUN mkdir -p uploads logs backups && chown -R khd:nodejs uploads logs backups
 
 USER khd
 EXPOSE 3000

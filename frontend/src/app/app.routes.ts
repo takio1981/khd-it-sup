@@ -212,6 +212,15 @@ export const routes: Routes = [
           import('./features/settings/document-log-list/document-log-list.component').then((m) => m.DocumentLogListComponent),
       },
       {
+        path: 'settings/backup',
+        canActivate: [permissionGuard],
+        data: { permissions: ['backup:manage'], watermark: 'logo3.png' },
+        loadComponent: () =>
+          import('./features/settings/backup-settings-page/backup-settings-page.component').then(
+            (m) => m.BackupSettingsPageComponent,
+          ),
+      },
+      {
         path: 'help',
         data: { watermark: 'logo3.png' },
         loadComponent: () => import('./features/help/help.component').then((m) => m.HelpComponent),

@@ -1,0 +1,19 @@
+<div class="space-y-4">
+  <div>
+    <h1 class="text-xl font-semibold">สำรอง/กู้คืนข้อมูล</h1>
+    <p class="text-sm text-neutral-500">สำรองข้อมูลทั้งหมดหรือเฉพาะบางตาราง ดาวน์โหลด และกู้คืนข้อมูลจากไฟล์สำรองที่มีอยู่</p>
+  </div>
+
+  <mat-tab-group animationDuration="150ms" class="khd-settings-tabs">
+    <mat-tab label="รายการ">
+      <div class="pt-4">
+        <khd-backup-list />
+      </div>
+    </mat-tab>
+    <mat-tab label="ตั้งค่าอัตโนมัติ">
+      <div class="pt-4">
+        <khd-backup-settings-form />
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

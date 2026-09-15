@@ -73,9 +73,12 @@ services:
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN:-}
       LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET:-}
       LOG_LEVEL: info
+      BACKUP_DIR: /app/backups
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
     volumes:
       - backend-uploads:/app/uploads
       - backend-logs:/app/logs
+      - backend-backups:/app/backups
     expose:
       - '3000'
     networks: [khd-network]
@@ -117,3 +120,4 @@ volumes:
   mariadb-data:
   backend-uploads:
   backend-logs:
+  backend-backups:

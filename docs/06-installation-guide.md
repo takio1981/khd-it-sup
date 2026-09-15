@@ -273,6 +273,27 @@ mysql -h 127.0.0.1 -P 3308 -u khd_app -p khd_it_sup -e "SHOW TABLES;"
 
 เห็นรายชื่อตาราง (เช่น `users`, `repair_tickets`, `assets` ฯลฯ) แปลว่าเชื่อมต่อสำเร็จ
 
+### 6.4.6 MariaDB Client Tools สำหรับฟีเจอร์สำรอง/กู้คืนข้อมูล (เฉพาะตอน dev บน Windows)
+
+ฟีเจอร์ "สำรอง/กู้คืนข้อมูล" (`/settings/backup`) เรียกใช้โปรแกรม `mariadb-dump`/`mariadb` (หรือชื่อรุ่นเก่า
+`mysqldump`/`mysql`) เพื่อสำรอง/กู้คืนข้อมูลจริง — ตอน production โปรแกรมนี้ถูกติดตั้งไว้ใน backend container
+ให้แล้วผ่าน `backend/Dockerfile` (`apk add mariadb-client`) แต่ตอน dev (`dev.bat`) backend รันบน Windows host
+ตรงๆ นอก Docker จึงต้องมีโปรแกรมนี้อยู่ใน PATH ของเครื่องเองด้วย:
+
+1. ถ้าเคยติดตั้ง MariaDB Server หรือ MariaDB Client บนเครื่องนี้แล้ว (เช่นจากการติดตั้งตาม §6.4.3) มักจะมีอยู่แล้วที่
+   `C:\Program Files\MariaDB <version>\bin\` — ตรวจสอบด้วย:
+   ```bash
+   "C:\Program Files\MariaDB 10.11\bin\mariadb-dump.exe" --version
+   ```
+2. เพิ่มโฟลเดอร์นั้นเข้า PATH ของ Windows (Settings → System → About → Advanced system settings →
+   Environment Variables → เพิ่มใน `Path` ของ user หรือ system) แล้วเปิด terminal ใหม่
+3. ถ้ายังไม่เคยติดตั้งเลย ดาวน์โหลด "MariaDB Client and Tools" (ไม่ต้องติดตั้งทั้ง Server) จาก
+   https://mariadb.org/download/ เลือก Product: Command Line Client
+
+ตรวจสอบว่าติดตั้งถูกต้องด้วยหน้า `/settings/backup` เอง — ถ้าเห็น banner เหลืองเตือนว่า
+"ไม่พบโปรแกรม mariadb-dump/mariadb" แปลว่ายังไม่พบใน PATH กรุณา restart backend dev server (`npm run dev`)
+หลังแก้ PATH ด้วย (ค่า PATH ที่ backend มองเห็นเป็นค่า ณ ตอนเริ่มโปรเซส ไม่ใช่ค่าปัจจุบันเสมอไป)
+
 ### 6.4.6 แก้ไขโครงสร้างฐานข้อมูลที่มีข้อมูลอยู่แล้ว (ไม่ใช่สร้างใหม่)
 
 เมื่อต้องเพิ่ม/แก้ไขตารางระหว่างพัฒนาโปรเจกต์ต่อ (ฐานข้อมูลมีข้อมูลอยู่แล้ว ห้ามลบทิ้งสร้างใหม่) ให้ทำตามลำดับนี้เท่านั้น

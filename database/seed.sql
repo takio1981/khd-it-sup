@@ -59,6 +59,7 @@ INSERT INTO `permissions` (`id`, `code`, `module`, `description`) VALUES
 (UUID(), 'settings:manage',       'settings',  'จัดการตั้งค่าระบบ'),
 (UUID(), 'audit:view',            'audit',     'ดู Audit Log'),
 (UUID(), 'workflow:configure',    'workflow',  'ตั้งค่า Workflow Engine'),
+(UUID(), 'backup:manage',         'backup',    'สำรอง/กู้คืนข้อมูลระบบ'),
 (UUID(), 'document:print',        'document',  'พิมพ์เอกสารราชการ'),
 (UUID(), 'document:generate',     'document',  'สร้างเอกสารราชการ'),
 (UUID(), 'spare_part:view',       'spare_part','ดูรายการ/สต็อกอะไหล่'),

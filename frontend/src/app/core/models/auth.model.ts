@@ -46,7 +46,8 @@ export type Permission =
   | 'spare_part:manage'
   | 'spare_part:issue'
   | 'vendor:view'
-  | 'vendor:manage';
+  | 'vendor:manage'
+  | 'backup:manage';
 
 export interface IAuthUser {
   id: string;

@@ -32,6 +32,8 @@ const ACTION_LABEL_TH: Record<string, string> = {
   EXPORT: 'ส่งออกข้อมูล',
   APPROVE: 'อนุมัติ',
   CONFIG_CHANGE: 'เปลี่ยนแปลงการตั้งค่า',
+  BACKUP: 'สำรองข้อมูล',
+  RESTORE: 'กู้คืนข้อมูล',
 };
 
 const ACTION_COLOR: Record<string, string> = {
@@ -44,6 +46,8 @@ const ACTION_COLOR: Record<string, string> = {
   EXPORT: '#06B6D4',
   APPROVE: '#8B5CF6',
   CONFIG_CHANGE: '#F59E0B',
+  BACKUP: '#0EA5E9',
+  RESTORE: '#F97316',
 };
 
 @Component({

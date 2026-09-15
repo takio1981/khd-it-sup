@@ -166,6 +166,7 @@ model User {
   timelineEvents      RepairTicketTimelineEvent[]
   approvals           Approval[]
   auditLogs           AuditLog[]
+  backupLogs          BackupLog[]
   assetLoansBorrowed  AssetLoan[]                 @relation("AssetLoanBorrower")
   assetLoansRecorded  AssetLoan[]                 @relation("AssetLoanRecordedBy")
   assetLoansReturned  AssetLoan[]                 @relation("AssetLoanReturnedBy")
@@ -1012,9 +1013,20 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+enum BackupAction {
+  BACKUP
+  RESTORE
+}
+
 enum BackupType {
   MANUAL
   AUTOMATIC
+  SAFETY
+}
+
+enum BackupScope {
+  FULL
+  PARTIAL
 }
 
 enum BackupStatus {
@@ -1023,16 +1035,25 @@ enum BackupStatus {
 }
 
 model BackupLog {
-  id             String       @id @db.Char(36)
-  type           BackupType
-  fileName       String       @map("file_name") @db.VarChar(255)
-  fileSizeBytes  BigInt?      @map("file_size_bytes")
-  status         BackupStatus
-  triggeredBy    String?      @map("triggered_by") @db.Char(36)
-  startedAt      DateTime     @map("started_at")
-  finishedAt     DateTime?    @map("finished_at")
-  errorMessage   String?      @map("error_message") @db.VarChar(500)
+  id                String       @id @db.Char(36)
+  action            BackupAction @default(BACKUP)
+  type              BackupType
+  scope             BackupScope  @default(FULL)
+  includedTables    Json?        @map("included_tables")
+  sourceBackupLogId String?      @map("source_backup_log_id") @db.Char(36)
+  sourceBackupLog   BackupLog?   @relation("BackupRestoreSource", fields: [sourceBackupLogId], references: [id], onDelete: SetNull)
+  restoredFrom      BackupLog[]  @relation("BackupRestoreSource")
+  fileName          String       @map("file_name") @db.VarChar(255)
+  fileSizeBytes     BigInt?      @map("file_size_bytes")
+  status            BackupStatus
+  triggeredBy       String?      @map("triggered_by") @db.Char(36)
+  triggeredByUser   User?        @relation(fields: [triggeredBy], references: [id], onDelete: SetNull)
+  startedAt         DateTime     @map("started_at")
+  finishedAt        DateTime?    @map("finished_at")
+  errorMessage      String?      @map("error_message") @db.VarChar(500)
 
   @@index([status], name: "idx_backup_logs_status")
+  @@index([action], name: "idx_backup_logs_action")
+  @@index([startedAt], name: "idx_backup_logs_started")
   @@map("backup_logs")
 }

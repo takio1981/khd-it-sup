@@ -857,17 +857,25 @@ END$$
 DELIMITER ;
 
 CREATE TABLE `backup_logs` (
-  `id`             CHAR(36)      NOT NULL,
-  `type`           ENUM('MANUAL','AUTOMATIC') NOT NULL,
-  `file_name`      VARCHAR(255)  NOT NULL,
-  `file_size_bytes` BIGINT       NULL,
-  `status`         ENUM('SUCCESS','FAILED') NOT NULL,
-  `triggered_by`   CHAR(36)      NULL,
-  `started_at`     DATETIME(3)   NOT NULL,
-  `finished_at`    DATETIME(3)   NULL,
-  `error_message`  VARCHAR(500)  NULL,
+  `id`                    CHAR(36)      NOT NULL,
+  `action`                ENUM('BACKUP','RESTORE') NOT NULL DEFAULT 'BACKUP',
+  `type`                  ENUM('MANUAL','AUTOMATIC','SAFETY') NOT NULL COMMENT 'SAFETY = สำรองอัตโนมัติก่อน restore เสมอ',
+  `scope`                 ENUM('FULL','PARTIAL') NOT NULL DEFAULT 'FULL',
+  `included_tables`       JSON          NULL COMMENT 'รายชื่อตาราง เมื่อ scope=PARTIAL เท่านั้น; NULL = ทุกตาราง',
+  `source_backup_log_id`  CHAR(36)      NULL COMMENT 'เมื่อ action=RESTORE: ไฟล์ backup ที่ใช้กู้คืน',
+  `file_name`             VARCHAR(255)  NOT NULL,
+  `file_size_bytes`       BIGINT        NULL,
+  `status`                ENUM('SUCCESS','FAILED') NOT NULL,
+  `triggered_by`          CHAR(36)      NULL,
+  `started_at`            DATETIME(3)   NOT NULL,
+  `finished_at`           DATETIME(3)   NULL,
+  `error_message`         VARCHAR(500)  NULL,
   PRIMARY KEY (`id`),
-  KEY `idx_backup_logs_status` (`status`)
+  KEY `idx_backup_logs_status` (`status`),
+  KEY `idx_backup_logs_action` (`action`),
+  KEY `idx_backup_logs_started` (`started_at`),
+  CONSTRAINT `fk_backup_logs_triggered_by` FOREIGN KEY (`triggered_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_backup_logs_source` FOREIGN KEY (`source_backup_log_id`) REFERENCES `backup_logs` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

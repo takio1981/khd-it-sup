@@ -17,6 +17,8 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 backend/logs/*
 !backend/logs/.gitkeep
+backend/backups/*
+!backend/backups/.gitkeep
 
 # Test / coverage
 coverage/

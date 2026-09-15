@@ -5,6 +5,8 @@ import { buildForgotPasswordEmailHtml } from '@modules/notifications/templates/f
 import { buildTicketMessageText } from '@modules/notifications/templates/ticketMessage.template';
 import { buildAssetLoanEmailHtml } from '@modules/notifications/templates/assetLoanEmail.template';
 import { buildAssetLoanMessageText } from '@modules/notifications/templates/assetLoanMessage.template';
+import { buildBackupEmailHtml } from '@modules/notifications/templates/backupEmail.template';
+import { buildBackupMessageText } from '@modules/notifications/templates/backupMessage.template';
 import { sendMail } from '@infrastructure/mailer/mailer';
 import { sendTelegramMessage } from '@infrastructure/telegram/telegram.client';
 import { sendLinePush } from '@infrastructure/line/line.client';
@@ -76,6 +78,21 @@ const ASSET_LOAN_EVENT_LABEL_TH: Record<AssetLoanNotificationEvent, string> = {
   RETURNED: 'มีการคืนครุภัณฑ์-อุปกรณ์',
   OVERDUE: 'ยืมครุภัณฑ์-อุปกรณ์เกินกำหนดคืน',
 };
+
+export type BackupNotificationEvent = 'BACKUP_SUCCESS' | 'BACKUP_FAILED' | 'RESTORE_SUCCESS' | 'RESTORE_FAILED';
+
+const BACKUP_EVENT_LABEL_TH: Record<BackupNotificationEvent, string> = {
+  BACKUP_SUCCESS: 'สำรองข้อมูลสำเร็จ',
+  BACKUP_FAILED: 'สำรองข้อมูลล้มเหลว',
+  RESTORE_SUCCESS: 'กู้คืนข้อมูลสำเร็จ',
+  RESTORE_FAILED: 'กู้คืนข้อมูลล้มเหลว',
+};
+
+interface IBackupNotificationPayload {
+  fileName: string;
+  scope: string;
+  errorMessage?: string | null;
+}
 
 interface IAssetLoanForNotification {
   id: string;
@@ -311,6 +328,46 @@ export class NotificationService {
       logger.error(`[notification] ส่ง LINE ไม่สำเร็จ: ${message}`);
       await this.repo.markFailed(log.id, message);
     }
+  }
+
+  /**
+   * เรียกจาก BackupService หลังทำ backup/restore เสร็จเสมอ (ไม่ว่าสำเร็จหรือล้มเหลว) — แจ้งเฉพาะ SUPER_ADMIN ที่ active
+   * เท่านั้น (ต่างจาก resolveItOfficers ของยืม-คืนครุภัณฑ์ เพราะ backup/restore เข้าถึงข้อมูลทั้งฐานข้อมูลและเป็นปฏิบัติการ
+   * ที่เสี่ยงทำลายข้อมูลได้ จึงจำกัดเฉพาะสิทธิ์สูงสุดในระบบ) กรณีล้มเหลว (BACKUP_FAILED/RESTORE_FAILED) ส่งอีเมลเสมอ
+   * ไม่เช็ค settings.emailEnabled เพราะ severity สูงพอไม่ควรพึ่ง toggle เดียวกับการแจ้งเตือนทั่วไป
+   */
+  async notifyBackupEvent(event: BackupNotificationEvent, payload: IBackupNotificationPayload): Promise<void> {
+    const isFailure = event === 'BACKUP_FAILED' || event === 'RESTORE_FAILED';
+    const settings = await systemSettingService.getNotificationSettings();
+    const superAdmins = await prisma.user.findMany({
+      where: { isActive: true, deletedAt: null, role: { code: 'SUPER_ADMIN' } },
+      select: { id: true, email: true },
+    });
+    if (superAdmins.length === 0) return;
+
+    const actionLabel = BACKUP_EVENT_LABEL_TH[event];
+    const detailUrl = `${env.FRONTEND_BASE_URL}/settings/backup`;
+    const errorMessage = payload.errorMessage ?? null;
+
+    if (isFailure || settings.emailEnabled) {
+      const html = buildBackupEmailHtml({ actionLabel, fileName: payload.fileName, scope: payload.scope, errorMessage, detailUrl, isFailure });
+      const subject = `[สำรอง/กู้คืนข้อมูล] ${actionLabel}`;
+      await Promise.all(superAdmins.map((a) => this.sendEmail(a.email, subject, html, 'BackupLog')));
+    }
+
+    if (settings.telegramEnabled || settings.lineEnabled) {
+      const text = buildBackupMessageText({ actionLabel, fileName: payload.fileName, scope: payload.scope, errorMessage, detailUrl, isFailure });
+      if (settings.telegramEnabled) await this.sendTelegram(text, 'BackupLog');
+      if (settings.lineEnabled) await this.sendLine(text, 'BackupLog');
+    }
+
+    await Promise.all(
+      superAdmins.map((a) =>
+        this.pushInApp(a.id, actionLabel, `${payload.fileName} — ${actionLabel}`, 'BackupLog').catch(() => {
+          // Socket.IO server อาจยังไม่ initialize (เช่นตอนรัน test) — ไม่ถือเป็นข้อผิดพลาดร้ายแรง
+        }),
+      ),
+    );
   }
 
   /** ส่ง Telegram ตรงถึง Chat ID ส่วนตัวของผู้ใช้แต่ละคน (คู่ขนานกับกลุ่มไอทีกลาง ใช้ Bot Token เดียวกัน) */
