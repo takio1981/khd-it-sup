@@ -305,6 +305,51 @@ const DOCUMENT_DIAGRAM = `flowchart TD
   e4@{ animate: true }
   e5@{ animate: true }`;
 
+const BACKUP_DIAGRAM = `flowchart TD
+  TRIGGER{"เริ่มต้นจากไหน?"}
+  MANUAL[/"กดปุ่ม 'สำรองข้อมูลตอนนี้'<br/>เลือกขอบเขต (ทั้งหมด/เฉพาะบางตาราง)"/]
+  SCHED["ตั้งเวลาอัตโนมัติทุกวัน 03:00 น.<br/>(เปิด/ปิด + ขอบเขตตั้งค่าไว้ล่วงหน้า)"]
+  DUMP["สำรองข้อมูลจริง (mariadb-dump)"]
+  STORE[("ไฟล์สำรองข้อมูล + ประวัติการสำรอง")]
+  RETENTION["ลบไฟล์สำรองอัตโนมัติที่เก่าเกินกำหนดเอง<br/>(ไม่กระทบไฟล์ที่กดสำรองเอง)"]
+
+  RESTORESTART(["เลือกไฟล์สำรองที่ต้องการกู้คืน"])
+  CONFIRM[/"ยืนยันรหัสผ่านตัวเองซ้ำ<br/>+ พิมพ์ชื่อไฟล์ให้ตรงเป๊ะ"/]
+  VALID{"รหัสผ่าน/ชื่อไฟล์ถูกต้อง?"}
+  REJECT(["ปฏิเสธทันที ไม่ดำเนินการต่อ"])
+  SAFETY["สำรองข้อมูลนิรภัยแบบเต็มให้อัตโนมัติก่อนเสมอ<br/>(บังคับ ปิดไม่ได้)"]
+  RESTORE["กู้คืนข้อมูลจากไฟล์ที่เลือก (mariadb)"]
+  NOTIFY[("แจ้งเตือนผู้ดูแลระบบสูงสุดทุกคน<br/>ทุกครั้งที่สำรอง/กู้คืน สำเร็จหรือล้มเหลว")]
+
+  TRIGGER e1@-->|"กดเอง"| MANUAL
+  TRIGGER e2@-->|"อัตโนมัติ"| SCHED
+  MANUAL e3@--> DUMP
+  SCHED e4@--> DUMP
+  DUMP e5@--> STORE
+  STORE e6@-.-> RETENTION
+  DUMP e7@-.-> NOTIFY
+  RESTORESTART e8@--> CONFIRM
+  CONFIRM e9@--> VALID
+  VALID e10@-->|"ไม่ถูกต้อง"| REJECT
+  VALID e11@-->|"ถูกต้อง"| SAFETY
+  SAFETY e12@--> RESTORE
+  RESTORE e13@-.-> NOTIFY
+  SAFETY e14@-.-> STORE
+  e1@{ animate: true }
+  e2@{ animate: true }
+  e3@{ animate: true }
+  e4@{ animate: true }
+  e5@{ animate: true }
+  e6@{ animate: true, animation: slow }
+  e7@{ animate: true, animation: slow }
+  e8@{ animate: true }
+  e9@{ animate: true }
+  e10@{ animate: true }
+  e11@{ animate: true }
+  e12@{ animate: true }
+  e13@{ animate: true, animation: slow }
+  e14@{ animate: true, animation: slow }`;
+
 @Component({
   selector: 'khd-workflow-diagrams',
   standalone: true,
@@ -449,6 +494,20 @@ export class WorkflowDiagramsComponent {
         'ใบแจ้งซ่อมมี 2 แบบฟอร์มให้อัตโนมัติตามหมวดหมู่ครุภัณฑ์ — คอมพิวเตอร์/อุปกรณ์คอมพิวเตอร์ ใช้แบบฟอร์มเดิม ส่วนเครื่องปรับอากาศ/ครุภัณฑ์การแพทย์/ครุภัณฑ์อื่นๆ (หรือไม่ผูกกับครุภัณฑ์) ใช้แบบฟอร์มงานทั่วไปของงานพัสดุแทน',
       ],
       definition: DOCUMENT_DIAGRAM,
+    },
+    {
+      key: 'backup',
+      title: 'สำรอง/กู้คืนข้อมูล',
+      icon: 'circle-stack',
+      iconColor: 'text-red-500',
+      description:
+        'สำรองข้อมูลได้ทั้งฐานข้อมูลหรือเลือกเฉพาะบางตาราง ทั้งกดเองและตั้งเวลาอัตโนมัติทุกวัน — ส่วนการกู้คืนข้อมูลมีการป้องกันหลายชั้นเพราะเป็นปฏิบัติการที่แทนที่ข้อมูลปัจจุบันได้จริง',
+      notes: [
+        'เฉพาะผู้ดูแลระบบสูงสุด (SUPER_ADMIN) เท่านั้นที่มีสิทธิ์เข้าถึงเมนูนี้ได้ตามค่าเริ่มต้นของระบบ',
+        'กู้คืนข้อมูลเลือกได้เฉพาะ "ไฟล์สำรองไหน" เท่านั้น ไม่สามารถเลือกเฉพาะบางตารางจากไฟล์สำรองแบบเต็มตอนกู้คืนได้ — ขอบเขตของการกู้คืนเป็นไปตามขอบเขตที่ไฟล์นั้นถูกสำรองไว้ตั้งแต่ต้น',
+        'สำรอง/กู้คืนทำได้ทีละ 1 งานเท่านั้น — ถ้ามีงานหนึ่งกำลังทำงานอยู่ จะเริ่มงานใหม่ซ้อนไม่ได้จนกว่างานเดิมจะเสร็จ',
+      ],
+      definition: BACKUP_DIAGRAM,
     },
     {
       key: 'roles',
@@ -623,6 +682,7 @@ export class WorkflowDiagramsComponent {
       ticket: { linkIndexes: [1], nodeIds: ['BLOCK'] },
       loan: { linkIndexes: [1], nodeIds: ['BLOCK'] },
       parts: { linkIndexes: [5], nodeIds: ['REJECT'] },
+      backup: { linkIndexes: [9], nodeIds: ['REJECT'] },
     };
     const c = config[key];
     if (!c) return '';
