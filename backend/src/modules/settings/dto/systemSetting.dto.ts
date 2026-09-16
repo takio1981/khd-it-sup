@@ -34,3 +34,8 @@ export const updateOrgSettingsSchema = z.object({
   smtpFromName: z.string().max(200).optional(),
 });
 export type UpdateOrgSettingsDto = z.infer<typeof updateOrgSettingsSchema>;
+
+export const testNotificationSchema = z.object({
+  channel: z.enum(['EMAIL', 'TELEGRAM', 'LINE', 'PUSH']),
+});
+export type TestNotificationDto = z.infer<typeof testNotificationSchema>;

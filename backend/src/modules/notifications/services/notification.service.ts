@@ -17,6 +17,7 @@ import { prisma } from '@infrastructure/database/prisma';
 import { normalizePagination, buildPaginatedResult } from '@common/utils/pagination';
 import { systemSettingService } from '@modules/settings/services/systemSetting.service';
 import { STAFF_ROLES } from '@common/constants/roles.const';
+import { BadRequestError } from '@common/errors';
 import type { ListNotificationLogsQueryDto } from '@modules/notifications/dto/notification.dto';
 import type { NotificationChannel, NotificationStatus } from '@prisma/client';
 
@@ -78,6 +79,8 @@ const ASSET_LOAN_EVENT_LABEL_TH: Record<AssetLoanNotificationEvent, string> = {
   RETURNED: 'มีการคืนครุภัณฑ์-อุปกรณ์',
   OVERDUE: 'ยืมครุภัณฑ์-อุปกรณ์เกินกำหนดคืน',
 };
+
+export type TestNotificationChannel = 'EMAIL' | 'TELEGRAM' | 'LINE' | 'PUSH';
 
 export type BackupNotificationEvent = 'BACKUP_SUCCESS' | 'BACKUP_FAILED' | 'RESTORE_SUCCESS' | 'RESTORE_FAILED';
 
@@ -370,6 +373,45 @@ export class NotificationService {
     );
   }
 
+  /**
+   * ส่งข้อความทดสอบตามช่องทางที่ระบุ ใช้ค่าที่ "บันทึกไว้แล้ว" เท่านั้น (ไม่รับค่าฉบับร่างที่ยังไม่ได้บันทึกจากฟอร์ม)
+   * เรียก client ของแต่ละช่องทางตรงๆ (ไม่ผ่าน sendEmail/sendTelegram/sendLine ส่วนตัวที่กลืน error ทิ้งเพื่อไม่ให้
+   * business transaction ล้มเหลว) เพื่อให้ error จริงสะท้อนกลับไปหน้าเว็บทันที ผู้ดูแลระบบจะได้รู้ว่าตั้งค่าผิดตรงไหน
+   */
+  async sendTestNotification(channel: TestNotificationChannel, requestedBy: { id: string; fullName: string }): Promise<void> {
+    const testText = `นี่คือข้อความทดสอบจากระบบ IT Service Desk — ทดสอบโดย ${requestedBy.fullName} เมื่อ ${new Date().toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}`;
+
+    try {
+      switch (channel) {
+        case 'EMAIL': {
+          const user = await prisma.user.findUnique({ where: { id: requestedBy.id }, select: { email: true } });
+          if (!user?.email) throw new Error('บัญชีผู้ใช้ปัจจุบันไม่มีอีเมลที่ใช้ทดสอบได้');
+          await sendMail({ to: user.email, subject: '[ทดสอบ] การแจ้งเตือนระบบ IT Service Desk', html: buildTestEmailHtml(testText) });
+          break;
+        }
+        case 'TELEGRAM': {
+          const config = await systemSettingService.getTelegramConfig();
+          if (!config) throw new Error('ยังไม่ได้ตั้งค่า Bot Token/Chat ID ให้ครบ');
+          await sendTelegramMessage(config.botToken, config.chatId, testText);
+          break;
+        }
+        case 'LINE': {
+          const config = await systemSettingService.getLineConfig();
+          if (!config) throw new Error('ยังไม่ได้ตั้งค่า Channel Access Token/Group ID ให้ครบ');
+          await sendLinePush(config.accessToken, config.targetId, testText);
+          break;
+        }
+        case 'PUSH': {
+          await this.pushInApp(requestedBy.id, 'ทดสอบการแจ้งเตือน', testText, 'Test');
+          break;
+        }
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new BadRequestError(`ทดสอบส่งไม่สำเร็จ: ${message}`, 'TEST_NOTIFICATION_FAILED');
+    }
+  }
+
   /** ส่ง Telegram ตรงถึง Chat ID ส่วนตัวของผู้ใช้แต่ละคน (คู่ขนานกับกลุ่มไอทีกลาง ใช้ Bot Token เดียวกัน) */
   private async sendTelegramPersonal(chatId: string, text: string, relatedEntityType?: string, relatedEntityId?: string): Promise<void> {
     const config = await systemSettingService.getTelegramConfig();
@@ -534,3 +576,23 @@ export class NotificationService {
 }
 
 export const notificationService = new NotificationService();
+
+/** HTML แบบง่าย ไม่ต้องมีแบรนด์เต็มรูปแบบเหมือนอีเมลจริง เพราะเป็นแค่ข้อความ ping ตรวจสอบว่าตั้งค่า SMTP ถูกต้องหรือไม่ */
+function buildTestEmailHtml(testText: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="th">
+<head><meta charset="utf-8" /></head>
+<body style="margin:0;padding:24px;background-color:#F7FAF8;font-family:'Segoe UI',Tahoma,sans-serif;">
+  <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+    <div style="background-color:#006C45;padding:20px 24px;">
+      <span style="color:#FFFFFF;font-size:16px;font-weight:600;">IT Service Desk — สำนักงานสาธารณสุขจังหวัดนครราชสีมา</span>
+    </div>
+    <div style="padding:24px;">
+      <p style="margin:0 0 8px;color:#111827;font-size:18px;font-weight:600;">ทดสอบการแจ้งเตือน</p>
+      <p style="margin:0;color:#6B7280;font-size:14px;">${testText}</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}

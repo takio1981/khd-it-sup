@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as systemSettingController from '@modules/settings/controllers/systemSetting.controller';
-import { updateNotificationSettingsSchema, updateOrgSettingsSchema } from '@modules/settings/dto/systemSetting.dto';
+import { testNotificationSchema, updateNotificationSettingsSchema, updateOrgSettingsSchema } from '@modules/settings/dto/systemSetting.dto';
 import { authenticate, requirePermission, validateRequest } from '@common/middleware';
 import { PERMISSIONS } from '@common/constants/permissions.const';
 import { logoUploader } from '@infrastructure/storage/multer.config';
@@ -35,6 +35,21 @@ router.patch(
   requirePermission(PERMISSIONS.SETTINGS_MANAGE),
   validateRequest({ body: updateNotificationSettingsSchema }),
   systemSettingController.updateNotificationSettings,
+);
+
+/**
+ * @openapi
+ * /settings/notifications/test:
+ *   post:
+ *     tags: [Settings]
+ *     summary: ส่งข้อความทดสอบตามช่องทางที่ระบุ (EMAIL/TELEGRAM/LINE/PUSH) โดยใช้ค่าที่บันทึกไว้แล้วเท่านั้น
+ *     security: [{ bearerAuth: [] }]
+ */
+router.post(
+  '/notifications/test',
+  requirePermission(PERMISSIONS.SETTINGS_MANAGE),
+  validateRequest({ body: testNotificationSchema }),
+  systemSettingController.testNotification,
 );
 
 /**

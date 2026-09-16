@@ -5,10 +5,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { SettingsService } from '../../../core/services/settings.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
-import type { INotificationSettings } from '../../../core/models/settings.model';
+import type { INotificationSettings, NotificationTestChannel } from '../../../core/models/settings.model';
 
 type ToggleKey =
   | 'emailEnabled'
@@ -27,7 +28,7 @@ type ToggleKey =
   selector: 'khd-notification-settings-form',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatSlideToggleModule, MatFormFieldModule, MatInputModule, MatButtonModule, IconComponent],
+  imports: [ReactiveFormsModule, MatSlideToggleModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatTooltipModule, IconComponent],
   templateUrl: './notification-settings-form.component.html',
 })
 export class NotificationSettingsFormComponent {
@@ -43,6 +44,11 @@ export class NotificationSettingsFormComponent {
   readonly savingCredentials = signal(false);
   readonly settings = signal<INotificationSettings | null>(null);
 
+  readonly editingTelegram = signal(false);
+  readonly editingLine = signal(false);
+
+  readonly testing = signal<Record<NotificationTestChannel, boolean>>({ EMAIL: false, TELEGRAM: false, LINE: false, PUSH: false });
+
   readonly telegramForm = this.fb.nonNullable.group({
     telegramChatId: [''],
     telegramBotToken: [''],
@@ -55,8 +61,6 @@ export class NotificationSettingsFormComponent {
   constructor() {
     this.settingsService.getNotificationSettings().subscribe((s) => {
       this.settings.set(s);
-      this.telegramForm.patchValue({ telegramChatId: s.telegramChatId });
-      this.lineForm.patchValue({ lineTargetId: s.lineTargetId });
       this.loading.set(false);
     });
   }
@@ -82,6 +86,16 @@ export class NotificationSettingsFormComponent {
     });
   }
 
+  startEditTelegram(): void {
+    const s = this.settings();
+    this.telegramForm.reset({ telegramChatId: s?.telegramChatId ?? '', telegramBotToken: '' });
+    this.editingTelegram.set(true);
+  }
+
+  cancelEditTelegram(): void {
+    this.editingTelegram.set(false);
+  }
+
   saveTelegramCredentials(): void {
     if (this.savingCredentials()) return;
     const { telegramChatId, telegramBotToken } = this.telegramForm.getRawValue();
@@ -89,8 +103,8 @@ export class NotificationSettingsFormComponent {
     this.settingsService.updateNotificationSettings({ telegramChatId, telegramBotToken: telegramBotToken || undefined }).subscribe({
       next: (updated) => {
         this.settings.set(updated);
-        this.telegramForm.patchValue({ telegramBotToken: '' });
         this.savingCredentials.set(false);
+        this.editingTelegram.set(false);
         this.snackBar.open('บันทึกการตั้งค่า Telegram แล้ว', 'ปิด', { duration: 2000 });
       },
       error: () => {
@@ -100,6 +114,16 @@ export class NotificationSettingsFormComponent {
     });
   }
 
+  startEditLine(): void {
+    const s = this.settings();
+    this.lineForm.reset({ lineTargetId: s?.lineTargetId ?? '', lineAccessToken: '' });
+    this.editingLine.set(true);
+  }
+
+  cancelEditLine(): void {
+    this.editingLine.set(false);
+  }
+
   saveLineCredentials(): void {
     if (this.savingCredentials()) return;
     const { lineTargetId, lineAccessToken } = this.lineForm.getRawValue();
@@ -107,13 +131,29 @@ export class NotificationSettingsFormComponent {
     this.settingsService.updateNotificationSettings({ lineTargetId, lineAccessToken: lineAccessToken || undefined }).subscribe({
       next: (updated) => {
         this.settings.set(updated);
-        this.lineForm.patchValue({ lineAccessToken: '' });
         this.savingCredentials.set(false);
+        this.editingLine.set(false);
         this.snackBar.open('บันทึกการตั้งค่า LINE แล้ว', 'ปิด', { duration: 2000 });
       },
       error: () => {
         this.savingCredentials.set(false);
         this.snackBar.open('บันทึกการตั้งค่า LINE ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      },
+    });
+  }
+
+  sendTest(channel: NotificationTestChannel): void {
+    if (this.testing()[channel]) return;
+    this.testing.update((t) => ({ ...t, [channel]: true }));
+    this.settingsService.testNotification(channel).subscribe({
+      next: () => {
+        this.testing.update((t) => ({ ...t, [channel]: false }));
+        this.snackBar.open('ส่งข้อความทดสอบสำเร็จ', 'ปิด', { duration: 3000 });
+      },
+      error: (err) => {
+        this.testing.update((t) => ({ ...t, [channel]: false }));
+        const message = err?.error?.error?.message ?? 'ส่งข้อความทดสอบไม่สำเร็จ';
+        this.snackBar.open(message, 'ปิด', { duration: 5000 });
       },
     });
   }

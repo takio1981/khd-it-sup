@@ -10,6 +10,7 @@ import type {
   IOrgSettings,
   IUpdateNotificationSettingsPayload,
   IUpdateOrgSettingsPayload,
+  NotificationTestChannel,
 } from '../models/settings.model';
 
 @Injectable({ providedIn: 'root' })
@@ -27,6 +28,12 @@ export class SettingsService {
     return this.http
       .patch<IApiSuccessResponse<INotificationSettings>>(`${this.base}/notifications`, payload)
       .pipe(map((res) => res.data));
+  }
+
+  testNotification(channel: NotificationTestChannel): Observable<void> {
+    return this.http
+      .post<IApiSuccessResponse<{ sent: true }>>(`${this.base}/notifications/test`, { channel })
+      .pipe(map(() => undefined));
   }
 
   getOrgSettings(): Observable<IOrgSettings> {

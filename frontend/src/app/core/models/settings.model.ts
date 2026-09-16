@@ -34,6 +34,8 @@ export interface IUpdateNotificationSettingsPayload {
   notifyAssetOverdue?: boolean;
 }
 
+export type NotificationTestChannel = 'EMAIL' | 'TELEGRAM' | 'LINE' | 'PUSH';
+
 export interface IOrgSettings {
   orgNameTh: string;
   orgLogoUrl: string | null;

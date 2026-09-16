@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { systemSettingService } from '@modules/settings/services/systemSetting.service';
-import type { UpdateNotificationSettingsDto, UpdateOrgSettingsDto } from '@modules/settings/dto/systemSetting.dto';
+import { notificationService } from '@modules/notifications/services/notification.service';
+import type { TestNotificationDto, UpdateNotificationSettingsDto, UpdateOrgSettingsDto } from '@modules/settings/dto/systemSetting.dto';
 import { env } from '@config/env';
 import { BadRequestError } from '@common/errors';
 import { asyncHandler } from '@common/utils/asyncHandler';
@@ -14,6 +15,12 @@ export const getNotificationSettings = asyncHandler(async (_req: Request, res: R
 export const updateNotificationSettings = asyncHandler(async (req: Request, res: Response) => {
   const settings = await systemSettingService.updateNotificationSettings(req.body as UpdateNotificationSettingsDto, req.user!.id);
   sendSuccess(res, settings);
+});
+
+export const testNotification = asyncHandler(async (req: Request, res: Response) => {
+  const { channel } = req.body as TestNotificationDto;
+  await notificationService.sendTestNotification(channel, { id: req.user!.id, fullName: req.user!.fullName });
+  sendSuccess(res, { sent: true });
 });
 
 export const getOrgSettings = asyncHandler(async (_req: Request, res: Response) => {

@@ -4,55 +4,81 @@
   </div>
 } @else if (settings(); as s) {
   <div class="space-y-4 max-w-2xl">
+    <!-- แจ้งเตือนในแอป (Push) — ทำงานเสมอผ่าน Socket.IO ไม่มีสวิตช์เปิด/ปิดหรือค่าตั้งค่าใดๆ -->
     <div class="khd-card">
-      <div class="flex items-center gap-2 mb-1">
-        <khd-icon name="paper-airplane" [size]="18" class="text-blue-500" />
-        <h2 class="text-sm font-medium">ช่องทางแจ้งเตือน</h2>
-      </div>
-      <p class="text-xs text-neutral-500 mb-4">เปิด/ปิดช่องทางการส่งแจ้งเตือนของระบบ</p>
-
-      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
-        <div>
-          <p class="text-sm font-medium">อีเมล (Email)</p>
-          <p class="text-xs text-neutral-500">ส่งผ่าน Gmail SMTP</p>
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <khd-icon name="bell" [size]="18" class="text-amber-500" />
+          <div>
+            <h2 class="text-sm font-medium">แจ้งเตือนในแอป (Push)</h2>
+            <p class="text-xs text-neutral-500">แจ้งเตือนผ่านกระดิ่งในแอปแบบเรียลไทม์ — ทำงานเสมอ ไม่ต้องตั้งค่า</p>
+          </div>
         </div>
-        <mat-slide-toggle [checked]="s.emailEnabled" [disabled]="!canManage() || saving()" (change)="toggle('emailEnabled')" />
-      </div>
-
-      <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
-        <div>
-          <p class="text-sm font-medium">Telegram</p>
-          <p class="text-xs text-neutral-500">
-            ส่งเข้าแชท/กลุ่มเดียวรวม (broadcast)
-            @if (!s.telegramBotTokenConfigured) {
-              <span class="text-amber-600 dark:text-amber-400"> — ยังไม่ได้ตั้งค่า Bot Token</span>
-            }
-          </p>
-        </div>
-        <mat-slide-toggle [checked]="s.telegramEnabled" [disabled]="!canManage() || saving()" (change)="toggle('telegramEnabled')" />
-      </div>
-
-      <div class="flex items-center justify-between py-2">
-        <div>
-          <p class="text-sm font-medium">LINE</p>
-          <p class="text-xs text-neutral-500">
-            ส่งเข้ากลุ่ม/แชทเดียวที่ตั้งค่าไว้ (push)
-            @if (!s.lineAccessTokenConfigured || !s.lineTargetId) {
-              <span class="text-amber-600 dark:text-amber-400"> — ยังไม่ได้ตั้งค่า Access Token/Group ID ให้ครบ</span>
-            }
-          </p>
-        </div>
-        <mat-slide-toggle [checked]="s.lineEnabled" [disabled]="!canManage() || saving()" (change)="toggle('lineEnabled')" />
+        <button mat-stroked-button [disabled]="!canManage() || testing().PUSH" (click)="sendTest('PUSH')">
+          <khd-icon name="paper-airplane" [size]="16" class="!mr-1" />
+          {{ testing().PUSH ? 'กำลังส่ง...' : 'ทดสอบ' }}
+        </button>
       </div>
     </div>
 
-    @if (canManage()) {
-      <div class="khd-card">
-        <div class="flex items-center gap-2 mb-1">
-          <khd-icon name="paper-airplane" [size]="18" class="text-sky-500" />
-          <h2 class="text-sm font-medium">ตั้งค่า Telegram Bot</h2>
+    <!-- อีเมล (Email) -->
+    <div class="khd-card">
+      <div class="flex items-center justify-between gap-2 mb-1">
+        <div class="flex items-center gap-2">
+          <khd-icon name="paper-airplane" [size]="18" class="text-blue-500" />
+          <h2 class="text-sm font-medium">อีเมล (Email)</h2>
         </div>
-        <p class="text-xs text-neutral-500 mb-4">
+        <mat-slide-toggle [checked]="s.emailEnabled" [disabled]="!canManage() || saving()" (change)="toggle('emailEnabled')" />
+      </div>
+      <p class="text-xs text-neutral-500 mb-3">ส่งผ่าน Gmail SMTP — ตั้งค่า SMTP ที่หน้า "ตั้งค่าทั่วไป"</p>
+      <div class="flex justify-end">
+        <button mat-stroked-button [disabled]="!canManage() || testing().EMAIL" (click)="sendTest('EMAIL')">
+          <khd-icon name="paper-airplane" [size]="16" class="!mr-1" />
+          {{ testing().EMAIL ? 'กำลังส่ง...' : 'ทดสอบ' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Telegram -->
+    <div class="khd-card">
+      <div class="flex items-center justify-between gap-2 mb-1">
+        <div class="flex items-center gap-2">
+          <khd-icon name="paper-airplane" [size]="18" class="text-sky-500" />
+          <h2 class="text-sm font-medium">Telegram</h2>
+        </div>
+        <mat-slide-toggle [checked]="s.telegramEnabled" [disabled]="!canManage() || saving()" (change)="toggle('telegramEnabled')" />
+      </div>
+      <p class="text-xs text-neutral-500 mb-3">
+        ส่งเข้าแชท/กลุ่มเดียวรวม (broadcast)
+        @if (!s.telegramBotTokenConfigured) {
+          <span class="text-amber-600 dark:text-amber-400"> — ยังไม่ได้ตั้งค่า Bot Token</span>
+        }
+      </p>
+
+      @if (!editingTelegram()) {
+        <div class="rounded-xl bg-black/[0.02] dark:bg-white/[0.04] p-3 space-y-1.5">
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-neutral-500">Chat ID</span>
+            <span class="font-medium">{{ s.telegramChatId || 'ยังไม่ได้ตั้งค่า' }}</span>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-neutral-500">Bot Token</span>
+            <span class="font-medium">{{ s.telegramBotTokenConfigured ? '•••••••• (ตั้งค่าไว้แล้ว)' : 'ยังไม่ได้ตั้งค่า' }}</span>
+          </div>
+          <div class="flex justify-between items-center pt-1">
+            <button mat-stroked-button [disabled]="!canManage() || testing().TELEGRAM" (click)="sendTest('TELEGRAM')">
+              <khd-icon name="paper-airplane" [size]="16" class="!mr-1" />
+              {{ testing().TELEGRAM ? 'กำลังส่ง...' : 'ทดสอบ' }}
+            </button>
+            @if (canManage()) {
+              <button mat-icon-button matTooltip="แก้ไขค่า Telegram" (click)="startEditTelegram()">
+                <khd-icon name="pencil-square" [size]="18" />
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <p class="text-xs text-neutral-500 mb-3">
           สร้างบอทผ่าน @&#8288;BotFather แล้วนำ Bot Token มาใส่ จากนั้นเชิญบอทเข้ากลุ่ม/แชทที่ต้องการรับแจ้งเตือน แล้วนำ Chat ID มาใส่
         </p>
         <form [formGroup]="telegramForm" (ngSubmit)="saveTelegramCredentials()" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -69,18 +95,54 @@
               [placeholder]="s.telegramBotTokenConfigured ? 'ตั้งค่าไว้แล้ว (กรอกใหม่เพื่อเปลี่ยน)' : 'ยังไม่ได้ตั้งค่า'"
             />
           </mat-form-field>
-          <div class="sm:col-span-2 flex justify-end">
-            <button mat-flat-button color="primary" type="submit" [disabled]="savingCredentials()">บันทึก Telegram</button>
+          <div class="sm:col-span-2 flex justify-end gap-2">
+            <button mat-button type="button" [disabled]="savingCredentials()" (click)="cancelEditTelegram()">ยกเลิก</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="savingCredentials()">บันทึก</button>
           </div>
         </form>
-      </div>
+      }
+    </div>
 
-      <div class="khd-card">
-        <div class="flex items-center gap-2 mb-1">
+    <!-- LINE -->
+    <div class="khd-card">
+      <div class="flex items-center justify-between gap-2 mb-1">
+        <div class="flex items-center gap-2">
           <khd-icon name="paper-airplane" [size]="18" class="text-green-500" />
-          <h2 class="text-sm font-medium">ตั้งค่า LINE Messaging API</h2>
+          <h2 class="text-sm font-medium">LINE</h2>
         </div>
-        <p class="text-xs text-neutral-500 mb-4">
+        <mat-slide-toggle [checked]="s.lineEnabled" [disabled]="!canManage() || saving()" (change)="toggle('lineEnabled')" />
+      </div>
+      <p class="text-xs text-neutral-500 mb-3">
+        ส่งเข้ากลุ่ม/แชทเดียวที่ตั้งค่าไว้ (push)
+        @if (!s.lineAccessTokenConfigured || !s.lineTargetId) {
+          <span class="text-amber-600 dark:text-amber-400"> — ยังไม่ได้ตั้งค่า Access Token/Group ID ให้ครบ</span>
+        }
+      </p>
+
+      @if (!editingLine()) {
+        <div class="rounded-xl bg-black/[0.02] dark:bg-white/[0.04] p-3 space-y-1.5">
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-neutral-500">Group ID / User ID</span>
+            <span class="font-medium">{{ s.lineTargetId || 'ยังไม่ได้ตั้งค่า' }}</span>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-neutral-500">Channel Access Token</span>
+            <span class="font-medium">{{ s.lineAccessTokenConfigured ? '•••••••• (ตั้งค่าไว้แล้ว)' : 'ยังไม่ได้ตั้งค่า' }}</span>
+          </div>
+          <div class="flex justify-between items-center pt-1">
+            <button mat-stroked-button [disabled]="!canManage() || testing().LINE" (click)="sendTest('LINE')">
+              <khd-icon name="paper-airplane" [size]="16" class="!mr-1" />
+              {{ testing().LINE ? 'กำลังส่ง...' : 'ทดสอบ' }}
+            </button>
+            @if (canManage()) {
+              <button mat-icon-button matTooltip="แก้ไขค่า LINE" (click)="startEditLine()">
+                <khd-icon name="pencil-square" [size]="18" />
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        <p class="text-xs text-neutral-500 mb-3">
           สร้าง LINE Official Account พร้อม Messaging API Channel ที่ LINE Developers Console นำ Channel Access Token (long-lived) มาใส่
           และเชิญบอทเข้ากลุ่ม/แชทที่ต้องการรับแจ้งเตือน แล้วนำ Group ID หรือ User ID มาใส่ (ต้องใช้ push ไม่ใช่ broadcast เพราะต้องส่งเข้ากลุ่มได้)
         </p>
@@ -98,12 +160,13 @@
               [placeholder]="s.lineAccessTokenConfigured ? 'ตั้งค่าไว้แล้ว (กรอกใหม่เพื่อเปลี่ยน)' : 'ยังไม่ได้ตั้งค่า'"
             />
           </mat-form-field>
-          <div class="sm:col-span-2 flex justify-end">
-            <button mat-flat-button color="primary" type="submit" [disabled]="savingCredentials()">บันทึก LINE</button>
+          <div class="sm:col-span-2 flex justify-end gap-2">
+            <button mat-button type="button" [disabled]="savingCredentials()" (click)="cancelEditLine()">ยกเลิก</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="savingCredentials()">บันทึก</button>
           </div>
         </form>
-      </div>
-    }
+      }
+    </div>
 
     <div class="khd-card">
       <div class="flex items-center gap-2 mb-1">
