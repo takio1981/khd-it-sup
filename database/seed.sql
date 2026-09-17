@@ -203,57 +203,51 @@ SET @wf_internal = UUID();
 INSERT INTO `workflow_templates` (`id`, `code`, `name`, `applies_to`, `version`, `is_active`) VALUES
 (@wf_internal, 'REPAIR_INTERNAL', 'ขั้นตอนการซ่อมภายใน (Internal Repair)', 'REPAIR_INTERNAL', 1, 1);
 
+-- v2 (2026-09-17): ลดจำนวนขั้นตอนจาก 11 เหลือ 7 ขั้นตอนหลัก ให้กระชับ ลำดับชัดเจนขึ้น — รวม
+-- RECEIVED+IT_REVIEW+DIAGNOSIS เป็น RECEIVED เดียว, REPAIRING+TESTING เป็น TESTING เดียว,
+-- COMPLETED+RETURNED เป็น COMPLETED เดียว **คงชื่อ step_code เดิมของ step ที่รอดไว้เป๊ะ** (RECEIVED/
+-- TESTING/COMPLETED/VENDOR_REPAIR) เพราะ backend/src/modules/repair-tickets/services/repairTicket.service.ts
+-- hardcode ชื่อ step เหล่านี้เป็น string literal ตรงๆ หลายจุด (receive()->RECEIVED, recordInspection()
+-- SEND_EXTERNAL->VENDOR_REPAIR, receiveFromVendor()->TESTING, transition() เช็ค 'COMPLETED') ถ้าเปลี่ยนชื่อ
+-- code จะพังทันที — ห้ามแก้ชื่อ step_code ทั้ง 4 นี้เด็ดขาดโดยไม่แก้โค้ด backend คู่กัน
 SET @st_draft     = UUID();
 SET @st_submitted = UUID();
 SET @st_received  = UUID();
-SET @st_review    = UUID();
-SET @st_diagnosis = UUID();
 SET @st_vendor    = UUID();
 SET @st_waitparts = UUID();
-SET @st_repairing = UUID();
 SET @st_testing   = UUID();
 SET @st_completed = UUID();
-SET @st_returned  = UUID();
 SET @st_accepted  = UUID();
 SET @st_closed    = UUID();
 SET @st_cancelled = UUID();
 
 INSERT INTO `workflow_steps`
   (`id`, `template_id`, `step_code`, `step_name_th`, `step_name_en`, `step_order`, `responsible_role_id`, `sla_hours`, `requires_approval`, `color_code`, `is_terminal`) VALUES
-(@st_draft,     @wf_internal, 'DRAFT',        'ร่าง',                 'Draft',              0, @role_user,       NULL, 0, '#9CA3AF', 0),
-(@st_submitted, @wf_internal, 'SUBMITTED',    'แจ้งซ่อมแล้ว',          'Submitted',          1, @role_user,       2,    0, '#3B82F6', 0),
-(@st_received,  @wf_internal, 'RECEIVED',     'รับเรื่องแล้ว',         'Received',           2, @role_it_officer, 4,    0, '#6366F1', 0),
-(@st_review,    @wf_internal, 'IT_REVIEW',    'ตรวจสอบเบื้องต้น',      'IT Review',          3, @role_it_officer, 8,    0, '#6366F1', 0),
-(@st_diagnosis, @wf_internal, 'DIAGNOSIS',    'วิเคราะห์ปัญหา',        'Diagnosis',          4, @role_technician, 24,   0, '#8B5CF6', 0),
-(@st_vendor,    @wf_internal, 'VENDOR_REPAIR','ส่งซ่อมภายนอก',         'Vendor Repair',      5, @role_it_officer, 240,  0, '#F97316', 0),
-(@st_waitparts, @wf_internal, 'WAITING_PARTS','รออะไหล่',              'Waiting Spare Parts',6, @role_technician, NULL, 0, '#F59E0B', 0),
-(@st_repairing, @wf_internal, 'REPAIRING',    'กำลังซ่อม',             'Repair In Progress', 7, @role_technician, 48,   0, '#06B6D4', 0),
-(@st_testing,   @wf_internal, 'TESTING',      'ทดสอบระบบ',             'Testing',            8, @role_technician, 8,    0, '#06B6D4', 0),
-(@st_completed, @wf_internal, 'COMPLETED',    'ซ่อมเสร็จสิ้น',         'Completed',          9, @role_technician, 4,    0, '#22C55E', 0),
-(@st_returned,  @wf_internal, 'RETURNED',     'คืนอุปกรณ์แล้ว',        'Returned to User',   10, @role_it_officer, 24,   0, '#14B8A6', 0),
-(@st_accepted,  @wf_internal, 'USER_ACCEPTANCE','ผู้แจ้งรับมอบ',       'User Acceptance',    11, @role_user,      48,   1, '#14B8A6', 0),
-(@st_closed,    @wf_internal, 'CLOSED',       'ปิดงาน',                'Closed',             12, @role_it_officer, NULL, 0, '#166534', 1),
-(@st_cancelled, @wf_internal, 'CANCELLED',    'ยกเลิก',                'Cancelled',          99, NULL,             NULL, 0, '#EF4444', 1);
+(@st_draft,     @wf_internal, 'DRAFT',        'ร่าง',                          'Draft',                    0, @role_user,       NULL, 0, '#9CA3AF', 0),
+(@st_submitted, @wf_internal, 'SUBMITTED',    'แจ้งซ่อมแล้ว',                   'Submitted',                1, @role_user,       2,    0, '#3B82F6', 0),
+(@st_received,  @wf_internal, 'RECEIVED',     'รับเรื่อง/ตรวจสอบ/วิเคราะห์ปัญหา', 'Received / Diagnosis',    2, @role_it_officer, 36,   0, '#6366F1', 0),
+(@st_waitparts, @wf_internal, 'WAITING_PARTS','รออะไหล่',                       'Waiting Spare Parts',     3, @role_technician, NULL, 0, '#F59E0B', 0),
+(@st_vendor,    @wf_internal, 'VENDOR_REPAIR','ส่งซ่อมภายนอก',                  'Vendor Repair',           4, @role_it_officer, 240,  0, '#F97316', 0),
+(@st_testing,   @wf_internal, 'TESTING',      'กำลังซ่อม/ทดสอบระบบ',            'Repairing / Testing',     5, @role_technician, 56,   0, '#06B6D4', 0),
+(@st_completed, @wf_internal, 'COMPLETED',    'ซ่อมเสร็จสิ้น/คืนอุปกรณ์แล้ว',    'Completed / Returned',    6, @role_it_officer, 28,   0, '#22C55E', 0),
+(@st_accepted,  @wf_internal, 'USER_ACCEPTANCE','ผู้แจ้งรับมอบ',                'User Acceptance',         7, @role_user,       48,   1, '#14B8A6', 0),
+(@st_closed,    @wf_internal, 'CLOSED',       'ปิดงาน',                        'Closed',                  8, @role_it_officer, NULL, 0, '#166534', 1),
+(@st_cancelled, @wf_internal, 'CANCELLED',    'ยกเลิก',                        'Cancelled',                99, NULL,             NULL, 0, '#EF4444', 1);
 
 INSERT INTO `workflow_transitions` (`id`, `template_id`, `from_step_id`, `to_step_id`, `condition_key`, `label`) VALUES
 (UUID(), @wf_internal, NULL,           @st_submitted, NULL, 'ผู้ใช้แจ้งซ่อม'),
 (UUID(), @wf_internal, @st_submitted,  @st_received,  NULL, 'ไอทีรับเรื่อง'),
-(UUID(), @wf_internal, @st_received,   @st_review,    NULL, 'ตรวจสอบเบื้องต้น'),
-(UUID(), @wf_internal, @st_review,     @st_diagnosis, NULL, 'มอบหมายช่างวิเคราะห์'),
-(UUID(), @wf_internal, @st_diagnosis,  @st_waitparts, 'NEED_PARTS', 'ต้องรออะไหล่'),
-(UUID(), @wf_internal, @st_diagnosis,  @st_repairing, 'READY_REPAIR', 'ซ่อมได้ทันที'),
-(UUID(), @wf_internal, @st_diagnosis,  @st_vendor,    'SEND_EXTERNAL', 'ส่งซ่อมภายนอก'),
+(UUID(), @wf_internal, @st_received,   @st_waitparts, 'NEED_PARTS', 'ต้องรออะไหล่'),
+(UUID(), @wf_internal, @st_received,   @st_testing,   'READY_REPAIR', 'ซ่อมได้ทันที'),
+(UUID(), @wf_internal, @st_received,   @st_vendor,    'SEND_EXTERNAL', 'ส่งซ่อมภายนอก'),
 (UUID(), @wf_internal, @st_vendor,     @st_testing,   NULL, 'รับเครื่องคืนจากร้าน ทดสอบ'),
 (UUID(), @wf_internal, @st_vendor,     @st_cancelled, 'CANCEL', 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล'),
-(UUID(), @wf_internal, @st_waitparts,  @st_repairing, NULL, 'อะไหล่พร้อม เริ่มซ่อม'),
-(UUID(), @wf_internal, @st_repairing,  @st_testing,   NULL, 'ซ่อมเสร็จ รอทดสอบ'),
+(UUID(), @wf_internal, @st_waitparts,  @st_testing,   NULL, 'อะไหล่พร้อม เริ่มซ่อม'),
 (UUID(), @wf_internal, @st_testing,    @st_completed, NULL, 'ทดสอบผ่าน'),
-(UUID(), @wf_internal, @st_completed,  @st_returned,  NULL, 'คืนอุปกรณ์ให้ผู้ใช้'),
-(UUID(), @wf_internal, @st_returned,   @st_accepted,  NULL, 'ผู้ใช้ตรวจรับ'),
+(UUID(), @wf_internal, @st_completed,  @st_accepted,  NULL, 'คืนอุปกรณ์ให้ผู้ใช้ ผู้ใช้ตรวจรับ'),
 (UUID(), @wf_internal, @st_accepted,   @st_closed,    NULL, 'ปิดงาน'),
 (UUID(), @wf_internal, @st_submitted,  @st_cancelled, 'CANCEL', 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล'),
-(UUID(), @wf_internal, @st_received,   @st_cancelled, 'CANCEL', 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล'),
-(UUID(), @wf_internal, @st_review,     @st_cancelled, 'CANCEL', 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล');
+(UUID(), @wf_internal, @st_received,   @st_cancelled, 'CANCEL', 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล');
 
 -- =====================================================================================
 -- 9. SYSTEM SETTINGS (defaults)

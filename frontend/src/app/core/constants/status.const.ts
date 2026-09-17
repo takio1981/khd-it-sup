@@ -1,4 +1,9 @@
-/** ต้องตรงกับ backend/src/common/constants/statusColor.const.ts เสมอ */
+/** ต้องตรงกับ backend/src/common/constants/statusColor.const.ts เสมอ
+ * หมายเหตุ workflow v2 (2026-09-17): รวม RECEIVED+IT_REVIEW+DIAGNOSIS เป็น RECEIVED เดียว,
+ * REPAIRING+TESTING เป็น TESTING เดียว, COMPLETED+RETURNED เป็น COMPLETED เดียว — คง entry เดิมของ
+ * IT_REVIEW/DIAGNOSIS/REPAIRING/RETURNED ไว้ในนี้ (ไม่ลบ) เพราะใบแจ้งซ่อมเก่าที่ยังค้างอยู่ใน v1
+ * (workflow_templates.version=1, is_active=0) และ Timeline ประวัติของใบที่ปิดไปแล้วยังอ้าง step_code
+ * เหล่านี้อยู่ ต้องมีสี/label ให้ render ถูกต้อง แม้จะไม่ใช่ step ที่ใบใหม่จะไปถึงอีกแล้วก็ตาม */
 export const STATUS_COLORS: Record<string, string> = {
   DRAFT: '#9CA3AF',
   SUBMITTED: '#3B82F6',
@@ -9,7 +14,7 @@ export const STATUS_COLORS: Record<string, string> = {
   WAITING_PARTS: '#F59E0B',
   REPAIRING: '#06B6D4',
   TESTING: '#06B6D4',
-  VENDOR_REPAIR: '#EA580C',
+  VENDOR_REPAIR: '#F97316',
   COMPLETED: '#22C55E',
   RETURNED: '#14B8A6',
   USER_ACCEPTANCE: '#14B8A6',
@@ -30,15 +35,15 @@ export const STATUS_COLORS: Record<string, string> = {
 export const STATUS_LABEL_TH: Record<string, string> = {
   DRAFT: 'ร่าง',
   SUBMITTED: 'แจ้งซ่อมแล้ว',
-  RECEIVED: 'รับเรื่องแล้ว',
+  RECEIVED: 'รับเรื่อง/ตรวจสอบ/วิเคราะห์ปัญหา',
   IT_REVIEW: 'ตรวจสอบเบื้องต้น',
   DIAGNOSIS: 'วิเคราะห์ปัญหา',
   WAITING_APPROVAL: 'รออนุมัติ',
   WAITING_PARTS: 'รออะไหล่',
   REPAIRING: 'กำลังซ่อม',
-  TESTING: 'ทดสอบระบบ',
-  VENDOR_REPAIR: 'ซ่อมภายนอก',
-  COMPLETED: 'ซ่อมเสร็จสิ้น',
+  TESTING: 'กำลังซ่อม/ทดสอบระบบ',
+  VENDOR_REPAIR: 'ส่งซ่อมภายนอก',
+  COMPLETED: 'ซ่อมเสร็จสิ้น/คืนอุปกรณ์แล้ว',
   RETURNED: 'คืนอุปกรณ์แล้ว',
   USER_ACCEPTANCE: 'ผู้แจ้งรับมอบ',
   CLOSED: 'ปิดงาน',

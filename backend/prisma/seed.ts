@@ -96,38 +96,46 @@ const ASSET_CATEGORIES: { code: string; nameTh: string; nameEn: string; icon: st
   { code: 'OTHER', nameTh: 'ครุภัณฑ์อื่นๆ', nameEn: 'Other Equipment', icon: 'CubeIcon', requiresSerial: false },
 ];
 
+// ต้อง sync กับ database/seed.sql § 8 WORKFLOW: REPAIR_INTERNAL เสมอ (แหล่งความจริงที่ dev/prod ใช้ผ่าน
+// docker-compose — ไฟล์นี้ใช้เฉพาะตอนรัน `npm run seed` นอก Docker) เคยไม่ตรงกันมาก่อน (ขาด step VENDOR_REPAIR
+// ไปทั้ง step ทำให้ฟีเจอร์ส่งซ่อมภายนอกพังถ้าใครรันไฟล์นี้) — v2 (2026-09-17) รวม RECEIVED+IT_REVIEW+DIAGNOSIS
+// เป็น RECEIVED เดียว, REPAIRING+TESTING เป็น TESTING เดียว, COMPLETED+RETURNED เป็น COMPLETED เดียว คง
+// step_code เดิมของ step ที่รอดไว้เป๊ะ (RECEIVED/TESTING/COMPLETED/VENDOR_REPAIR) เพราะ repairTicket.service.ts
+// hardcode ชื่อเหล่านี้เป็น string literal ตรงๆ หลายจุด — ห้ามเปลี่ยนโดยไม่แก้โค้ด backend คู่กัน
 const WORKFLOW_STEPS = [
   { code: 'DRAFT', th: 'ร่าง', en: 'Draft', order: 0, role: 'USER', sla: null, color: '#9CA3AF', terminal: false },
   { code: 'SUBMITTED', th: 'แจ้งซ่อมแล้ว', en: 'Submitted', order: 1, role: 'USER', sla: 2, color: '#3B82F6', terminal: false },
-  { code: 'RECEIVED', th: 'รับเรื่องแล้ว', en: 'Received', order: 2, role: 'IT_OFFICER', sla: 4, color: '#6366F1', terminal: false },
-  { code: 'IT_REVIEW', th: 'ตรวจสอบเบื้องต้น', en: 'IT Review', order: 3, role: 'IT_OFFICER', sla: 8, color: '#6366F1', terminal: false },
-  { code: 'DIAGNOSIS', th: 'วิเคราะห์ปัญหา', en: 'Diagnosis', order: 4, role: 'TECHNICIAN', sla: 24, color: '#8B5CF6', terminal: false },
-  { code: 'WAITING_PARTS', th: 'รออะไหล่', en: 'Waiting Spare Parts', order: 5, role: 'TECHNICIAN', sla: null, color: '#F59E0B', terminal: false },
-  { code: 'REPAIRING', th: 'กำลังซ่อม', en: 'Repair In Progress', order: 6, role: 'TECHNICIAN', sla: 48, color: '#06B6D4', terminal: false },
-  { code: 'TESTING', th: 'ทดสอบระบบ', en: 'Testing', order: 7, role: 'TECHNICIAN', sla: 8, color: '#06B6D4', terminal: false },
-  { code: 'COMPLETED', th: 'ซ่อมเสร็จสิ้น', en: 'Completed', order: 8, role: 'TECHNICIAN', sla: 4, color: '#22C55E', terminal: false },
-  { code: 'RETURNED', th: 'คืนอุปกรณ์แล้ว', en: 'Returned to User', order: 9, role: 'IT_OFFICER', sla: 24, color: '#14B8A6', terminal: false },
-  { code: 'USER_ACCEPTANCE', th: 'ผู้แจ้งรับมอบ', en: 'User Acceptance', order: 10, role: 'USER', sla: 48, color: '#14B8A6', terminal: false, approval: true },
-  { code: 'CLOSED', th: 'ปิดงาน', en: 'Closed', order: 11, role: 'IT_OFFICER', sla: null, color: '#166534', terminal: true },
+  { code: 'RECEIVED', th: 'รับเรื่อง/ตรวจสอบ/วิเคราะห์ปัญหา', en: 'Received / Diagnosis', order: 2, role: 'IT_OFFICER', sla: 36, color: '#6366F1', terminal: false },
+  { code: 'WAITING_PARTS', th: 'รออะไหล่', en: 'Waiting Spare Parts', order: 3, role: 'TECHNICIAN', sla: null, color: '#F59E0B', terminal: false },
+  { code: 'VENDOR_REPAIR', th: 'ส่งซ่อมภายนอก', en: 'Vendor Repair', order: 4, role: 'IT_OFFICER', sla: 240, color: '#F97316', terminal: false },
+  { code: 'TESTING', th: 'กำลังซ่อม/ทดสอบระบบ', en: 'Repairing / Testing', order: 5, role: 'TECHNICIAN', sla: 56, color: '#06B6D4', terminal: false },
+  { code: 'COMPLETED', th: 'ซ่อมเสร็จสิ้น/คืนอุปกรณ์แล้ว', en: 'Completed / Returned', order: 6, role: 'IT_OFFICER', sla: 28, color: '#22C55E', terminal: false },
+  { code: 'USER_ACCEPTANCE', th: 'ผู้แจ้งรับมอบ', en: 'User Acceptance', order: 7, role: 'USER', sla: 48, color: '#14B8A6', terminal: false, approval: true },
+  { code: 'CLOSED', th: 'ปิดงาน', en: 'Closed', order: 8, role: 'IT_OFFICER', sla: null, color: '#166534', terminal: true },
   { code: 'CANCELLED', th: 'ยกเลิก', en: 'Cancelled', order: 99, role: null, sla: null, color: '#EF4444', terminal: true },
 ] as const;
 
-const WORKFLOW_TRANSITIONS: [string | null, string, string?][] = [
-  [null, 'SUBMITTED', 'ผู้ใช้แจ้งซ่อม'],
-  ['SUBMITTED', 'RECEIVED', 'ไอทีรับเรื่อง'],
-  ['RECEIVED', 'IT_REVIEW', 'ตรวจสอบเบื้องต้น'],
-  ['IT_REVIEW', 'DIAGNOSIS', 'มอบหมายช่างวิเคราะห์'],
-  ['DIAGNOSIS', 'WAITING_PARTS', 'ต้องรออะไหล่'],
-  ['DIAGNOSIS', 'REPAIRING', 'ซ่อมได้ทันที'],
-  ['WAITING_PARTS', 'REPAIRING', 'อะไหล่พร้อม เริ่มซ่อม'],
-  ['REPAIRING', 'TESTING', 'ซ่อมเสร็จ รอทดสอบ'],
-  ['TESTING', 'COMPLETED', 'ทดสอบผ่าน'],
-  ['COMPLETED', 'RETURNED', 'คืนอุปกรณ์ให้ผู้ใช้'],
-  ['RETURNED', 'USER_ACCEPTANCE', 'ผู้ใช้ตรวจรับ'],
-  ['USER_ACCEPTANCE', 'CLOSED', 'ปิดงาน'],
-  ['SUBMITTED', 'CANCELLED', 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล'],
-  ['RECEIVED', 'CANCELLED', 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล'],
-  ['IT_REVIEW', 'CANCELLED', 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล'],
+interface IWorkflowTransitionSeed {
+  from: string | null;
+  to: string;
+  label?: string;
+  conditionKey?: string;
+}
+
+const WORKFLOW_TRANSITIONS: IWorkflowTransitionSeed[] = [
+  { from: null, to: 'SUBMITTED', label: 'ผู้ใช้แจ้งซ่อม' },
+  { from: 'SUBMITTED', to: 'RECEIVED', label: 'ไอทีรับเรื่อง' },
+  { from: 'RECEIVED', to: 'WAITING_PARTS', label: 'ต้องรออะไหล่', conditionKey: 'NEED_PARTS' },
+  { from: 'RECEIVED', to: 'TESTING', label: 'ซ่อมได้ทันที', conditionKey: 'READY_REPAIR' },
+  { from: 'RECEIVED', to: 'VENDOR_REPAIR', label: 'ส่งซ่อมภายนอก', conditionKey: 'SEND_EXTERNAL' },
+  { from: 'VENDOR_REPAIR', to: 'TESTING', label: 'รับเครื่องคืนจากร้าน ทดสอบ' },
+  { from: 'VENDOR_REPAIR', to: 'CANCELLED', label: 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล', conditionKey: 'CANCEL' },
+  { from: 'WAITING_PARTS', to: 'TESTING', label: 'อะไหล่พร้อม เริ่มซ่อม' },
+  { from: 'TESTING', to: 'COMPLETED', label: 'ทดสอบผ่าน' },
+  { from: 'COMPLETED', to: 'USER_ACCEPTANCE', label: 'คืนอุปกรณ์ให้ผู้ใช้ ผู้ใช้ตรวจรับ' },
+  { from: 'USER_ACCEPTANCE', to: 'CLOSED', label: 'ปิดงาน' },
+  { from: 'SUBMITTED', to: 'CANCELLED', label: 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล', conditionKey: 'CANCEL' },
+  { from: 'RECEIVED', to: 'CANCELLED', label: 'ยกเลิกโดยผู้แจ้ง/ผู้ดูแล', conditionKey: 'CANCEL' },
 ];
 
 async function main(): Promise<void> {
@@ -275,7 +283,7 @@ async function main(): Promise<void> {
 
   const existingTransitions = await prisma.workflowTransition.findMany({ where: { templateId: template.id } });
   if (existingTransitions.length === 0) {
-    for (const [from, to, label] of WORKFLOW_TRANSITIONS) {
+    for (const { from, to, label, conditionKey } of WORKFLOW_TRANSITIONS) {
       await prisma.workflowTransition.create({
         data: {
           id: randomUUID(),
@@ -283,6 +291,7 @@ async function main(): Promise<void> {
           fromStepId: from ? stepIdByCode.get(from) : null,
           toStepId: stepIdByCode.get(to)!,
           label,
+          conditionKey,
         },
       });
     }

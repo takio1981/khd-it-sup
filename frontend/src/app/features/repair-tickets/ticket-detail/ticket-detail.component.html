@@ -36,14 +36,32 @@
             <khd-icon name="chevron-down" [size]="20" />
           </button>
           <mat-menu #actionMenu="matMenu">
-            <button mat-menu-item *khdHasPermission="'document:print'" (click)="openPrintPreview()">
-              <khd-icon name="printer" [size]="16" class="!mr-2" />พิมพ์ใบแจ้งซ่อม
-            </button>
+            <div class="px-3 pt-2 pb-1 text-xs font-medium text-neutral-400 select-none">เปลี่ยนสถานะ</div>
             @if (canReceive()) {
               <button mat-menu-item *khdHasPermission="'ticket:receive'" (click)="receive()">
                 <khd-icon name="clipboard-document-list" [size]="16" class="!mr-2" />รับเรื่อง
               </button>
             }
+            @for (tr of availableTransitions(); track tr.toStep.id) {
+              <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="transition(tr.toStep.stepCode, tr.conditionKey)">
+                <khd-icon name="arrow-path" [size]="16" class="!mr-2" />{{ tr.label ?? ('ไปยัง ' + tr.toStep.stepNameTh) }}
+              </button>
+            }
+            <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="openInspectionDialog()">
+              <khd-icon name="clipboard-document-list" [size]="16" class="!mr-2" />บันทึกผลตรวจสอบเบื้องต้น
+            </button>
+            @if (canClose() && (hasFullClosePermission() || isOwnTicketReporter())) {
+              <button mat-menu-item *khdHasPermission="['ticket:close', 'ticket:accept']" (click)="openAcceptDialog()">
+                <khd-icon name="check-circle" [size]="16" class="!mr-2" />
+                {{ hasFullClosePermission() ? 'ปิดงาน' : 'เซ็นรับงาน' }}
+              </button>
+            }
+
+            <mat-divider />
+            <div class="px-3 pt-2 pb-1 text-xs font-medium text-neutral-400 select-none">การดำเนินการอื่น</div>
+            <button mat-menu-item *khdHasPermission="'document:print'" (click)="openPrintPreview()">
+              <khd-icon name="printer" [size]="16" class="!mr-2" />พิมพ์ใบแจ้งซ่อม
+            </button>
             <button mat-menu-item *khdHasPermission="'ticket:assign'" (click)="openAssignDialog()">
               <khd-icon name="users" [size]="16" class="!mr-2" />มอบหมายช่าง
             </button>
@@ -55,28 +73,18 @@
                 <khd-icon name="building-office-2" [size]="16" class="!mr-2" />สร้างใบส่งซ่อมภายนอก
               </button>
             }
-            @for (tr of availableTransitions(); track tr.toStep.id) {
-              <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="transition(tr.toStep.stepCode, tr.conditionKey)">
-                <khd-icon name="arrow-path" [size]="16" class="!mr-2" />{{ tr.label ?? ('ไปยัง ' + tr.toStep.stepNameTh) }}
-              </button>
-            }
-            <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="openInspectionDialog()">
-              <khd-icon name="clipboard-document-list" [size]="16" class="!mr-2" />บันทึกผลตรวจสอบเบื้องต้น
-            </button>
             @if (canApproveDigitalHealthHead()) {
               <button mat-menu-item *khdHasPermission="'ticket:approve'" (click)="approveDigitalHealthHead()">
                 <khd-icon name="pencil-square" [size]="16" class="!mr-2" />ลงนามอนุมัติ (หัวหน้ากลุ่มงานสุขภาพดิจิทัล)
               </button>
             }
-            @if (canClose() && (hasFullClosePermission() || isOwnTicketReporter())) {
-              <button mat-menu-item *khdHasPermission="['ticket:close', 'ticket:accept']" (click)="openAcceptDialog()">
-                <khd-icon name="check-circle" [size]="16" class="!mr-2" />
-                {{ hasFullClosePermission() ? 'ปิดงาน' : 'เซ็นรับงาน' }}
+
+            @if (canCancel()) {
+              <mat-divider />
+              <button mat-menu-item *khdHasPermission="'ticket:cancel'" (click)="openCancelDialog()" class="!text-red-600">
+                <khd-icon name="x-circle" [size]="16" class="!mr-2" />ยกเลิกงาน
               </button>
             }
-            <button mat-menu-item *khdHasPermission="'ticket:cancel'" (click)="openCancelDialog()" class="!text-red-600">
-              <khd-icon name="x-circle" [size]="16" class="!mr-2" />ยกเลิกงาน
-            </button>
           </mat-menu>
         </div>
       </div>

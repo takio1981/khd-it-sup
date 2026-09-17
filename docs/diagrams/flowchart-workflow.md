@@ -1,29 +1,32 @@
 # Flowchart — Repair Workflow
 
-## Internal Repair (✅ Implemented — `workflow_templates.code = 'REPAIR_INTERNAL'`)
+## Internal Repair (✅ Implemented — `workflow_templates.code = 'REPAIR_INTERNAL'`, version 2)
 
 ตรงกับข้อมูลจริงใน `database/seed.sql` (workflow_steps + workflow_transitions) — ทดสอบ lifecycle เต็มแล้ว (ดู [00-roadmap.md](../00-roadmap.md))
+
+> **v2 (2026-09-17)**: ลดจำนวนขั้นตอนจาก 11 เหลือ 7 ขั้นตอนหลัก โดยรวม RECEIVED+IT_REVIEW+DIAGNOSIS เป็น
+> RECEIVED เดียว, REPAIRING+TESTING เป็น TESTING เดียว, COMPLETED+RETURNED เป็น COMPLETED เดียว — คง step_code
+> เดิมของ step ที่รอดไว้ (RECEIVED/TESTING/COMPLETED/VENDOR_REPAIR) เพราะ backend hardcode ชื่อเหล่านี้ไว้ตรงๆ
+> ใบแจ้งซ่อมที่ค้างอยู่ก่อนปรับ (workflow version 1, ปิดใช้งานแล้ว) ยังดำเนินการต่อได้ปกติจนปิดงาน
 
 ```mermaid
 flowchart TD
     Start([ผู้ใช้แจ้งซ่อม]) --> Submitted[แจ้งซ่อมแล้ว<br/>SUBMITTED — SLA 2 ชม.]
-    Submitted --> Received[รับเรื่องแล้ว<br/>RECEIVED — SLA 4 ชม.]
-    Received --> ITReview[ตรวจสอบเบื้องต้น<br/>IT_REVIEW — SLA 8 ชม.]
-    ITReview --> Diagnosis[วิเคราะห์ปัญหา<br/>DIAGNOSIS — SLA 24 ชม.]
+    Submitted --> Received[รับเรื่อง/ตรวจสอบ/วิเคราะห์ปัญหา<br/>RECEIVED — SLA 36 ชม.]
 
-    Diagnosis -- NEED_PARTS --> WaitingParts[รออะไหล่<br/>WAITING_PARTS]
-    Diagnosis -- READY_REPAIR --> Repairing[กำลังซ่อม<br/>REPAIRING — SLA 48 ชม.]
-    WaitingParts --> Repairing
+    Received -- NEED_PARTS --> WaitingParts[รออะไหล่<br/>WAITING_PARTS]
+    Received -- READY_REPAIR --> Testing[กำลังซ่อม/ทดสอบระบบ<br/>TESTING — SLA 56 ชม.]
+    Received -- SEND_EXTERNAL --> VendorRepair[ส่งซ่อมภายนอก<br/>VENDOR_REPAIR — SLA 240 ชม.]
+    WaitingParts --> Testing
+    VendorRepair --> Testing
 
-    Repairing --> Testing[ทดสอบระบบ<br/>TESTING — SLA 8 ชม.]
-    Testing --> Completed[ซ่อมเสร็จสิ้น<br/>COMPLETED — SLA 4 ชม.]
-    Completed --> Returned[คืนอุปกรณ์แล้ว<br/>RETURNED — SLA 24 ชม.]
-    Returned --> UserAcceptance[ผู้แจ้งรับมอบ<br/>USER_ACCEPTANCE — SLA 48 ชม. — ต้อง approval]
+    Testing --> Completed[ซ่อมเสร็จสิ้น/คืนอุปกรณ์แล้ว<br/>COMPLETED — SLA 28 ชม.]
+    Completed --> UserAcceptance[ผู้แจ้งรับมอบ<br/>USER_ACCEPTANCE — SLA 48 ชม. — ต้อง approval]
     UserAcceptance --> Closed([ปิดงาน<br/>CLOSED])
 
     Submitted -. CANCEL .-> Cancelled([ยกเลิก<br/>CANCELLED])
     Received -. CANCEL .-> Cancelled
-    ITReview -. CANCEL .-> Cancelled
+    VendorRepair -. CANCEL .-> Cancelled
 
     classDef terminal fill:#166534,color:#fff,stroke:none
     classDef cancel fill:#EF4444,color:#fff,stroke:none

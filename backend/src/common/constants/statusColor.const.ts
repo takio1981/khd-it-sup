@@ -1,6 +1,8 @@
 /**
  * สีมาตรฐานของสถานะงานซ่อม ใช้ทั้งฝั่ง Backend (เอกสาร/PDF) และส่งให้ Frontend แสดงผล Timeline/Kanban
  * ตรงตามสเปกหัวข้อ "Status Color" — เป็น fallback เมื่อ workflow_steps.color_code ไม่ได้ถูกตั้งค่า
+ * ต้องตรงกับ frontend/src/app/core/constants/status.const.ts เสมอ — คง entry ของ step ที่ถูกรวมไปแล้วใน
+ * workflow v2 (IT_REVIEW/DIAGNOSIS/REPAIRING/RETURNED) ไว้ ไม่ลบ เพราะใบแจ้งซ่อมเก่า/Timeline ประวัติยังอ้างอยู่
  */
 export const STATUS_COLORS: Record<string, string> = {
   DRAFT: '#9CA3AF',
@@ -12,7 +14,7 @@ export const STATUS_COLORS: Record<string, string> = {
   WAITING_PARTS: '#F59E0B',
   REPAIRING: '#06B6D4',
   TESTING: '#06B6D4',
-  VENDOR_REPAIR: '#EA580C',
+  VENDOR_REPAIR: '#F97316',
   COMPLETED: '#22C55E',
   RETURNED: '#14B8A6',
   USER_ACCEPTANCE: '#14B8A6',

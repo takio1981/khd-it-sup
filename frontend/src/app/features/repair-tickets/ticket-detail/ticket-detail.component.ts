@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -80,6 +81,7 @@ const VENDOR_ORDER_STATUS_LABEL_TH: Record<string, string> = {
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatMenuModule,
+    MatDividerModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -149,6 +151,17 @@ export class TicketDetailComponent {
 
   readonly canReceive = computed(() => this.ticket()?.status === 'SUBMITTED');
   readonly canClose = computed(() => this.ticket()?.status === 'USER_ACCEPTANCE');
+  /** ยกเลิกได้เฉพาะสถานะที่มี transition ไป CANCELLED จริงตาม workflow เท่านั้น (data-driven ไม่ hardcode
+   * รายชื่อสถานะเอง เพราะใบเก่าที่ค้างอยู่ใน workflow เวอร์ชันก่อนหน้าอาจมีกติกายกเลิกต่างจากใบใหม่) — ป้องกัน
+   * ปุ่ม "ยกเลิกงาน" โชว์ตลอดแม้กดแล้วจะโดน backend ปฏิเสธเสมอ (ผู้ใช้ไม่รู้เหตุผลว่าทำไมยกเลิกไม่ได้) */
+  readonly canCancel = computed(() => {
+    const t = this.ticket();
+    if (!t?.workflowInstance) return false;
+    const currentStepId = t.workflowInstance.currentStep.id;
+    const cancelledStep = t.workflowInstance.template.steps.find((s) => s.stepCode === 'CANCELLED');
+    if (!cancelledStep) return false;
+    return t.workflowInstance.template.transitions.some((tr) => tr.fromStepId === currentStepId && tr.toStepId === cancelledStep.id);
+  });
   readonly hasFullClosePermission = computed(() => this.authService.hasAnyPermission(['ticket:close']));
   readonly isOwnTicketReporter = computed(
     () => !!this.ticket() && this.ticket()!.reportedBy.id === this.authService.currentUser()?.id,

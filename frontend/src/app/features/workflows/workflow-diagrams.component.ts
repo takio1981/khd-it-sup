@@ -75,17 +75,13 @@ const TICKET_DIAGRAM = `flowchart TD
   DUPCHECK{"ครุภัณฑ์นี้มีใบแจ้งซ่อม<br/>ที่ยังไม่ปิดงานอยู่แล้วหรือไม่?"}
   BLOCK(["ระบบบล็อกการแจ้งซ้ำ<br/>แสดงเลขที่ใบเดิม + สถานะล่าสุด"])
   SUBMITTED["แจ้งซ่อมแล้ว (SUBMITTED)<br/>ออกเลขที่ใบอัตโนมัติ + แจ้งเตือนไอที"]
-  RECEIVED["รับเรื่องแล้ว (RECEIVED)"]
-  REVIEW["ตรวจสอบเบื้องต้น (IT_REVIEW)"]
+  RECEIVED["รับเรื่อง/ตรวจสอบ/วิเคราะห์ปัญหา (RECEIVED)"]
   ASSIGN[/"มอบหมายช่างเทคนิคผู้รับผิดชอบ<br/>(ทำได้ทุกขั้นตอน)"/]
-  DIAG["วิเคราะห์ปัญหา (DIAGNOSIS)"]
   OUTCOME{"ผลตรวจสอบ?"}
   PARTS["รออะไหล่ (WAITING_PARTS)"]
-  REPAIRING["กำลังซ่อม (REPAIRING)"]
   VENDOR["ส่งซ่อมภายนอก (VENDOR_REPAIR)<br/>ดูผัง SOP ส่งซ่อมภายนอก"]
-  TESTING["ทดสอบระบบ (TESTING)"]
-  COMPLETED["ซ่อมเสร็จสิ้น (COMPLETED)<br/>บันทึกสรุปผลการซ่อม (สาเหตุ/วิธีซ่อม)"]
-  RETURNED["คืนอุปกรณ์แล้ว (RETURNED)"]
+  TESTING["กำลังซ่อม/ทดสอบระบบ (TESTING)"]
+  COMPLETED["ซ่อมเสร็จสิ้น/คืนอุปกรณ์แล้ว (COMPLETED)<br/>บันทึกสรุปผลการซ่อม (สาเหตุ/วิธีซ่อม)"]
   ACCEPT["ผู้แจ้งรับมอบ (USER_ACCEPTANCE)"]
   CLOSED(["ปิดงาน (CLOSED)"])
   CANCELLED(["ยกเลิก (CANCELLED)"])
@@ -96,50 +92,40 @@ const TICKET_DIAGRAM = `flowchart TD
   DUPCHECK e2@-->|"มี"| BLOCK
   DUPCHECK e3@-->|"ไม่มี"| SUBMITTED
   SUBMITTED e4@-->|"ไอทีรับเรื่อง"| RECEIVED
-  RECEIVED e5@-->|"ตรวจสอบเบื้องต้น"| REVIEW
-  REVIEW e6@--> DIAG
-  RECEIVED e18@-.-> ASSIGN
-  SUBMITTED e19@-.-> SIGN1
-  DIAG e7@--> OUTCOME
-  OUTCOME e8@-->|"ซ่อมได้ทันที"| REPAIRING
+  RECEIVED e5@-.-> ASSIGN
+  SUBMITTED e6@-.-> SIGN1
+  RECEIVED e7@--> OUTCOME
+  OUTCOME e8@-->|"ซ่อมได้ทันที"| TESTING
   OUTCOME e9@-->|"ต้องรออะไหล่"| PARTS
   OUTCOME e10@-->|"เกินขีดความสามารถ"| VENDOR
-  DIAG e20@-.-> SIGN2
-  PARTS e11@-->|"อะไหล่พร้อม"| REPAIRING
-  REPAIRING e12@-->|"ซ่อมเสร็จ"| TESTING
+  RECEIVED e11@-.-> SIGN2
+  PARTS e12@-->|"อะไหล่พร้อม"| TESTING
   VENDOR e13@-->|"รับเครื่องคืนจากร้าน"| TESTING
   TESTING e14@-->|"ทดสอบผ่าน"| COMPLETED
-  COMPLETED e15@-->|"คืนอุปกรณ์ให้ผู้ใช้"| RETURNED
-  RETURNED e16@-->|"ผู้ใช้ตรวจรับ"| ACCEPT
-  ACCEPT e17@-->|"ปิดงาน"| CLOSED
-  SUBMITTED e21@-.->|"ยกเลิก"| CANCELLED
-  RECEIVED e22@-.->|"ยกเลิก"| CANCELLED
-  REVIEW e23@-.->|"ยกเลิก"| CANCELLED
-  VENDOR e24@-.->|"ยกเลิก"| CANCELLED
+  COMPLETED e15@-->|"คืนอุปกรณ์ให้ผู้ใช้ ผู้ใช้ตรวจรับ"| ACCEPT
+  ACCEPT e16@-->|"ปิดงาน"| CLOSED
+  SUBMITTED e17@-.->|"ยกเลิก"| CANCELLED
+  RECEIVED e18@-.->|"ยกเลิก"| CANCELLED
+  VENDOR e19@-.->|"ยกเลิก"| CANCELLED
   e1@{ animate: true }
   e2@{ animate: true }
   e3@{ animate: true }
   e4@{ animate: true }
-  e5@{ animate: true }
-  e6@{ animate: true }
+  e5@{ animate: true, animation: slow }
+  e6@{ animate: true, animation: slow }
   e7@{ animate: true }
   e8@{ animate: true }
   e9@{ animate: true }
   e10@{ animate: true }
-  e11@{ animate: true }
+  e11@{ animate: true, animation: slow }
   e12@{ animate: true }
   e13@{ animate: true }
   e14@{ animate: true }
   e15@{ animate: true }
   e16@{ animate: true }
-  e17@{ animate: true }
+  e17@{ animate: true, animation: slow }
   e18@{ animate: true, animation: slow }
-  e19@{ animate: true, animation: slow }
-  e20@{ animate: true, animation: slow }
-  e21@{ animate: true, animation: slow }
-  e22@{ animate: true, animation: slow }
-  e23@{ animate: true, animation: slow }
-  e24@{ animate: true, animation: slow }`;
+  e19@{ animate: true, animation: slow }`;
 
 const LOAN_DIAGRAM = `flowchart TD
   START(["สแกน QR หรือเลือกครุภัณฑ์ที่ต้องการยืม"])
@@ -406,9 +392,10 @@ export class WorkflowDiagramsComponent {
       description:
         'ตั้งแต่ผู้ใช้แจ้งซ่อมจนถึงปิดงาน ระบบตรวจสอบการแจ้งซ้ำซ้อนก่อนสร้างใบใหม่เสมอ และเสนอเฉพาะสถานะถัดไปที่เป็นไปได้จริงในแต่ละขั้น (ห้ามข้ามขั้นตอนที่ไม่ได้กำหนดไว้)',
       notes: [
-        'ยกเลิกงานได้เฉพาะช่วง "แจ้งซ่อมแล้ว / รับเรื่องแล้ว / ตรวจสอบเบื้องต้น / ส่งซ่อมภายนอก" เท่านั้น — หลังจากนั้นต้องดำเนินการต่อจนจบงาน',
+        'ยกเลิกงานได้เฉพาะช่วง "แจ้งซ่อมแล้ว / รับเรื่อง-ตรวจสอบ-วิเคราะห์ปัญหา / ส่งซ่อมภายนอก" เท่านั้น — หลังจากเริ่มซ่อมจริงแล้วต้องดำเนินการต่อจนจบงาน',
         'ทุกการเปลี่ยนสถานะบันทึกลง Timeline แบบถาวร แก้ไขหรือลบย้อนหลังไม่ได้ เพื่อความโปร่งใส',
         'ช่างเทคนิค/เจ้าหน้าที่ไอที แก้ไขสถานะ/ผลตรวจสอบ/สรุปผลได้เฉพาะใบที่ตนแจ้งเองหรือได้รับมอบหมายเท่านั้น ส่วนแอดมิน/ผู้ดูแลระบบสูงสุดทำได้ทุกใบ',
+        'ปรับลดจำนวนขั้นตอนจาก 11 เหลือ 7 ขั้นตอนหลัก (2026-09-17) โดยรวมขั้นตอนที่ใกล้เคียงกันเข้าด้วยกัน — ใบแจ้งซ่อมที่ค้างอยู่ก่อนปรับ (workflow เวอร์ชันเดิม) ยังดำเนินการต่อได้ตามปกติจนปิดงาน ไม่ถูกกระทบ',
       ],
       definition: TICKET_DIAGRAM,
     },
