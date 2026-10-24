@@ -6,9 +6,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserAvatarComponent } from '../../../shared/components/user-avatar/user-avatar.component';
 import { PinInputComponent } from '../../../shared/components/pin-input/pin-input.component';
-import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
+import { AuthLayoutComponent } from '../../../shared/components/auth-layout/auth-layout.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
-import { environment } from '../../../../environments/environment';
 
 /** อุปกรณ์นี้ใช้ PIN ต่อไม่ได้แล้ว — เคลียร์ marker แล้วสลับกลับฟอร์มรหัสผ่านให้ผู้ใช้เอง */
 const FALLBACK_ERROR_CODES = new Set(['PIN_REVOKED', 'PIN_EXPIRED', 'PIN_DEVICE_UNKNOWN', 'PIN_DEVICE_MISSING']);
@@ -24,7 +23,7 @@ const FALLBACK_ERROR_CODES = new Set(['PIN_REVOKED', 'PIN_EXPIRED', 'PIN_DEVICE_
     MatProgressSpinnerModule,
     UserAvatarComponent,
     PinInputComponent,
-    PageWatermarkComponent,
+    AuthLayoutComponent,
     IconComponent,
   ],
   templateUrl: './pin-login-form.component.html',
@@ -35,7 +34,6 @@ export class PinLoginFormComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly orgName = environment.orgNameTh;
 
   /** ให้ parent (LoginComponent) สลับกลับไปฟอร์ม user/password — message ไม่ null หมายถึงต้องแสดงเหตุผลด้วย */
   readonly usePassword = output<string | null>();

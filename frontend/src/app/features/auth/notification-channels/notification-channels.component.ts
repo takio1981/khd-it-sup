@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
-import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
-import { environment } from '../../../../environments/environment';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'khd-notification-channels',
@@ -15,12 +15,13 @@ import { environment } from '../../../../environments/environment';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    RouterLink,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    PageWatermarkComponent,
+    PageHeaderComponent,
+    LoadingStateComponent,
+    IconComponent,
   ],
   templateUrl: './notification-channels.component.html',
 })
@@ -28,7 +29,6 @@ export class NotificationChannelsComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
 
-  readonly orgName = environment.orgNameTh;
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly savedMessage = signal<string | null>(null);

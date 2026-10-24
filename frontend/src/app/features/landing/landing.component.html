@@ -1,54 +1,75 @@
-<div class="relative min-h-screen overflow-hidden flex flex-col items-center justify-center bg-brand-background dark:bg-neutral-950 px-4 py-12">
-  <div
-    class="pointer-events-none absolute inset-0 overflow-hidden flex items-center justify-center opacity-[0.16] dark:opacity-[0.22]"
-    aria-hidden="true"
-  >
-    <img src="logo-khd-it-sup-2.png" alt="" class="block w-[min(160vw,1100px)] max-w-none select-none" />
-  </div>
+<div class="min-h-screen bg-brand-background">
+  <header class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+    <div class="flex items-center gap-2.5">
+      <span class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white shadow-soft">
+        <img src="logo-khd-it-sup.png" alt="" class="h-full w-full object-cover" />
+      </span>
+      <span class="text-sm font-semibold text-ink">KHD-IT-SUP</span>
+    </div>
+    <a mat-stroked-button routerLink="/auth/login">เข้าสู่ระบบ</a>
+  </header>
 
-  <div class="relative z-10 w-full max-w-2xl text-center">
-    <img
-      src="logo-khd-it-sup-2.png"
-      alt="โลโก้ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์"
-      class="block mx-auto mb-6 h-36 w-36 md:h-40 md:w-40 rounded-full bg-white shadow-softLg ring-1 ring-black/5 dark:ring-white/10"
-    />
-
-    <h1 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white">ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์</h1>
-    <p class="text-base text-neutral-500 mt-1">{{ orgName }}</p>
-    <p class="text-sm text-neutral-500 mt-4 max-w-lg mx-auto">
-      แจ้งซ่อมอุปกรณ์ ติดตามสถานะงาน และจัดการยืม-คืนครุภัณฑ์ไอที ได้ในที่เดียว
-    </p>
-
-    <a routerLink="/auth/login" mat-flat-button color="primary" class="!mt-8 !h-12 !px-10 inline-flex items-center justify-center">
-      เข้าสู่ระบบ
-    </a>
-
-    <div class="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
-      <div class="khd-card !p-4 flex items-center gap-3">
-        <img src="logo1.png" alt="" class="h-11 w-11 rounded-full shrink-0" />
-        <div class="min-w-0">
-          <p class="text-sm font-medium">แจ้งซ่อม</p>
-          <p class="text-xs text-neutral-500">ติดตามสถานะงานซ่อมแบบเรียลไทม์</p>
-        </div>
-      </div>
-      <div class="khd-card !p-4 flex items-center gap-3">
-        <img src="logo2.png" alt="" class="h-11 w-11 rounded-full shrink-0" />
-        <div class="min-w-0">
-          <p class="text-sm font-medium">ยืม-คืนครุภัณฑ์</p>
-          <p class="text-xs text-neutral-500">บริหารการยืม-คืนอุปกรณ์ไอที</p>
-        </div>
-      </div>
-      <div class="khd-card !p-4 flex items-center gap-3">
-        <img src="logo3.png" alt="" class="h-11 w-11 rounded-full shrink-0" />
-        <div class="min-w-0">
-          <p class="text-sm font-medium">บริหารครุภัณฑ์</p>
-          <p class="text-xs text-neutral-500">ทะเบียนครุภัณฑ์และประวัติการใช้งาน</p>
-        </div>
+  <section class="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-6 sm:px-6 md:grid-cols-[1.1fr_0.9fr] md:pt-12">
+    <div class="text-center md:text-left">
+      <p class="m-0 text-sm font-medium text-brand-primary">IT Service Desk · {{ orgName }}</p>
+      <h1 class="m-0 mt-3 text-[32px] font-semibold leading-tight sm:text-[40px]">
+        ระบบแจ้งซ่อมอุปกรณ์<br class="hidden sm:block" />และระบบคอมพิวเตอร์
+      </h1>
+      <p class="m-0 mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted md:mx-0">
+        แจ้งซ่อมได้ภายในไม่กี่คลิก ติดตามทุกขั้นตอนจนรับเครื่องคืน และจัดการยืม-คืนครุภัณฑ์ไอทีของทุกหน่วยงานในที่เดียว
+      </p>
+      <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row md:justify-start">
+        <a mat-flat-button routerLink="/auth/login" class="!h-12 !px-8 !text-[15px]">เข้าสู่ระบบ</a>
+        <a mat-stroked-button routerLink="/qr/scanner" class="!h-12 !px-6">
+          <khd-icon name="qr-code" [size]="18" class="mr-2" />
+          สแกน QR แจ้งซ่อม / ยืม-คืน
+        </a>
       </div>
     </div>
-  </div>
 
-  <p class="relative z-10 text-center text-xs text-neutral-400 mt-10">
-    © สำนักงานสาธารณสุขจังหวัดนครราชสีมา — IT Service Desk
-  </p>
+    <div class="relative mx-auto aspect-square w-full max-w-[360px]">
+      <div class="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgb(var(--khd-primary)/0.16),transparent_68%)]"></div>
+      <img
+        src="logo-khd-it-sup-2.png"
+        alt="ตราสัญลักษณ์ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์"
+        class="relative block h-full w-full rounded-full bg-white object-cover p-3 shadow-softLg"
+      />
+    </div>
+  </section>
+
+  <section class="border-0 border-y border-solid border-line bg-surface">
+    <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+      <h2 class="m-0 text-xl font-semibold">ทุกงานไอทีที่หน่วยงานต้องใช้</h2>
+      <ul class="m-0 mt-8 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-5">
+        @for (f of features; track f.img) {
+          <li class="flex items-start gap-3 rounded-2xl border border-solid border-line p-4 lg:flex-col">
+            <span class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-soft">
+              <img [src]="'illust/' + f.img + '.webp'" alt="" class="h-full w-full object-cover" />
+            </span>
+            <div class="min-w-0">
+              <p class="m-0 text-sm font-semibold text-ink">{{ f.title }}</p>
+              <p class="m-0 mt-1 text-[13px] leading-relaxed text-muted">{{ f.text }}</p>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+    <h2 class="m-0 text-xl font-semibold">แจ้งซ่อมง่ายใน 3 ขั้นตอน</h2>
+    <ol class="m-0 mt-8 grid list-none gap-4 p-0 md:grid-cols-3">
+      @for (s of steps; track s.title; let i = $index) {
+        <li class="khd-card">
+          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary text-sm font-semibold text-white">{{ i + 1 }}</span>
+          <p class="m-0 mt-3 font-semibold text-ink">{{ s.title }}</p>
+          <p class="m-0 mt-1 text-sm text-muted">{{ s.text }}</p>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <footer class="border-0 border-t border-solid border-line py-6 text-center text-xs text-neutral-400">
+    © {{ year }} {{ orgName }} — IT Service Desk
+  </footer>
 </div>

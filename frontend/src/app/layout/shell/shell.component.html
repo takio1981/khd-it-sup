@@ -3,125 +3,146 @@
     [mode]="isMobile() ? 'over' : 'side'"
     [opened]="isMobile() ? sidenavOpened() : true"
     (openedChange)="sidenavOpened.set($event)"
-    class="!border-r-0 shadow-soft transition-[width] duration-200 ease-in-out"
+    class="!border-r-0 transition-[width] duration-200 ease-in-out"
     [class.!w-64]="isSidebarExpanded()"
     [class.!w-[72px]]="!isSidebarExpanded()"
   >
-    <div
-      class="flex h-16 items-center gap-2 px-4 border-b border-black/5 dark:border-white/10"
-      [class.justify-between]="isSidebarExpanded()"
-      [class.justify-center]="!isSidebarExpanded()"
-    >
-      <div class="flex items-center gap-2 min-w-0">
-        <img [src]="logoObjectUrl() || 'logo1.png'" alt="" class="block h-9 w-9 rounded-full shrink-0 object-cover" />
+    <div class="flex h-full flex-col">
+      <div class="flex h-16 shrink-0 items-center gap-3 px-4" [class.justify-center]="!isSidebarExpanded()">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+          <img [src]="logoObjectUrl() || 'logo1.png'" alt="" class="block h-full w-full object-cover" />
+        </span>
         @if (isSidebarExpanded()) {
-          <div class="min-w-0">
-            <p class="text-sm font-semibold leading-tight truncate">{{ appName }}</p>
-            <p class="text-[11px] text-neutral-500 truncate">IT Service Desk</p>
+          <div class="min-w-0 flex-1">
+            <p class="m-0 text-sm font-semibold leading-tight text-white">{{ appName }}</p>
+            <p class="m-0 text-[11px] leading-snug text-white/55 line-clamp-2">{{ orgName() }}</p>
           </div>
+          @if (isMobile()) {
+            <button mat-icon-button class="!text-white/70" (click)="sidenavOpened.set(false)" aria-label="ปิดเมนู">
+              <khd-icon name="x-mark" [size]="20" />
+            </button>
+          }
         }
       </div>
-      @if (isSidebarExpanded()) {
-        <ng-container *ngTemplateOutlet="pillGroup" />
-      }
-    </div>
 
-    <mat-nav-list class="!py-2">
-      @for (item of navItems(); track item.route) {
-        <a
-          mat-list-item
-          [routerLink]="item.route"
-          routerLinkActive="!bg-brand-primary/10 !text-brand-primary dark:!text-emerald-400 font-medium"
-          class="!rounded-lg !mx-2 !mb-1"
-          [matTooltip]="isSidebarExpanded() ? '' : item.label"
-          matTooltipPosition="right"
-        >
-          <span matListItemIcon class="relative inline-flex">
-            <khd-icon [name]="item.icon" [size]="20" />
-            @if (!isSidebarExpanded() && item.route === '/repair-tickets' && isStaffRole() && unviewedTicketCount() > 0) {
-              <span class="absolute -top-1 -right-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-neutral-900"></span>
-            }
-          </span>
+      <nav class="flex-1 overflow-y-auto px-3 pb-4" aria-label="เมนูหลัก">
+        @for (group of navGroups(); track group.label) {
           @if (isSidebarExpanded()) {
-            <span matListItemTitle>{{ item.label }}</span>
+            <p class="m-0 px-3 pb-1.5 pt-5 text-[11px] font-semibold tracking-wide text-white/40">{{ group.label }}</p>
+          } @else {
+            <div class="mx-2 my-3 border-0 border-t border-solid border-white/10"></div>
           }
-          @if (isSidebarExpanded() && item.route === '/repair-tickets' && isStaffRole() && unviewedTicketCount() > 0) {
-            <span
-              matListItemMeta
-              class="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white"
+          @for (item of group.items; track item.route) {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="khd-nav-active"
+              class="khd-nav-link"
+              [class.justify-center]="!isSidebarExpanded()"
+              [matTooltip]="isSidebarExpanded() ? '' : item.label"
+              matTooltipPosition="right"
             >
-              {{ unviewedTicketCount() > 99 ? '99+' : unviewedTicketCount() }}
-            </span>
+              <span class="relative inline-flex shrink-0">
+                <khd-icon [name]="item.icon" [size]="20" />
+                @if (!isSidebarExpanded() && hasTicketBadge(item.route)) {
+                  <span class="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-[rgb(var(--khd-sidebar))]"></span>
+                }
+              </span>
+              @if (isSidebarExpanded()) {
+                <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+                @if (hasTicketBadge(item.route)) {
+                  <span class="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-semibold leading-none text-white">
+                    {{ unviewedTicketCount() > 99 ? '99+' : unviewedTicketCount() }}
+                  </span>
+                }
+              }
+            </a>
           }
-        </a>
-      }
-    </mat-nav-list>
+        }
+      </nav>
+    </div>
   </mat-sidenav>
 
   <mat-sidenav-content
-    class="relative bg-brand-background dark:bg-neutral-950 transition-[margin-left] duration-200 ease-in-out"
+    class="transition-[margin-left] duration-200 ease-in-out"
     [class.!ml-64]="!isMobile() && isSidebarExpanded()"
     [class.!ml-[72px]]="!isMobile() && !isSidebarExpanded()"
   >
-    @if (watermarkSrc(); as src) {
-      <khd-page-watermark [src]="src" />
-    }
+    <header
+      class="sticky top-0 z-20 flex h-16 items-center gap-2 border-0 border-b border-solid border-line bg-surface/90 px-3 backdrop-blur md:px-6"
+    >
+      <button
+        mat-icon-button
+        (click)="toggleSidenav()"
+        [matTooltip]="isSidebarExpanded() ? 'ย่อเมนู' : 'แสดงเมนู'"
+        [attr.aria-label]="isSidebarExpanded() ? 'ย่อเมนู' : 'แสดงเมนู'"
+      >
+        <khd-icon name="bars-3" [size]="20" />
+      </button>
 
-    <mat-toolbar class="sticky top-0 z-20 !bg-white dark:!bg-neutral-900 !border-b !border-black/5 dark:!border-white/10 !px-3 md:!px-6 shadow-soft">
-      @if (!isSidebarExpanded()) {
-        <ng-container *ngTemplateOutlet="pillGroup" />
-      }
+      <div class="min-w-0 flex-1">
+        @if (currentNav(); as nav) {
+          <p class="m-0 hidden truncate text-xs text-muted md:block">{{ nav.group }}</p>
+          <p class="m-0 truncate text-[15px] font-semibold leading-tight text-ink">{{ nav.label }}</p>
+        }
+      </div>
 
-      <span class="hidden md:block truncate ml-3 text-base lg:text-lg font-bold text-brand-primary dark:text-emerald-400">{{ orgName() }}</span>
-      <span class="flex-1"></span>
-
-      <button mat-icon-button (click)="openSearch()" matTooltip="ค้นหา (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้/ยืม-คืน)" aria-label="ค้นหา (ตั๋วซ่อม/ครุภัณฑ์/ผู้ใช้/ยืม-คืน)">
+      <button
+        type="button"
+        class="hidden h-10 w-64 cursor-pointer items-center gap-2 rounded-xl border border-solid border-line bg-surface-2 px-3 text-left text-sm text-muted transition-colors hover:border-brand-primary/40 lg:flex"
+        (click)="openSearch()"
+      >
+        <khd-icon name="magnifying-glass" [size]="18" />
+        <span class="flex-1 truncate whitespace-nowrap">ค้นหาทั้งระบบ…</span>
+        <kbd class="rounded-md border border-solid border-line bg-surface px-1.5 py-0.5 font-sans text-[11px] text-muted">Ctrl K</kbd>
+      </button>
+      <button mat-icon-button class="lg:!hidden" (click)="openSearch()" matTooltip="ค้นหา" aria-label="ค้นหา">
         <khd-icon name="magnifying-glass" [size]="20" />
       </button>
 
-      <button mat-icon-button [matTooltip]="themeService.mode() === 'dark' ? 'สลับเป็นโหมดสว่าง' : 'สลับเป็นโหมดมืด'" (click)="toggleTheme()">
-        <khd-icon [name]="themeService.mode() === 'dark' ? 'sun' : 'moon'" [size]="20" />
-      </button>
+      @if (canCreateTicket()) {
+        <button mat-flat-button class="!hidden md:!inline-flex" (click)="openCreateTicket()">
+          <khd-icon name="plus" [size]="18" class="mr-1" />
+          แจ้งซ่อม
+        </button>
+      }
 
-      <button mat-icon-button [matMenuTriggerFor]="notifMenu" matTooltip="การแจ้งเตือน">
+      <button mat-icon-button [matMenuTriggerFor]="notifMenu" matTooltip="การแจ้งเตือน" aria-label="การแจ้งเตือน">
         <span class="relative inline-flex">
           <khd-icon name="bell" [size]="20" />
           @if (notificationService.unreadCount() > 0) {
             <span
-              class="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white"
+              class="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white"
             >
               {{ notificationService.unreadCount() > 99 ? '99+' : notificationService.unreadCount() }}
             </span>
           }
         </span>
       </button>
-      <mat-menu #notifMenu="matMenu" class="khd-notif-menu-panel">
-        <div class="w-80 max-w-[90vw]">
-          <div class="flex items-center justify-between px-4 py-2 border-b border-black/5 dark:border-white/10">
-            <p class="text-sm font-medium">การแจ้งเตือน</p>
+      <mat-menu #notifMenu="matMenu" class="khd-notif-menu-panel" xPosition="before">
+        <div class="w-[340px] max-w-[90vw]">
+          <div class="flex items-center justify-between border-0 border-b border-solid border-line px-4 py-3">
+            <p class="m-0 text-sm font-semibold text-ink">การแจ้งเตือน</p>
             @if (notificationService.unreadCount() > 0) {
-              <button type="button" class="text-xs text-brand-primary hover:underline" (click)="notificationService.markAllAsRead()">
+              <button type="button" class="cursor-pointer border-0 bg-transparent text-xs font-medium text-brand-primary hover:underline" (click)="notificationService.markAllAsRead()">
                 อ่านทั้งหมด
               </button>
             }
           </div>
           <div class="max-h-96 overflow-y-auto">
             @if (notificationService.items().length === 0) {
-              <p class="text-center text-sm text-neutral-400 py-8">ไม่มีการแจ้งเตือนที่ยังไม่ได้อ่าน</p>
+              <div class="flex flex-col items-center gap-2 px-6 py-10 text-center">
+                <khd-icon name="bell" [size]="28" class="text-neutral-300" />
+                <p class="m-0 text-sm text-muted">ไม่มีการแจ้งเตือนที่ยังไม่ได้อ่าน</p>
+              </div>
             }
             @for (n of notificationService.items(); track n.id) {
-              <button
-                type="button"
-                mat-menu-item
-                class="!h-auto !py-2.5 !whitespace-normal !leading-tight bg-brand-primary/5"
-                (click)="onNotificationClick(n)"
-              >
-                <div class="flex items-start gap-2">
+              <button type="button" mat-menu-item class="!h-auto !whitespace-normal !py-2.5 !leading-tight" (click)="onNotificationClick(n)">
+                <div class="flex items-start gap-2.5">
                   <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-primary"></span>
                   <div class="min-w-0">
-                    <p class="text-sm font-medium truncate">{{ n.subject }}</p>
-                    <p class="text-xs text-neutral-500 line-clamp-2">{{ n.message }}</p>
-                    <p class="text-[11px] text-neutral-400 mt-0.5">{{ n.createdAt | date: 'd MMM yyyy, HH:mm' }}</p>
+                    <p class="m-0 truncate text-sm font-medium text-ink">{{ n.subject }}</p>
+                    <p class="m-0 line-clamp-2 text-xs text-muted">{{ n.message }}</p>
+                    <p class="m-0 mt-0.5 text-[11px] text-neutral-400">{{ n.createdAt | date: 'd MMM yyyy, HH:mm' }}</p>
                   </div>
                 </div>
               </button>
@@ -130,58 +151,97 @@
         </div>
       </mat-menu>
 
-      <button mat-button [matMenuTriggerFor]="userMenu" class="!ml-1 !normal-case">
+      <button
+        type="button"
+        [matMenuTriggerFor]="userMenu"
+        class="flex h-10 cursor-pointer items-center gap-2 rounded-full border-0 bg-transparent py-1 pl-1 pr-1 text-ink hover:bg-neutral-500/10 sm:pr-3"
+        aria-label="เมนูผู้ใช้"
+      >
         <khd-user-avatar
           [avatarUrl]="authService.currentUser()?.avatarUrl ?? null"
           [gender]="authService.currentUser()?.gender ?? null"
-          [size]="26"
-          class="!mr-1.5"
+          [size]="32"
         />
-        <span class="hidden sm:inline max-w-[140px] truncate align-middle">{{ authService.currentUser()?.fullName }}</span>
+        <span class="hidden max-w-[140px] truncate text-sm font-medium sm:inline">{{ authService.currentUser()?.fullName }}</span>
       </button>
-      <mat-menu #userMenu="matMenu">
-        <div class="px-4 py-2">
-          <p class="text-sm font-medium">{{ authService.currentUser()?.fullName }}</p>
-          <p class="text-xs text-neutral-500">{{ authService.currentUser()?.role }}</p>
+      <mat-menu #userMenu="matMenu" xPosition="before">
+        <div class="min-w-[240px] px-4 py-3">
+          <p class="m-0 text-sm font-semibold text-ink">{{ authService.currentUser()?.fullName }}</p>
+          <p class="m-0 text-xs text-muted">{{ roleLabel() }}</p>
         </div>
         <mat-divider />
         <button mat-menu-item (click)="openProfileDialog()">
-          <khd-icon name="user-circle" [size]="18" class="!mr-2" />
+          <khd-icon name="user-circle" [size]="18" class="mr-3" />
           รูปโปรไฟล์
         </button>
         <button mat-menu-item routerLink="/auth/change-password">
-          <khd-icon name="pencil-square" [size]="18" class="!mr-2" />
+          <khd-icon name="pencil-square" [size]="18" class="mr-3" />
           เปลี่ยนรหัสผ่าน
         </button>
         <button mat-menu-item routerLink="/auth/setup-pin">
-          <khd-icon name="shield-check" [size]="18" class="!mr-2" />
+          <khd-icon name="shield-check" [size]="18" class="mr-3" />
           ตั้งค่า PIN เข้าสู่ระบบ
         </button>
         <button mat-menu-item routerLink="/auth/notification-channels">
-          <khd-icon name="bell" [size]="18" class="!mr-2" />
+          <khd-icon name="bell" [size]="18" class="mr-3" />
           ช่องทางการแจ้งเตือนส่วนตัว
         </button>
+        <button mat-menu-item (click)="toggleTheme()">
+          <khd-icon [name]="themeService.mode() === 'dark' ? 'sun' : 'moon'" [size]="18" class="mr-3" />
+          {{ themeService.mode() === 'dark' ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด' }}
+        </button>
+        <mat-divider />
         <button mat-menu-item (click)="logout()">
-          <khd-icon name="arrow-right-on-rectangle" [size]="18" class="!mr-2" />
+          <khd-icon name="arrow-right-on-rectangle" [size]="18" class="mr-3" />
           ออกจากระบบ
         </button>
       </mat-menu>
-    </mat-toolbar>
+    </header>
 
-    <main class="relative z-10 p-4 md:p-6">
+    <main class="mx-auto w-full max-w-[1600px] p-4 pb-28 md:p-6 md:pb-10">
       <router-outlet />
     </main>
+
+    @if (isMobile()) {
+      <nav
+        class="fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch border-0 border-t border-solid border-line bg-surface pb-[env(safe-area-inset-bottom)]"
+        aria-label="เมนูลัด"
+      >
+        @for (item of bottomNavLeft(); track item.route) {
+          <ng-container *ngTemplateOutlet="bottomLink; context: { $implicit: item }" />
+        }
+        @if (canCreateTicket()) {
+          <div class="flex flex-1 items-start justify-center">
+            <button
+              type="button"
+              class="-mt-5 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border-4 border-solid border-[rgb(var(--khd-bg))] bg-brand-primary text-white shadow-softLg"
+              (click)="openCreateTicket()"
+              aria-label="แจ้งซ่อม"
+            >
+              <khd-icon name="plus" [size]="26" [strokeWidth]="2" />
+            </button>
+          </div>
+        }
+        @for (item of bottomNavRight(); track item.route) {
+          <ng-container *ngTemplateOutlet="bottomLink; context: { $implicit: item }" />
+        }
+        <button type="button" class="khd-bottom-link" (click)="sidenavOpened.set(true)">
+          <khd-icon name="bars-3" [size]="22" />
+          <span>เมนู</span>
+        </button>
+      </nav>
+    }
   </mat-sidenav-content>
 </mat-sidenav-container>
 
-<ng-template #pillGroup>
-  <button
-    mat-icon-button
-    class="!rounded-full border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.06] shrink-0"
-    (click)="toggleSidenav()"
-    [matTooltip]="isSidebarExpanded() ? 'ซ่อนเมนู' : 'แสดงเมนู'"
-    [attr.aria-label]="isSidebarExpanded() ? 'ซ่อนเมนู' : 'แสดงเมนู'"
-  >
-    <khd-icon name="bars-3" [size]="18" />
-  </button>
+<ng-template #bottomLink let-item>
+  <a [routerLink]="item.route" routerLinkActive="khd-bottom-active" class="khd-bottom-link">
+    <span class="relative inline-flex">
+      <khd-icon [name]="item.icon" [size]="22" />
+      @if (hasTicketBadge(item.route)) {
+        <span class="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-[rgb(var(--khd-surface))]"></span>
+      }
+    </span>
+    <span class="max-w-full truncate px-1">{{ item.shortLabel ?? item.label }}</span>
+  </a>
 </ng-template>

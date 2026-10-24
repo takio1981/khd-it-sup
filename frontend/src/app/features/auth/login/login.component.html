@@ -1,41 +1,29 @@
 @if (checkingPinStatus()) {
-  <div class="relative min-h-screen flex items-center justify-center bg-brand-background dark:bg-neutral-950">
+  <div class="flex min-h-screen items-center justify-center bg-brand-background">
     <mat-spinner diameter="32" />
   </div>
 } @else if (mode() === 'pin') {
   <khd-pin-login-form (usePassword)="onUsePassword($event)" />
 } @else {
-<div class="relative min-h-screen overflow-hidden flex items-center justify-center bg-brand-background dark:bg-neutral-950 px-4">
-  <khd-page-watermark src="logo-khd-it-sup.png" />
-
-  <div class="relative z-10 w-full max-w-md">
-    <div class="text-center mb-6">
-      <img
-        src="logo-khd-it-sup.png"
-        alt="โลโก้ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์"
-        class="block mx-auto mb-3 h-24 w-24 rounded-full bg-white shadow-softLg ring-1 ring-black/5 dark:ring-white/10"
-      />
-      <h1 class="text-lg font-semibold text-neutral-900 dark:text-white">ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์</h1>
-      <p class="text-sm text-neutral-500 mt-1">{{ orgName }}</p>
-    </div>
-
-    <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card !bg-transparent !shadow-softLg space-y-4">
-      <h2 class="text-base font-medium text-neutral-700 dark:text-neutral-200">เข้าสู่ระบบ</h2>
-
+  <khd-auth-layout heading="เข้าสู่ระบบ" description="ใช้ชื่อผู้ใช้และรหัสผ่านที่ได้รับจากผู้ดูแลระบบ">
+    <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-1">
       @if (errorMessage()) {
-        <div class="rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm px-3 py-2">
-          {{ errorMessage() }}
+        <div class="mb-3 flex items-start gap-2 rounded-xl bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300" role="alert">
+          <khd-icon name="exclamation-triangle" [size]="18" class="mt-0.5 shrink-0" />
+          <span>{{ errorMessage() }}</span>
         </div>
       }
 
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>ชื่อผู้ใช้</mat-label>
         <input matInput formControlName="username" autocomplete="username" />
+        <khd-icon matPrefix name="user-circle" [size]="20" class="ml-3 mr-2 text-neutral-400" />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>รหัสผ่าน</mat-label>
         <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password" autocomplete="current-password" />
+        <khd-icon matPrefix name="shield-check" [size]="20" class="ml-3 mr-2 text-neutral-400" />
         <button
           mat-icon-button
           matSuffix
@@ -47,26 +35,23 @@
         </button>
       </mat-form-field>
 
-      <p class="text-right text-sm -mt-2">
-        <a routerLink="/auth/forgot-password" class="text-brand-primary hover:underline">ลืมรหัสผ่าน?</a>
-      </p>
+      <div class="-mt-2 mb-4 text-right text-sm">
+        <a routerLink="/auth/forgot-password" class="font-medium text-brand-primary no-underline hover:underline">ลืมรหัสผ่าน?</a>
+      </div>
 
-      <button mat-flat-button color="primary" type="submit" class="!w-full !h-11" [disabled]="form.invalid || loading()">
+      <button mat-flat-button type="submit" class="!h-12 !w-full !text-[15px]" [disabled]="form.invalid || loading()">
         @if (loading()) {
-          <mat-spinner diameter="20" class="!inline-block !mr-2" />
+          <mat-spinner diameter="20" class="!mr-2 !inline-block" />
         }
         เข้าสู่ระบบ
       </button>
     </form>
 
-    <a mat-stroked-button routerLink="/qr/scanner" class="!w-full !h-11 !mt-4 !flex !items-center !justify-center">
-      <khd-icon name="qr-code" [size]="18" class="!mr-1" />
-      สแกน QR Code แจ้งซ่อม / ยืม-คืนอุปกรณ์
-    </a>
-
-    <p class="text-center text-xs text-neutral-400 mt-6">
-      © สำนักงานสาธารณสุขจังหวัดนครราชสีมา — IT Service Desk
-    </p>
-  </div>
-</div>
+    <div below class="mt-4">
+      <a mat-stroked-button routerLink="/qr/scanner" class="!h-12 !w-full">
+        <khd-icon name="qr-code" [size]="18" class="mr-2" />
+        สแกน QR Code แจ้งซ่อม / ยืม-คืนอุปกรณ์
+      </a>
+    </div>
+  </khd-auth-layout>
 }

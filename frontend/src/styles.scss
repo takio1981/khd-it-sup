@@ -1,120 +1,250 @@
 // =====================================================================================
 // KHD-IT-SUP Global Styles
-// Angular Material (M3 system-level theming) + TailwindCSS (utility layer สำหรับ brand color เป๊ะตาม spec)
+// Angular Material (M3, palette จาก _theme-colors.scss) + TailwindCSS (utility ที่อ่านค่าจาก token เดียวกัน)
+// สีแบรนด์ทั้งหมดเป็น CSS variable แบบ RGB triplet (--khd-*) เพื่อให้ Tailwind ใส่ opacity ได้ (เช่น bg-brand-primary/10)
+// และสลับโหมดมืดได้ที่จุดเดียว (html.dark-theme) — ห้าม hardcode สีแบรนด์ใน component
 // =====================================================================================
 @use '@angular/material' as mat;
+@use './theme-colors' as khd;
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-// --- Angular Material Theme (Light — default) ---
+$khd-typography: (
+  plain-family: ('IBM Plex Sans Thai', 'Noto Sans Thai', system-ui, sans-serif),
+  brand-family: ('IBM Plex Sans Thai', 'Noto Sans Thai', system-ui, sans-serif),
+  bold-weight: 600,
+  medium-weight: 500,
+  regular-weight: 400,
+);
+
 html {
   height: 100%;
+  color-scheme: light;
   @include mat.theme((
     color: (
       theme-type: light,
-      primary: mat.$green-palette,
-      tertiary: mat.$blue-palette,
+      primary: khd.$primary-palette,
+      tertiary: khd.$tertiary-palette,
     ),
-    typography: Roboto,
+    typography: $khd-typography,
     density: 0,
   ));
 
-  // Brand colors ตาม UI/UX spec — ใช้เป็น CSS custom property กลาง ให้ component SCSS เรียกใช้ได้โดยไม่ต้อง hardcode
-  --khd-primary: #006C45;
-  --khd-secondary: #00A86B;
-  --khd-background: #F7FAF8;
+  --khd-primary: 0 93 184;
+  --khd-primary-soft: 214 227 255;
+  --khd-ink: 11 37 69;
+  --khd-teal: 0 128 119;
+  --khd-green: 47 133 61;
+  --khd-bg: 244 246 250;
+  --khd-surface: 255 255 255;
+  --khd-surface-2: 248 250 252;
+  --khd-border: 227 232 239;
+  --khd-text: 17 27 45;
+  --khd-muted: 91 107 130;
+  --khd-sidebar: 11 37 69;
+  --khd-sidebar-text: 203 216 236;
+  --khd-shadow: 15 30 60;
 }
 
-// --- Dark Mode (toggle ผ่าน ThemeService ที่ใส่ class "dark-theme" บน <html>) ---
 html.dark-theme {
+  color-scheme: dark;
   @include mat.theme((
     color: (
       theme-type: dark,
-      primary: mat.$green-palette,
-      tertiary: mat.$blue-palette,
+      primary: khd.$primary-palette,
+      tertiary: khd.$tertiary-palette,
     ),
-    typography: Roboto,
+    typography: $khd-typography,
     density: 0,
   ));
 
-  --khd-background: #0F1712;
+  --khd-primary: 122 172 255;
+  --khd-primary-soft: 26 44 77;
+  --khd-ink: 230 235 242;
+  --khd-teal: 76 188 177;
+  --khd-green: 110 196 120;
+  --khd-bg: 10 17 30;
+  --khd-surface: 18 27 43;
+  --khd-surface-2: 23 34 53;
+  --khd-border: 34 48 73;
+  --khd-text: 230 235 242;
+  --khd-muted: 148 161 181;
+  --khd-sidebar: 13 22 38;
+  --khd-sidebar-text: 168 182 204;
+  --khd-shadow: 0 0 0;
+}
+
+// --- Material component overrides ระดับทั้งแอป (ใช้ mixin ทางการ → ชื่อ token ถูก validate ตอน build) ---
+html {
+  @include mat.button-overrides((
+    filled-container-shape: 10px,
+    outlined-container-shape: 10px,
+    protected-container-shape: 10px,
+    text-container-shape: 10px,
+    tonal-container-shape: 10px,
+    outlined-outline-color: rgb(var(--khd-border)),
+  ));
+  @include mat.form-field-overrides((
+    outlined-container-shape: 10px,
+    outlined-outline-color: rgb(var(--khd-border)),
+    outlined-hover-outline-color: rgb(var(--khd-muted)),
+  ));
+  @include mat.dialog-overrides((
+    container-shape: 20px,
+    container-color: rgb(var(--khd-surface)),
+  ));
+  @include mat.menu-overrides((
+    container-shape: 12px,
+    container-color: rgb(var(--khd-surface)),
+  ));
+  @include mat.table-overrides((
+    background-color: transparent,
+    header-headline-color: rgb(var(--khd-muted)),
+    header-headline-weight: 600,
+    header-headline-size: 13px,
+    row-item-outline-color: rgb(var(--khd-border)),
+  ));
+  @include mat.paginator-overrides((
+    container-background-color: transparent,
+  ));
+  @include mat.tabs-overrides((
+    divider-color: rgb(var(--khd-border)),
+  ));
+  @include mat.snack-bar-overrides((
+    container-shape: 12px,
+  ));
+  @include mat.sidenav-overrides((
+    container-shape: 0,
+    container-background-color: rgb(var(--khd-sidebar)),
+    content-background-color: rgb(var(--khd-bg)),
+  ));
+}
+
+// ปุ่มแบบ color="warn" — M3 ไม่แปลง attribute color ให้เอง ปุ่มยืนยันลบ/ยกเลิกจึงเคยเป็นสีหลักเหมือนปุ่มทั่วไป
+.mat-warn {
+  @include mat.button-overrides((
+    filled-container-color: var(--mat-sys-error),
+    filled-label-text-color: var(--mat-sys-on-error),
+    outlined-label-text-color: var(--mat-sys-error),
+    text-label-text-color: var(--mat-sys-error),
+    protected-label-text-color: var(--mat-sys-error),
+  ));
+  @include mat.icon-button-overrides((
+    icon-color: var(--mat-sys-error),
+  ));
 }
 
 body {
-  color-scheme: light;
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
+  background-color: rgb(var(--khd-bg));
+  color: rgb(var(--khd-text));
   font: var(--mat-sys-body-medium);
+  font-size: 14.5px;
+  line-height: 1.6;
   margin: 0;
   height: 100%;
-}
-
-html.dark-theme body {
-  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
   box-sizing: border-box;
 }
 
-// --- Scrollbar (บาง, กลมกลืนกับธีม) ---
+h1, h2, h3 {
+  text-wrap: balance;
+  color: rgb(var(--khd-ink));
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--khd-primary));
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// --- Scrollbar ---
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: rgb(0 0 0 / 0.15);
+  background-color: rgb(var(--khd-muted) / 0.3);
   border-radius: 8px;
 }
-html.dark-theme ::-webkit-scrollbar-thumb {
-  background-color: rgb(255 255 255 / 0.15);
-}
 
-// --- Utility: การ์ด/ผิว soft-shadow ที่ใช้ซ้ำทั่วระบบ (Modern/Minimal ตาม UI/UX spec) ---
+// --- การ์ดพื้นผิวหลักของทุกหน้า ---
 .khd-card {
-  @apply rounded-2xl shadow-soft bg-white dark:bg-neutral-800 p-4 md:p-6;
+  @apply rounded-2xl p-4 md:p-5;
+  background-color: rgb(var(--khd-surface));
+  border: 1px solid rgb(var(--khd-border));
+  box-shadow: 0 1px 2px rgb(var(--khd-shadow) / 0.04);
 }
 
-// --- Status badge — pill พาสเทล (พื้นอ่อน + ตัวหนังสือสีเข้ม) ใส่สีผ่าน [style.background-color]/[style.color] ---
+// --- Status badge — จุดสี + พื้นอ่อน (สีมาจาก status.const.ts ผ่าน [style]) ---
 .khd-status-badge {
-  @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium;
+  @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+// สีสถานะบางตัวเข้มมาก (เช่น ปิดงาน #166534) อ่านยากบนพื้นมืด — สว่างขึ้นเฉพาะโหมดมืด ไม่แตะค่าสีต้นทาง
+html.dark-theme .khd-status-badge {
+  filter: brightness(1.45) saturate(1.1);
 }
 
-// --- กระดิ่งแจ้งเตือน (mat-menu panel) — เนื้อหาข้างในกว้าง 320px (w-80) แต่ mat-menu panel ค่า default
-// max-width แคบกว่า (280px) ทำให้ปุ่ม "อ่านทั้งหมด" ในหัวกล่องถูกตัดขอบ ต้องขยาย panel ให้พอดีกับเนื้อหาจริง
 .khd-notif-menu-panel {
-  max-width: 340px !important;
+  max-width: 360px !important;
 }
 
-// --- กล่องค้นหาข้ามระบบ (global search dialog) — ให้ขอบมนนุ่มและเงานุ่มแบบเดียวกับ .khd-card ทั่วระบบ
-// แทนกรอบเหลี่ยม/เงาแข็งของ mat-dialog ค่า default ที่ไม่ตรงกับภาษาการออกแบบของแอป
 .khd-search-dialog-panel .mat-mdc-dialog-surface {
   border-radius: 1.25rem !important;
-  box-shadow: 0 8px 24px 0 rgb(0 0 0 / 0.08) !important;
   overflow: hidden;
 }
 
-// --- Table header — พื้นมิ้นต์อ่อนโทนแบรนด์ ใช้ร่วมกันทุกตาราง (mat-table) ในระบบ ---
+// --- Toast (ToastService) ---
+.khd-toast-success {
+  @include mat.snack-bar-overrides((
+    container-color: #1f6b3a,
+    supporting-text-color: #fff,
+    button-color: #d9f5df,
+  ));
+}
+.khd-toast-error {
+  @include mat.snack-bar-overrides((
+    container-color: #9f1c1c,
+    supporting-text-color: #fff,
+    button-color: #ffe0e0,
+  ));
+}
+
+// --- ตาราง (mat-table) — หัวตารางเรียบ แถว hover ---
 .mat-mdc-table .mat-mdc-header-row {
-  background-color: rgb(0 108 69 / 0.06);
+  background-color: rgb(var(--khd-surface-2));
 }
-.mat-mdc-table .mat-mdc-header-cell {
-  color: #047857;
-  font-weight: 600;
+.mat-mdc-table .mat-mdc-row:hover {
+  background-color: rgb(var(--khd-primary) / 0.04);
 }
-html.dark-theme .mat-mdc-table .mat-mdc-header-row {
-  background-color: rgb(16 185 129 / 0.1);
+.mat-mdc-table .mat-mdc-cell {
+  font-variant-numeric: tabular-nums;
 }
-html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
-  color: #6ee7b7;
+
+// แถบตัวกรองบนหน้ารายการ — ช่องกรอกกะทัดรัด และซ่อนพื้นที่ hint ใต้ช่อง (แทน hack !mb-[-1.25em] เดิมในแต่ละหน้า)
+.khd-filter-bar {
+  @apply khd-card flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center;
+  padding: 0.75rem !important;
+  @include mat.theme((density: -3));
+
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
 }
 
 // =====================================================================================
 // Responsive tables — ต่ำกว่า lg (1024px, มือถือ+แท็บเล็ต) พับทุกแถวของทุก mat-table ในระบบ
-// เป็นการ์ดแนวตั้งอัตโนมัติ แทนตารางแนวนอนที่ต้องเลื่อนซ้าย-ขวา ใช้ label จาก attr(data-label)
-// ที่ต้องเติมไว้ที่ td มาตรฐานแต่ละคอลัมน์ (ดูตัวอย่างในแต่ละหน้า) แทนหัวตารางที่ถูกซ่อนไป
+// เป็นการ์ดแนวตั้งอัตโนมัติ ใช้ label จาก attr(data-label) ที่ต้องเติมไว้ที่ td แต่ละคอลัมน์
 // =====================================================================================
 @media (max-width: 1023.98px) {
   .mat-mdc-table {
@@ -138,6 +268,9 @@ html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
     padding: 0.75rem !important;
     margin-bottom: 0.75rem !important;
   }
+  .mat-mdc-table .mat-mdc-row:hover {
+    background-color: rgb(var(--khd-surface));
+  }
   .mat-mdc-row:last-child {
     margin-bottom: 0 !important;
   }
@@ -151,7 +284,7 @@ html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
     min-height: 0 !important;
     padding: 0.375rem 0;
     text-align: right;
-    border-bottom: 1px solid rgb(0 0 0 / 0.06);
+    border-bottom: 1px solid rgb(var(--khd-border));
   }
   .mat-mdc-cell:last-of-type {
     border-bottom: none;
@@ -162,15 +295,9 @@ html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
     font-weight: 600;
     font-size: 0.75rem;
     text-align: left;
-    color: rgb(107 114 128);
+    color: rgb(var(--khd-muted));
     flex-shrink: 0;
     padding-top: 0.125rem;
-  }
-  html.dark-theme .mat-mdc-cell {
-    border-bottom-color: rgb(255 255 255 / 0.08);
-  }
-  html.dark-theme .mat-mdc-cell::before {
-    color: rgb(156 163 175);
   }
 
   // คอลัมน์ actions (ชื่อคอลัมน์นี้ซ้ำเหมือนกันทุกตาราง) — ไม่มีป้ายชื่อ ปุ่มจัดชิดขวาเป็นแถวท้ายการ์ด
@@ -179,16 +306,12 @@ html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
     border-bottom: none !important;
     padding-top: 0.5rem;
     margin-top: 0.25rem;
-    border-top: 1px dashed rgb(0 0 0 / 0.08);
+    border-top: 1px dashed rgb(var(--khd-border));
   }
   .mat-column-actions::before {
     content: none;
   }
-  html.dark-theme .mat-column-actions {
-    border-top-color: rgb(255 255 255 / 0.1);
-  }
 
-  // checkbox เลือกหลายรายการ (เฉพาะตารางครุภัณฑ์) — ไม่มีป้ายชื่อ
   .mat-column-select {
     border-bottom: none !important;
   }
@@ -196,11 +319,11 @@ html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
     content: none;
   }
 
-  // แถวรายละเอียดที่ขยายได้ (ตารางครุภัณฑ์ — multiTemplateDataRows) — ไม่ต้องห่อเป็นการ์ดซ้อนการ์ดอีกชั้น
-  // ปล่อยให้ใช้ layout เดิม (label:value แบบ inline) ที่มีอยู่แล้วในตัว td เอง ต่อท้ายใต้การ์ดของแถวหลัก
+  // แถวรายละเอียดที่ขยายได้ (ตารางครุภัณฑ์ — multiTemplateDataRows) — ไม่ห่อเป็นการ์ดซ้อนอีกชั้น
   .mat-mdc-row.mat-row-detail {
     padding: 0 !important;
     margin-bottom: 0.75rem !important;
+    border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     background: transparent !important;
@@ -214,11 +337,11 @@ html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
     content: none !important;
   }
 
-  // ตาราง HTML ธรรมดา (ไม่ใช่ mat-table) ที่แปะ class นี้ตรงๆ — ใช้กลไกเดียวกันแต่ target tag ปกติ
+  // ตาราง HTML ธรรมดาที่แปะ class นี้ — ใช้กลไกเดียวกันแต่ target tag ปกติ
   table.khd-table-responsive {
     display: block !important;
     width: 100%;
-    min-width: 0 !important; // ทับ min-w-[…] ของ Tailwind ที่บางตารางตั้งไว้เพื่อบังคับเลื่อนแนวนอนตอนเป็นตารางจริง
+    min-width: 0 !important;
   }
   table.khd-table-responsive thead {
     display: none;
@@ -244,7 +367,7 @@ html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
     width: 100%;
     padding: 0.375rem 0;
     text-align: right;
-    border-bottom: 1px solid rgb(0 0 0 / 0.06);
+    border-bottom: 1px solid rgb(var(--khd-border));
   }
   table.khd-table-responsive td:last-child {
     border-bottom: none;
@@ -255,22 +378,15 @@ html.dark-theme .mat-mdc-table .mat-mdc-header-cell {
     font-weight: 600;
     font-size: 0.75rem;
     text-align: left;
-    color: rgb(107 114 128);
+    color: rgb(var(--khd-muted));
     flex-shrink: 0;
     padding-top: 0.125rem;
-  }
-  html.dark-theme table.khd-table-responsive td {
-    border-bottom-color: rgb(255 255 255 / 0.08);
-  }
-  html.dark-theme table.khd-table-responsive td::before {
-    color: rgb(156 163 175);
   }
 }
 
 // =====================================================================================
-// Print isolation — ใช้กับหน้าตัวอย่างก่อนพิมพ์ (QR Label) และเอกสารอื่นในอนาคต
-// ใส่ id="khd-print-area" ครอบเนื้อหาที่ต้องการพิมพ์ + class "khd-no-print" บนปุ่ม/ส่วนควบคุมที่ไม่ต้องการให้พิมพ์
-// ต้องอยู่ใน global stylesheet (ไม่ใช่ scoped component style) เพราะต้องซ่อนทุกอย่างนอก component ด้วย (เช่น sidebar/toolbar)
+// Print isolation — ใช้กับหน้าตัวอย่างก่อนพิมพ์ (QR Label / ใบแจ้งซ่อม)
+// ใส่ id="khd-print-area" ครอบเนื้อหาที่ต้องการพิมพ์ + class "khd-no-print" บนส่วนควบคุมที่ไม่ต้องพิมพ์
 // =====================================================================================
 @media print {
   body * {

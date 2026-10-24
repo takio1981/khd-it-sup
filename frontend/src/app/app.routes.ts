@@ -32,17 +32,6 @@ export const routes: Routes = [
       import('./features/auth/change-password/change-password.component').then((m) => m.ChangePasswordComponent),
   },
   {
-    path: 'auth/setup-pin',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/auth/setup-pin/setup-pin.component').then((m) => m.SetupPinComponent),
-  },
-  {
-    path: 'auth/notification-channels',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/auth/notification-channels/notification-channels.component').then((m) => m.NotificationChannelsComponent),
-  },
-  {
     path: 'qr/scan/:token',
     loadComponent: () => import('./features/qr/qr-scan/qr-scan.component').then((m) => m.QrScanComponent),
   },
@@ -62,27 +51,36 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
+        path: 'auth/setup-pin',
+        loadComponent: () => import('./features/auth/setup-pin/setup-pin.component').then((m) => m.SetupPinComponent),
+      },
+      {
+        path: 'auth/notification-channels',
+        loadComponent: () =>
+          import('./features/auth/notification-channels/notification-channels.component').then((m) => m.NotificationChannelsComponent),
+      },
+      {
         path: 'dashboard',
         canActivate: [permissionGuard],
-        data: { permissions: ['dashboard:view'], watermark: 'logo3.png' },
+        data: { permissions: ['dashboard:view'] },
         loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
       {
         path: 'reports',
         canActivate: [permissionGuard],
-        data: { permissions: ['report:view'], watermark: 'logo3.png' },
+        data: { permissions: ['report:view'] },
         loadComponent: () => import('./features/reports/reports.component').then((m) => m.ReportsComponent),
       },
       {
         path: 'assets',
         canActivate: [permissionGuard],
-        data: { permissions: ['asset:read'], watermark: 'logo3.png' },
+        data: { permissions: ['asset:read'] },
         loadComponent: () => import('./features/assets/asset-list/asset-list.component').then((m) => m.AssetListComponent),
       },
       {
         path: 'assets/categories',
         canActivate: [permissionGuard],
-        data: { permissions: ['asset:create', 'asset:update'], watermark: 'logo3.png' },
+        data: { permissions: ['asset:create', 'asset:update'] },
         loadComponent: () =>
           import('./features/assets/asset-category-list/asset-category-list.component').then(
             (m) => m.AssetCategoryListComponent,
@@ -91,98 +89,98 @@ export const routes: Routes = [
       {
         path: 'assets/locations',
         canActivate: [permissionGuard],
-        data: { permissions: ['asset:create', 'asset:update'], watermark: 'logo3.png' },
+        data: { permissions: ['asset:create', 'asset:update'] },
         loadComponent: () => import('./features/locations/location-list.component').then((m) => m.LocationListComponent),
       },
       {
         path: 'assets/import',
         canActivate: [permissionGuard],
-        data: { permissions: ['asset:create'], watermark: 'logo3.png' },
+        data: { permissions: ['asset:create'] },
         loadComponent: () =>
           import('./features/assets/equipment-sync/equipment-sync.component').then((m) => m.EquipmentSyncComponent),
       },
       {
         path: 'asset-loans',
         canActivate: [permissionGuard],
-        data: { permissions: ['asset:loan'], watermark: 'logo2.png' },
+        data: { permissions: ['asset:loan'] },
         loadComponent: () => import('./features/asset-loans/asset-loan-list.component').then((m) => m.AssetLoanListComponent),
       },
       {
         path: 'asset-loans/:id',
         canActivate: [permissionGuard],
-        data: { permissions: ['asset:loan'], watermark: 'logo2.png' },
+        data: { permissions: ['asset:loan'] },
         loadComponent: () =>
           import('./features/asset-loans/asset-loan-detail/asset-loan-detail.component').then((m) => m.AssetLoanDetailComponent),
       },
       {
         path: 'spare-parts',
         canActivate: [permissionGuard],
-        data: { permissions: ['spare_part:view', 'spare_part:manage', 'spare_part:issue'], watermark: 'logo2.png' },
+        data: { permissions: ['spare_part:view', 'spare_part:manage', 'spare_part:issue'] },
         loadComponent: () =>
           import('./features/spare-parts/spare-part-list/spare-part-list.component').then((m) => m.SparePartListComponent),
       },
       {
         path: 'vendors',
         canActivate: [permissionGuard],
-        data: { permissions: ['vendor:view', 'vendor:manage'], watermark: 'logo2.png' },
+        data: { permissions: ['vendor:view', 'vendor:manage'] },
         loadComponent: () => import('./features/vendors/vendor-list/vendor-list.component').then((m) => m.VendorListComponent),
       },
       {
         path: 'assets/:id',
         canActivate: [permissionGuard],
-        data: { permissions: ['asset:read'], watermark: 'logo3.png' },
+        data: { permissions: ['asset:read'] },
         loadComponent: () => import('./features/assets/asset-detail/asset-detail.component').then((m) => m.AssetDetailComponent),
       },
       {
         path: 'repair-tickets',
         canActivate: [permissionGuard],
-        data: { permissions: ['ticket:read', 'ticket:track'], watermark: 'logo1.png' },
+        data: { permissions: ['ticket:read', 'ticket:track'] },
         loadComponent: () =>
           import('./features/repair-tickets/ticket-list/ticket-list.component').then((m) => m.TicketListComponent),
       },
       {
         path: 'repair-tickets/board',
         canActivate: [permissionGuard],
-        data: { permissions: ['ticket:read', 'ticket:track'], watermark: 'logo1.png' },
+        data: { permissions: ['ticket:read', 'ticket:track'] },
         loadComponent: () =>
           import('./features/repair-tickets/ticket-board/ticket-board.component').then((m) => m.TicketBoardComponent),
       },
       {
         path: 'repair-tickets/:id',
         canActivate: [permissionGuard],
-        data: { permissions: ['ticket:read', 'ticket:track'], watermark: 'logo1.png' },
+        data: { permissions: ['ticket:read', 'ticket:track'] },
         loadComponent: () =>
           import('./features/repair-tickets/ticket-detail/ticket-detail.component').then((m) => m.TicketDetailComponent),
       },
       {
         path: 'users',
         canActivate: [permissionGuard],
-        data: { permissions: ['user:read'], watermark: 'logo3.png' },
+        data: { permissions: ['user:read'] },
         loadComponent: () => import('./features/users/user-list/user-list.component').then((m) => m.UserListComponent),
       },
       {
         path: 'users/positions',
         canActivate: [permissionGuard],
-        data: { permissions: ['user:create', 'user:update'], watermark: 'logo3.png' },
+        data: { permissions: ['user:create', 'user:update'] },
         loadComponent: () => import('./features/positions/position-list.component').then((m) => m.PositionListComponent),
       },
       {
         path: 'departments',
         canActivate: [permissionGuard],
-        data: { permissions: ['department:manage'], watermark: 'logo3.png' },
+        data: { permissions: ['department:manage'] },
         loadComponent: () =>
           import('./features/departments/department-list.component').then((m) => m.DepartmentListComponent),
       },
       {
         path: 'departments/divisions',
         canActivate: [permissionGuard],
-        data: { permissions: ['department:manage'], watermark: 'logo3.png' },
+        data: { permissions: ['department:manage'] },
         loadComponent: () => import('./features/divisions/division-list.component').then((m) => m.DivisionListComponent),
       },
       {
         path: 'settings/notifications',
         canActivate: [permissionGuard],
-        data: { permissions: ['settings:manage', 'audit:view'], watermark: 'logo3.png' },
+        data: { permissions: ['settings:manage', 'audit:view'] },
         loadComponent: () =>
           import('./features/settings/notification-settings-page/notification-settings-page.component').then(
             (m) => m.NotificationSettingsPageComponent,
@@ -191,7 +189,7 @@ export const routes: Routes = [
       {
         path: 'settings/general',
         canActivate: [permissionGuard],
-        data: { permissions: ['settings:manage', 'audit:view'], watermark: 'logo3.png' },
+        data: { permissions: ['settings:manage', 'audit:view'] },
         loadComponent: () =>
           import('./features/settings/general-settings-form/general-settings-form.component').then(
             (m) => m.GeneralSettingsFormComponent,
@@ -200,21 +198,21 @@ export const routes: Routes = [
       {
         path: 'settings/audit-log',
         canActivate: [permissionGuard],
-        data: { permissions: ['audit:view'], watermark: 'logo3.png' },
+        data: { permissions: ['audit:view'] },
         loadComponent: () =>
           import('./features/settings/audit-log-list/audit-log-list.component').then((m) => m.AuditLogListComponent),
       },
       {
         path: 'settings/documents',
         canActivate: [permissionGuard],
-        data: { permissions: ['document:print', 'document:generate', 'audit:view'], watermark: 'logo3.png' },
+        data: { permissions: ['document:print', 'document:generate', 'audit:view'] },
         loadComponent: () =>
           import('./features/settings/document-log-list/document-log-list.component').then((m) => m.DocumentLogListComponent),
       },
       {
         path: 'settings/backup',
         canActivate: [permissionGuard],
-        data: { permissions: ['backup:manage'], watermark: 'logo3.png' },
+        data: { permissions: ['backup:manage'] },
         loadComponent: () =>
           import('./features/settings/backup-settings-page/backup-settings-page.component').then(
             (m) => m.BackupSettingsPageComponent,
@@ -222,12 +220,10 @@ export const routes: Routes = [
       },
       {
         path: 'help',
-        data: { watermark: 'logo3.png' },
         loadComponent: () => import('./features/help/help.component').then((m) => m.HelpComponent),
       },
       {
         path: 'workflows',
-        data: { watermark: 'logo3.png' },
         loadComponent: () =>
           import('./features/workflows/workflow-diagrams.component').then((m) => m.WorkflowDiagramsComponent),
       },

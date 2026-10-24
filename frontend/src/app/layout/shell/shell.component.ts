@@ -1,16 +1,13 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatListModule } from '@angular/material/list';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { filter, map, startWith } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
@@ -19,15 +16,17 @@ import { NotificationService } from '../../core/services/notification.service';
 import { SettingsService } from '../../core/services/settings.service';
 import { RepairTicketService } from '../../core/services/repair-ticket.service';
 import { SocketService } from '../../core/services/socket.service';
-import { STAFF_ROLES } from '../../core/models/auth.model';
+import { ROLE_LABEL_TH, STAFF_ROLES } from '../../core/models/auth.model';
 import { IconComponent } from '../../shared/components/icon/icon.component';
-import { PageWatermarkComponent } from '../../shared/components/page-watermark/page-watermark.component';
 import { UserAvatarComponent } from '../../shared/components/user-avatar/user-avatar.component';
 import { ProfileDialogComponent } from '../../shared/components/profile-dialog/profile-dialog.component';
 import { GlobalSearchDialogComponent } from '../../shared/components/global-search-dialog/global-search-dialog.component';
-import { NAV_ITEMS } from '../nav-items';
+import { TicketFormComponent } from '../../features/repair-tickets/ticket-form/ticket-form.component';
+import { ACCOUNT_NAV_GROUP, NAV_GROUPS, type INavItem } from '../nav-items';
 import { environment } from '../../../environments/environment';
 import type { IInAppNotification } from '../../core/models/notification.model';
+
+const COLLAPSED_KEY = 'khd-sidebar-collapsed';
 
 @Component({
   selector: 'khd-shell',
@@ -40,14 +39,11 @@ import type { IInAppNotification } from '../../core/models/notification.model';
     DatePipe,
     NgTemplateOutlet,
     MatSidenavModule,
-    MatToolbarModule,
-    MatListModule,
     MatMenuModule,
     MatButtonModule,
     MatDividerModule,
     MatTooltipModule,
     IconComponent,
-    PageWatermarkComponent,
     UserAvatarComponent,
   ],
   templateUrl: './shell.component.html',
@@ -56,7 +52,6 @@ import type { IInAppNotification } from '../../core/models/notification.model';
 export class ShellComponent {
   private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly router = inject(Router);
-  private readonly activatedRoute = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly settingsService = inject(SettingsService);
   private readonly repairTicketService = inject(RepairTicketService);
@@ -68,17 +63,71 @@ export class ShellComponent {
   readonly notificationService = inject(NotificationService);
   readonly appName = environment.appName;
 
-  /** เห็นตัวเลขงานแจ้งซ่อมใหม่ที่เมนู sidebar เฉพาะ role เจ้าหน้าที่ — ผู้แจ้งซ่อมทั่วไปไม่ควรเห็นตัวเลขรวมทั้งระบบ */
+  /** เห็นตัวเลขงานแจ้งซ่อมใหม่ที่เมนูเฉพาะ role เจ้าหน้าที่ — ผู้แจ้งซ่อมทั่วไปไม่ควรเห็นตัวเลขรวมทั้งระบบ */
   readonly isStaffRole = computed(() => {
     const role = this.authService.currentUser()?.role;
     return !!role && STAFF_ROLES.includes(role);
   });
+  readonly roleLabel = computed(() => {
+    const role = this.authService.currentUser()?.role;
+    return role ? ROLE_LABEL_TH[role] : '';
+  });
   readonly unviewedTicketCount = signal(0);
+  readonly canCreateTicket = computed(() => !!this.authService.currentUser() && this.authService.hasAnyPermission(['ticket:create']));
 
   /** ชื่อองค์กร/โลโก้ — โหลดจาก "ตั้งค่าทั่วไป" (ถ้าแอดมินยังไม่ได้ตั้งค่า ใช้ค่า default จาก environment/logo1.png แทน) */
   private readonly orgNameFromSettings = signal<string | null>(null);
   readonly orgName = computed(() => this.orgNameFromSettings() || environment.orgNameTh);
   readonly logoObjectUrl = signal<string | null>(null);
+
+  readonly isMobile = toSignal(this.breakpointObserver.observe('(max-width: 768px)').pipe(map((r) => r.matches)), {
+    initialValue: false,
+  });
+
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+      startWith(this.router.url),
+    ),
+    { requireSync: true },
+  );
+
+  /** มือถือ: เปิด/ปิด sidenav แบบ overlay — เริ่มต้นปิด (เดิมเปิดค้างบังเนื้อหาทุกครั้งที่โหลดหน้า) */
+  readonly sidenavOpened = signal(false);
+  /** เดสก์ท็อป: ย่อเหลือแถบไอคอน — จำค่าไว้ในเบราว์เซอร์ */
+  readonly sidebarCollapsed = signal(readCollapsed());
+  readonly isSidebarExpanded = computed(() => (this.isMobile() ? this.sidenavOpened() : !this.sidebarCollapsed()));
+
+  private readonly allowed = (item: INavItem) =>
+    !item.permissions?.length || this.authService.hasAnyPermission(item.permissions);
+
+  readonly navGroups = computed(() =>
+    NAV_GROUPS.map((g) => ({ label: g.label, items: g.items.filter(this.allowed) })).filter((g) => g.items.length > 0),
+  );
+
+  /** ชื่อหน้าปัจจุบันใน top bar — จับคู่ route ที่ยาวที่สุดที่ขึ้นต้นตรงกับ URL (หน้ารายละเอียดใช้ชื่อเมนูแม่) */
+  readonly currentNav = computed(() => {
+    const path = this.currentUrl().split(/[?#]/)[0];
+    let best: { label: string; group: string; len: number } | null = null;
+    for (const g of [...NAV_GROUPS, ACCOUNT_NAV_GROUP]) {
+      for (const item of g.items) {
+        if ((path === item.route || path.startsWith(item.route + '/')) && (!best || item.route.length > best.len)) {
+          best = { label: item.label, group: g.label, len: item.route.length };
+        }
+      }
+    }
+    return best;
+  });
+
+  private readonly bottomItems = computed(() =>
+    this.navGroups()
+      .flatMap((g) => g.items)
+      .filter((i) => i.mobile)
+      .slice(0, 3),
+  );
+  readonly bottomNavLeft = computed(() => this.bottomItems().slice(0, 2));
+  readonly bottomNavRight = computed(() => this.bottomItems().slice(2));
 
   constructor() {
     this.settingsService.getBranding().subscribe((b) => {
@@ -104,38 +153,39 @@ export class ShellComponent {
     this.socketService.ticketViewed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.unviewedTicketCount.update((v) => Math.max(0, v - 1));
     });
+
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        if (this.isMobile()) this.sidenavOpened.set(false);
+      });
   }
 
-  readonly isMobile = toSignal(
-    this.breakpointObserver.observe('(max-width: 768px)').pipe(map((r) => r.matches)),
-    { initialValue: false },
-  );
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      if (this.dialog.openDialogs.length === 0) this.openSearch();
+    }
+  }
 
-  /** ภาพลายน้ำพื้นหลังของหน้าปัจจุบัน — อ่านจาก route data ของ child route ที่ลึกที่สุด (ดู watermark ใน app.routes.ts) */
-  readonly watermarkSrc = toSignal(
-    this.router.events.pipe(
-      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
-      map(() => this.deepestRouteWatermark()),
-      startWith(this.deepestRouteWatermark()),
-    ),
-    { requireSync: true },
-  );
-
-  /** มือถือ: เปิด/ปิด sidenav แบบ overlay ทั้งแผง */
-  readonly sidenavOpened = signal(true);
-  /** เดสก์ท็อป: "ซ่อนเมนู" ไม่ได้ซ่อนแผงทั้งหมดแล้ว แต่ย่อเหลือแค่แถบไอคอน (ยังเห็นป้ายแจ้งเตือนงานแจ้งซ่อมบนไอคอนอยู่) */
-  readonly sidebarCollapsed = signal(false);
-  readonly isSidebarExpanded = computed(() => (this.isMobile() ? this.sidenavOpened() : !this.sidebarCollapsed()));
-
-  readonly navItems = computed(() =>
-    NAV_ITEMS.filter((item) => !item.permissions?.length || this.authService.hasAnyPermission(item.permissions)),
-  );
+  hasTicketBadge(route: string): boolean {
+    return route === '/repair-tickets' && this.isStaffRole() && this.unviewedTicketCount() > 0;
+  }
 
   toggleSidenav(): void {
     if (this.isMobile()) {
       this.sidenavOpened.update((v) => !v);
-    } else {
-      this.sidebarCollapsed.update((v) => !v);
+      return;
+    }
+    this.sidebarCollapsed.update((v) => !v);
+    try {
+      localStorage.setItem(COLLAPSED_KEY, this.sidebarCollapsed() ? '1' : '0');
+    } catch {
+      // ไม่มี storage ก็แค่ไม่จำค่า
     }
   }
 
@@ -144,11 +194,18 @@ export class ShellComponent {
   }
 
   openProfileDialog(): void {
-    this.dialog.open(ProfileDialogComponent, { width: '380px' });
+    this.dialog.open(ProfileDialogComponent, { width: '380px', maxWidth: '95vw' });
   }
 
   openSearch(): void {
     this.dialog.open(GlobalSearchDialogComponent, { width: '640px', maxWidth: '92vw', autoFocus: true, panelClass: 'khd-search-dialog-panel' });
+  }
+
+  openCreateTicket(): void {
+    const ref = this.dialog.open(TicketFormComponent, { width: '560px', maxWidth: '95vw' });
+    ref.afterClosed().subscribe((ticket) => {
+      if (ticket) void this.router.navigate(['/repair-tickets', ticket.id]);
+    });
   }
 
   logout(): void {
@@ -171,10 +228,12 @@ export class ShellComponent {
     }
     return null;
   }
+}
 
-  private deepestRouteWatermark(): string | undefined {
-    let route = this.activatedRoute.snapshot;
-    while (route.firstChild) route = route.firstChild;
-    return route.data['watermark'] as string | undefined;
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
   }
 }

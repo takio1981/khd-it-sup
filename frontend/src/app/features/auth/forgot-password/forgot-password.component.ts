@@ -6,14 +6,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
-import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
+import { AuthLayoutComponent } from '../../../shared/components/auth-layout/auth-layout.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'khd-forgot-password',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, MatFormFieldModule, MatInputModule, MatButtonModule, MatProgressSpinnerModule, PageWatermarkComponent],
+  imports: [ReactiveFormsModule, RouterLink, MatFormFieldModule, MatInputModule, MatButtonModule, MatProgressSpinnerModule, AuthLayoutComponent, IconComponent],
   templateUrl: './forgot-password.component.html',
 })
 export class ForgotPasswordComponent {

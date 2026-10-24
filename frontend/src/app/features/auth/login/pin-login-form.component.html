@@ -1,53 +1,36 @@
-<div class="relative min-h-screen overflow-hidden flex items-center justify-center bg-brand-background dark:bg-neutral-950 px-4">
-  <khd-page-watermark src="logo-khd-it-sup.png" />
-
-  <div class="relative z-10 w-full max-w-md">
-    <div class="text-center mb-6">
-      <img
-        src="logo-khd-it-sup.png"
-        alt="โลโก้ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์"
-        class="block mx-auto mb-3 h-24 w-24 rounded-full bg-white shadow-softLg ring-1 ring-black/5 dark:ring-white/10"
-      />
-      <h1 class="text-lg font-semibold text-neutral-900 dark:text-white">ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์</h1>
-      <p class="text-sm text-neutral-500 mt-1">{{ orgName }}</p>
+<khd-auth-layout>
+  <form [formGroup]="form" (ngSubmit)="submit(form.getRawValue().pin)" class="flex flex-col gap-5">
+    <div class="text-center">
+      <khd-user-avatar [avatarUrl]="marker?.avatarUrl ?? null" [gender]="marker?.gender ?? null" [size]="64" class="mx-auto mb-3 block w-fit" />
+      <p class="m-0 text-lg font-semibold text-ink">สวัสดี {{ marker?.fullName }}</p>
+      <p class="m-0 mt-1 text-sm text-muted">กรอก PIN 6 หลักเพื่อเข้าสู่ระบบ</p>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="submit(form.getRawValue().pin)" class="khd-card !bg-transparent !shadow-softLg space-y-5">
-      <div class="text-center -mt-1 mb-1">
-        <khd-user-avatar [avatarUrl]="marker?.avatarUrl ?? null" [gender]="marker?.gender ?? null" [size]="56" class="mx-auto mb-2 block w-fit" />
-        <p class="text-base font-medium text-neutral-800 dark:text-neutral-100">สวัสดี {{ marker?.fullName }}</p>
-        <p class="text-xs text-neutral-500 mt-0.5">กรอก PIN 6 หลักเพื่อเข้าสู่ระบบ</p>
+    @if (errorMessage()) {
+      <div class="flex items-start justify-center gap-2 rounded-xl bg-red-500/10 px-3 py-2.5 text-center text-sm text-red-700 dark:text-red-300" role="alert">
+        <khd-icon name="exclamation-triangle" [size]="18" class="mt-0.5 shrink-0" />
+        <span>{{ errorMessage() }}</span>
       </div>
+    }
 
-      @if (errorMessage()) {
-        <div class="rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm px-3 py-2 text-center">
-          {{ errorMessage() }}
-        </div>
+    <khd-pin-input formControlName="pin" (completed)="submit($event)" />
+
+    <button mat-flat-button type="submit" class="!h-12 !w-full !text-[15px]" [disabled]="loading()">
+      @if (loading()) {
+        <mat-spinner diameter="20" class="!mr-2 !inline-block" />
       }
+      เข้าสู่ระบบ
+    </button>
 
-      <khd-pin-input formControlName="pin" (completed)="submit($event)" />
+    <button type="button" class="cursor-pointer border-0 bg-transparent text-sm font-medium text-brand-primary hover:underline" (click)="switchToPassword()">
+      ไม่ใช่ {{ marker?.fullName }}? เข้าสู่ระบบด้วยรหัสผ่าน
+    </button>
+  </form>
 
-      <button mat-flat-button color="primary" type="submit" class="!w-full !h-11" [disabled]="loading()">
-        @if (loading()) {
-          <mat-spinner diameter="20" class="!inline-block !mr-2" />
-        }
-        เข้าสู่ระบบ
-      </button>
-
-      <p class="text-center text-sm">
-        <button type="button" class="text-brand-primary hover:underline" (click)="switchToPassword()">
-          ไม่ใช่ {{ marker?.fullName }}? เข้าสู่ระบบด้วยรหัสผ่าน
-        </button>
-      </p>
-    </form>
-
-    <a mat-stroked-button routerLink="/qr/scanner" class="!w-full !h-11 !mt-4 !flex !items-center !justify-center">
-      <khd-icon name="qr-code" [size]="18" class="!mr-1" />
+  <div below class="mt-4">
+    <a mat-stroked-button routerLink="/qr/scanner" class="!h-12 !w-full">
+      <khd-icon name="qr-code" [size]="18" class="mr-2" />
       สแกน QR Code แจ้งซ่อม / ยืม-คืนอุปกรณ์
     </a>
-
-    <p class="text-center text-xs text-neutral-400 mt-6">
-      © สำนักงานสาธารณสุขจังหวัดนครราชสีมา — IT Service Desk
-    </p>
   </div>
-</div>
+</khd-auth-layout>

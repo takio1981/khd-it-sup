@@ -1,20 +1,26 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { IconComponent } from '../../shared/components/icon/icon.component';
-import { PageWatermarkComponent } from '../../shared/components/page-watermark/page-watermark.component';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'khd-forbidden',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, IconComponent, PageWatermarkComponent],
+  imports: [RouterLink, MatButtonModule],
   template: `
-    <div class="relative min-h-screen overflow-hidden flex flex-col items-center justify-center gap-3 bg-brand-background dark:bg-neutral-950 px-4 text-center">
-      <khd-page-watermark src="logo3.png" />
-      <khd-icon name="shield-check" [size]="56" class="relative z-10 text-red-500" />
-      <h1 class="relative z-10 text-xl font-semibold">ไม่มีสิทธิ์เข้าถึงหน้านี้</h1>
-      <p class="relative z-10 text-neutral-500 text-sm">บัญชีของคุณไม่มีสิทธิ์เพียงพอสำหรับหน้านี้ กรุณาติดต่อผู้ดูแลระบบหากคิดว่าเป็นข้อผิดพลาด</p>
-      <a routerLink="/dashboard" class="relative z-10 text-brand-primary text-sm font-medium hover:underline">กลับสู่แดชบอร์ด</a>
+    <div class="flex min-h-screen flex-col items-center justify-center bg-brand-background px-4 text-center">
+      <span class="mb-5 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-white shadow-softLg">
+        <img src="illust/security.webp" alt="" class="h-full w-full object-cover" />
+      </span>
+      <p class="m-0 text-sm font-semibold tracking-wide text-red-600">403</p>
+      <h1 class="m-0 mt-1 text-2xl font-semibold">ไม่มีสิทธิ์เข้าถึงหน้านี้</h1>
+      <p class="m-0 mt-2 max-w-md text-sm text-muted">
+        บัญชีของคุณไม่มีสิทธิ์เพียงพอสำหรับหน้านี้ กรุณาติดต่อผู้ดูแลระบบหากคิดว่าเป็นข้อผิดพลาด
+      </p>
+      <div class="mt-6 flex flex-wrap justify-center gap-2">
+        <a mat-flat-button routerLink="/repair-tickets">ไปที่งานแจ้งซ่อม</a>
+        <a mat-stroked-button routerLink="/help">คู่มือการใช้งาน</a>
+      </div>
     </div>
   `,
 })

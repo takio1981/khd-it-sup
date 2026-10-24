@@ -2,6 +2,53 @@
   display: block;
 }
 
-mat-sidenav-container {
-  background-color: var(--khd-background);
+.khd-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 2.5rem;
+  margin-bottom: 2px;
+  padding: 0 0.75rem;
+  border-radius: 0.625rem;
+  font-size: 13.5px;
+  color: rgb(var(--khd-sidebar-text));
+  text-decoration: none;
+  transition: background-color 120ms, color 120ms;
+
+  &:hover {
+    background-color: rgb(255 255 255 / 0.06);
+    color: #fff;
+  }
+
+  &.khd-nav-active {
+    background-color: rgb(255 255 255 / 0.11);
+    color: #fff;
+    font-weight: 500;
+
+    khd-icon {
+      color: #8fbaff;
+    }
+  }
+}
+
+.khd-bottom-link {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  color: rgb(var(--khd-muted));
+  text-decoration: none;
+  cursor: pointer;
+
+  &.khd-bottom-active {
+    color: rgb(var(--khd-primary));
+    font-weight: 600;
+  }
 }

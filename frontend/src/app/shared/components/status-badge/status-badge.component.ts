@@ -7,7 +7,8 @@ import { getStatusColor, getStatusLabel } from '../../../core/constants/status.c
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <span class="khd-status-badge" [style.background-color]="color() + '1A'" [style.color]="color()">
+    <span class="khd-status-badge" [style.background-color]="color() + '1F'" [style.color]="color()">
+      <span class="h-1.5 w-1.5 shrink-0 rounded-full" [style.background-color]="color()"></span>
       {{ label() }}
     </span>
   `,

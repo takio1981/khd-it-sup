@@ -4,6 +4,15 @@ export type RoleCode = 'SUPER_ADMIN' | 'ADMIN' | 'IT_OFFICER' | 'TECHNICIAN' | '
  * ใช้กำหนดว่าใครเห็นตัวเลขงานแจ้งซ่อมใหม่ที่เมนู sidebar (ผู้แจ้งซ่อมทั่วไป role USER ไม่ควรเห็นตัวเลขรวมทั้งระบบ) */
 export const STAFF_ROLES: readonly RoleCode[] = ['SUPER_ADMIN', 'ADMIN', 'IT_OFFICER', 'TECHNICIAN'];
 
+/** ชื่อ role ภาษาไทย — ตรงกับ roles.name_th ใน database/seed.sql */
+export const ROLE_LABEL_TH: Record<RoleCode, string> = {
+  SUPER_ADMIN: 'ผู้ดูแลระบบสูงสุด',
+  ADMIN: 'ผู้ดูแลระบบ',
+  IT_OFFICER: 'เจ้าหน้าที่ไอที',
+  TECHNICIAN: 'ช่างเทคนิค',
+  USER: 'ผู้ใช้งานทั่วไป',
+};
+
 export type Gender = 'MALE' | 'FEMALE';
 
 /** ต้องตรงกับ backend/src/common/constants/permissions.const.ts เสมอ (source of truth คือฝั่ง backend) */

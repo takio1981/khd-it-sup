@@ -1,18 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, type AbstractControl, type ValidationErrors } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
-import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PinInputComponent } from '../../../shared/components/pin-input/pin-input.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import type { IPinDevice, IPinStatusResponse } from '../../../core/models/auth.model';
-import { environment } from '../../../../environments/environment';
 
 function pinsMatchValidator(group: AbstractControl): ValidationErrors | null {
   const pin = group.get('pin')?.value;
@@ -39,12 +40,14 @@ type PinCardState = 'never-configured' | 'disabled-with-history' | 'active' | 's
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    RouterLink,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
     MatProgressSpinnerModule,
-    PageWatermarkComponent,
+    PageHeaderComponent,
+    LoadingStateComponent,
+    EmptyStateComponent,
+    MatTooltipModule,
     IconComponent,
     PinInputComponent,
   ],
@@ -55,7 +58,6 @@ export class SetupPinComponent {
   private readonly authService = inject(AuthService);
   private readonly dialog = inject(MatDialog);
 
-  readonly orgName = environment.orgNameTh;
 
   readonly checkingStatus = signal(true);
   readonly statusLoadError = signal(false);

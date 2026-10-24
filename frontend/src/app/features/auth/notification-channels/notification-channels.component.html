@@ -1,71 +1,49 @@
-<div class="relative min-h-screen overflow-hidden flex items-center justify-center bg-brand-background dark:bg-neutral-950 px-4 py-10">
-  <khd-page-watermark src="logo3.png" />
+<div class="mx-auto max-w-xl space-y-4">
+  <khd-page-header
+    title="ช่องทางการแจ้งเตือนส่วนตัว"
+    subtitle="รับแจ้งเตือนสถานะงานแจ้งซ่อมและยืม-คืนครุภัณฑ์ของคุณโดยตรง นอกเหนือจากที่ส่งเข้ากลุ่มไอทีกลางตามปกติ"
+  />
 
-  <div class="relative z-10 w-full max-w-md">
-    <div class="text-center mb-6">
-      <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-primary text-white text-2xl font-bold shadow-softLg">
-        IT
-      </div>
-      <h1 class="text-lg font-semibold text-neutral-900 dark:text-white">ระบบแจ้งซ่อมอุปกรณ์และระบบคอมพิวเตอร์</h1>
-      <p class="text-sm text-neutral-500 mt-1">{{ orgName }}</p>
-    </div>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card space-y-3">
+    @if (savedMessage()) {
+      <div class="rounded-xl bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-700 dark:text-emerald-300">{{ savedMessage() }}</div>
+    }
+    @if (errorMessage()) {
+      <div class="rounded-xl bg-red-500/10 px-3 py-2.5 text-sm text-red-700 dark:text-red-300" role="alert">{{ errorMessage() }}</div>
+    }
 
-    <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card !shadow-softLg space-y-4">
-      <h2 class="text-base font-medium text-neutral-700 dark:text-neutral-200">ช่องทางการแจ้งเตือนส่วนตัว</h2>
-      <p class="text-sm text-neutral-500 -mt-2">
-        รับแจ้งเตือนสถานะงานแจ้งซ่อมและยืม-คืนครุภัณฑ์ของคุณโดยตรง นอกเหนือจากที่ส่งเข้ากลุ่มไอทีกลางตามปกติ
-      </p>
-
-      @if (savedMessage()) {
-        <div class="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-sm px-3 py-2">
-          {{ savedMessage() }}
-        </div>
-      }
-      @if (errorMessage()) {
-        <div class="rounded-lg bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-sm px-3 py-2">
-          {{ errorMessage() }}
+    @if (loading()) {
+      <khd-loading-state />
+    } @else {
+      @if (alreadyConfigured() && !savedMessage()) {
+        <div class="flex items-start gap-2 rounded-xl bg-brand-primary/10 px-3 py-2.5 text-sm text-brand-primary">
+          <khd-icon name="information-circle" [size]="18" class="mt-0.5 shrink-0" />
+          <span>คุณตั้งค่าการแจ้งเตือนส่วนตัวไว้แล้ว — แก้ไขค่าด้านล่างแล้วกดบันทึกเพื่ออัปเดต</span>
         </div>
       }
 
-      @if (loading()) {
-        <div class="flex justify-center py-6">
-          <mat-spinner diameter="28" />
-        </div>
-      } @else {
-        @if (alreadyConfigured() && !savedMessage()) {
-          <div class="rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-sm px-3 py-2">
-            คุณมีการตั้งค่าการแจ้งเตือนส่วนตัวไว้แล้ว — แก้ไขค่าด้านล่างแล้วกดบันทึกเพื่ออัปเดต
-          </div>
-        }
-        <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
-          <mat-label>Telegram Chat ID</mat-label>
-          <input matInput formControlName="telegramChatId" placeholder="เช่น 123456789" />
-        </mat-form-field>
-        <p class="text-xs text-neutral-400">
-          หาได้โดยส่งข้อความหาบอท <span class="font-medium">@userinfobot</span> ใน Telegram แล้วนำ Chat ID ที่ได้มาวางที่นี่
-        </p>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Telegram Chat ID</mat-label>
+        <input matInput formControlName="telegramChatId" placeholder="เช่น 123456789" />
+        <khd-icon matPrefix name="paper-airplane" [size]="18" class="ml-3 mr-2 text-[#229ED9]" />
+        <mat-hint>ส่งข้อความหาบอท &#64;userinfobot ใน Telegram แล้วนำ Chat ID ที่ได้มาวางที่นี่</mat-hint>
+      </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
-          <mat-label>LINE User ID</mat-label>
-          <input matInput formControlName="lineUserId" placeholder="เช่น U1234567890abcdef1234567890abcdef" />
-        </mat-form-field>
-        <p class="text-xs text-neutral-400">หากไม่ทราบ LINE User ID ของตนเอง ติดต่อเจ้าหน้าที่ไอทีเพื่อขอความช่วยเหลือ</p>
+      <mat-form-field appearance="outline" class="mt-3 w-full">
+        <mat-label>LINE User ID</mat-label>
+        <input matInput formControlName="lineUserId" placeholder="เช่น U1234567890abcdef1234567890abcdef" />
+        <khd-icon matPrefix name="chat-bubble-left-right" [size]="18" class="ml-3 mr-2 text-[#06C755]" />
+        <mat-hint>หากไม่ทราบ LINE User ID ของตนเอง ติดต่อเจ้าหน้าที่ไอทีเพื่อขอความช่วยเหลือ</mat-hint>
+      </mat-form-field>
 
-        <button mat-flat-button color="primary" type="submit" class="!w-full !h-11" [disabled]="saving()">
+      <div class="flex justify-end pt-3">
+        <button mat-flat-button type="submit" [disabled]="saving()">
           @if (saving()) {
-            <mat-spinner diameter="20" class="!inline-block !mr-2" />
+            <mat-spinner diameter="20" class="!mr-2 !inline-block" />
           }
           บันทึกช่องทางการแจ้งเตือน
         </button>
-      }
-    </form>
-
-    <p class="text-center text-sm mt-4">
-      <a routerLink="/dashboard" class="text-brand-primary hover:underline">กลับไปแดชบอร์ด</a>
-    </p>
-
-    <p class="text-center text-xs text-neutral-400 mt-6">
-      © สำนักงานสาธารณสุขจังหวัดนครราชสีมา — IT Service Desk
-    </p>
-  </div>
+      </div>
+    }
+  </form>
 </div>
