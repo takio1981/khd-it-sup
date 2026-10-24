@@ -231,7 +231,7 @@ export class RepairTicketService {
       ctx,
     );
 
-    await this.notifySafe('NEW_TICKET', ticket, ticket.workflowInstance?.currentStep.stepNameTh ?? ticket.status);
+    void this.notifySafe('NEW_TICKET', ticket, ticket.workflowInstance?.currentStep.stepNameTh ?? ticket.status);
     await this.notifyTicketLiveListSafe('ticket:created', { ticketId: ticket.id, ticketNumber: ticket.ticketNumber, urgency: ticket.urgency });
 
     return ticket;
@@ -299,7 +299,7 @@ export class RepairTicketService {
     );
 
     const notifyEvent = updated.status === 'COMPLETED' ? 'COMPLETE' : updated.status === 'CANCELLED' ? 'CANCEL' : 'STATUS_CHANGE';
-    await this.notifySafe(notifyEvent, updated, updated.workflowInstance?.currentStep.stepNameTh ?? updated.status);
+    void this.notifySafe(notifyEvent, updated, updated.workflowInstance?.currentStep.stepNameTh ?? updated.status);
 
     return updated;
   }
@@ -333,7 +333,7 @@ export class RepairTicketService {
       ctx,
     );
 
-    await this.notifySafe('ASSIGN', ticket, ticket.workflowInstance?.currentStep.stepNameTh ?? ticket.status);
+    void this.notifySafe('ASSIGN', ticket, ticket.workflowInstance?.currentStep.stepNameTh ?? ticket.status);
 
     return ticket;
   }

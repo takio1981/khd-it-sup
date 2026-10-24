@@ -1,4 +1,7 @@
+import { inject } from '@angular/core';
 import type { Routes } from '@angular/router';
+import { AuthService } from './core/services/auth.service';
+import { homeRouteFor } from './layout/nav-items';
 import { authGuard, guestGuard, mustChangePasswordGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
@@ -49,7 +52,14 @@ export const routes: Routes = [
     canActivateChild: [mustChangePasswordGuard],
     loadComponent: () => import('./layout/shell/shell.component').then((m) => m.ShellComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: () => {
+          const auth = inject(AuthService);
+          return homeRouteFor((p) => auth.hasAnyPermission(p));
+        },
+      },
       {
         path: 'auth/setup-pin',
         loadComponent: () => import('./features/auth/setup-pin/setup-pin.component').then((m) => m.SetupPinComponent),

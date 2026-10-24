@@ -77,3 +77,8 @@ export const ACCOUNT_NAV_GROUP: INavGroup = {
 
 /** รายการเมนูแบบแบน (ใช้หาชื่อหน้าปัจจุบัน/เมนูล่างมือถือ) */
 export const NAV_ITEMS: INavItem[] = NAV_GROUPS.flatMap((g) => g.items);
+
+/** หน้าแรกหลังเข้าสู่ระบบ = เมนูแรกที่บัญชีมีสิทธิ์ (เดิม hardcode /dashboard ทำให้ role ที่ไม่มีสิทธิ์ดูแดชบอร์ดตกหน้า 403 ทันที) */
+export function homeRouteFor(hasAnyPermission: (p: Permission[]) => boolean): string {
+  return NAV_ITEMS.find((i) => !i.permissions?.length || hasAnyPermission(i.permissions))?.route ?? '/help';
+}

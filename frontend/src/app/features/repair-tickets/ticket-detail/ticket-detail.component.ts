@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, ViewChild, ElementRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, Injector, ViewChild, afterNextRender, computed, effect, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -104,6 +104,7 @@ export class TicketDetailComponent {
   private readonly dialog = inject(MatDialog);
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   readonly partsUsed = signal<ISparePartTransaction[]>([]);
 
@@ -122,6 +123,7 @@ export class TicketDetailComponent {
   private static readonly ALLOWED_ATTACHMENT_PREFIXES = ['image/', 'video/'];
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('trailScroller') trailScroller?: ElementRef<HTMLElement>;
 
   /** ผูกอัตโนมัติจาก route param :id */
   readonly id = input<string>('');
@@ -190,11 +192,26 @@ export class TicketDetailComponent {
       .map((s) => ({
         id: s.id,
         name: s.stepNameTh,
-        state: s.id === current.id ? 'current' : s.stepOrder < current.stepOrder ? 'done' : 'todo',
+        state: s.id === current.id ? (current.isTerminal ? 'done' : 'current') : s.stepOrder < current.stepOrder ? 'done' : 'todo',
       }));
   });
 
-  private readonly canUpdateStatus = computed(() => !!this.authService.currentUser() && this.authService.hasAnyPermission(['ticket:update_status']));
+  /** ตรงกับ assertCanEditAsAssigneeOrReporter ฝั่ง backend: เปลี่ยนขั้นตอน/บันทึกผลตรวจ/สรุปผลซ่อม ทำได้เฉพาะ Admin/Super Admin,
+   * ผู้แจ้ง หรือช่างที่ได้รับมอบหมาย — ซ่อนปุ่มที่กดแล้วจะถูกปฏิเสธ 403 เสมอ */
+  readonly canEditAsAssigneeOrReporter = computed(() => {
+    const t = this.ticket();
+    const me = this.authService.currentUser();
+    if (!t || !me) return false;
+    return me.role === 'SUPER_ADMIN' || me.role === 'ADMIN' || t.reportedBy.id === me.id || t.assignedTechnician?.id === me.id;
+  });
+  private readonly canUpdateStatus = computed(
+    () => this.authService.hasAnyPermission(['ticket:update_status']) && this.canEditAsAssigneeOrReporter(),
+  );
+  /** มีสิทธิ์เปลี่ยนสถานะทั่วไป แต่งานนี้ไม่ได้มอบหมายให้ตน — แสดงคำอธิบายแทนปุ่ม */
+  readonly blockedByAssignment = computed(
+    () => this.authService.hasAnyPermission(['ticket:update_status']) && !this.canEditAsAssigneeOrReporter() && this.availableTransitions().length > 0,
+  );
+  readonly canEditSummary = computed(() => this.canUpdateStatus());
   readonly canReceiveNow = computed(() => this.canReceive() && this.authService.hasAnyPermission(['ticket:receive']));
   readonly showInspectNext = computed(() => this.canUpdateStatus() && this.ticket()?.status === 'RECEIVED' && !this.ticket()?.inspectedAt);
   /** ปุ่มไปขั้นถัดไปตาม workflow — ตัดเส้นทาง "ไปยังรับเรื่อง" ออกเมื่อมีปุ่ม "รับเรื่อง" (endpoint เฉพาะ) อยู่แล้ว กันปุ่มซ้ำ */
@@ -238,6 +255,7 @@ export class TicketDetailComponent {
     this.repairTicketService.getById(id).subscribe({
       next: (ticket) => {
         this.ticket.set(ticket);
+        afterNextRender(() => this.scrollTrailToCurrent(), { injector: this.injector });
         this.loading.set(false);
       },
       error: (err) => {
@@ -248,12 +266,25 @@ export class TicketDetailComponent {
       },
     });
     this.repairTicketService.getTimeline(id).subscribe((events) => this.timeline.set(events));
-    this.sparePartService.listTransactions({ ticketId: id, limit: 50 }).subscribe((res) => this.partsUsed.set(res.items));
-    this.vendorRepairOrderService.list({ ticketId: id, limit: 1 }).subscribe((res) => {
-      const order = res.items[0] ?? null;
-      this.vendorOrder.set(order);
-      this.selectedVendorOrderStatus = order?.status ?? '';
-    });
+    // โหลดเฉพาะส่วนที่บัญชีมีสิทธิ์ดู — เดิมเรียกทุกครั้ง ผู้แจ้งซ่อม (USER) จึงเห็นแถบ error "ไม่มีสิทธิ์" ทุกครั้งที่เปิดใบงานของตัวเอง
+    if (this.authService.hasAnyPermission(['spare_part:view', 'spare_part:manage', 'spare_part:issue'])) {
+      this.sparePartService.listTransactions({ ticketId: id, limit: 50 }).subscribe((res) => this.partsUsed.set(res.items));
+    }
+    if (this.authService.hasAnyPermission(['vendor:view', 'vendor:manage'])) {
+      this.vendorRepairOrderService.list({ ticketId: id, limit: 1 }).subscribe((res) => {
+        const order = res.items[0] ?? null;
+        this.vendorOrder.set(order);
+        this.selectedVendorOrderStatus = order?.status ?? '';
+      });
+    }
+  }
+
+  /** มือถือ: แถบขั้นตอนกว้างกว่าจอ — เลื่อนให้เห็นขั้นปัจจุบัน (หรือขั้นสุดท้ายเมื่อปิดงานแล้ว) โดยไม่เลื่อนหน้าทั้งหน้า */
+  private scrollTrailToCurrent(): void {
+    const el = this.trailScroller?.nativeElement;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+    const target = el.querySelector<HTMLElement>('[aria-current="step"]');
+    el.scrollLeft = target ? target.offsetLeft - (el.clientWidth - target.offsetWidth) / 2 : el.scrollWidth;
   }
 
   private refresh(message = 'บันทึกเรียบร้อยแล้ว'): void {

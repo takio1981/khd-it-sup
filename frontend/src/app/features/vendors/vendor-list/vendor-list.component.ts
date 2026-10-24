@@ -6,7 +6,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxjs';
 import { VendorService } from '../../../core/services/vendor.service';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
@@ -21,6 +20,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ExportMenuComponent } from '../../../shared/components/export-menu/export-menu.component';
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -51,7 +51,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
 export class VendorListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly vendorService = inject(VendorService);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly toast = inject(ToastService);
 
   readonly displayedColumns = ['code', 'name', 'contactPerson', 'phone', 'status', 'actions'];
   readonly vendors = signal<IVendor[]>([]);
@@ -145,6 +145,7 @@ export class VendorListComponent {
       next: () => {
         this.saving.set(false);
         this.showForm.set(false);
+        this.toast.success(editing ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มข้อมูลแล้ว');
         this.editingId.set(null);
         this.fetch();
       },
@@ -166,7 +167,7 @@ export class VendorListComponent {
       },
       error: () => {
         this.exporting.set(false);
-        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('Export Excel ไม่สำเร็จ');
       },
     });
   }
@@ -181,7 +182,7 @@ export class VendorListComponent {
       },
       error: () => {
         this.exporting.set(false);
-        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('Export CSV ไม่สำเร็จ');
       },
     });
   }
@@ -199,7 +200,7 @@ export class VendorListComponent {
         filename: `vendors-${Date.now()}.pdf`,
       });
     } catch {
-      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      this.toast.error('Export PDF ไม่สำเร็จ');
     } finally {
       this.exporting.set(false);
     }

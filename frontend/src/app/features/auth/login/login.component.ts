@@ -6,6 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
+import { homeRouteFor } from '../../../layout/nav-items';
 import { AuthLayoutComponent } from '../../../shared/components/auth-layout/auth-layout.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { PinLoginFormComponent } from './pin-login-form.component';
@@ -90,7 +91,7 @@ export class LoginComponent {
 
     this.authService.login(this.form.getRawValue()).subscribe({
       next: () => {
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? homeRouteFor((p) => this.authService.hasAnyPermission(p));
         void this.router.navigateByUrl(returnUrl);
       },
       error: (err) => {

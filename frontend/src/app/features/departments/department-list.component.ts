@@ -7,7 +7,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { DepartmentService } from '../../core/services/department.service';
 import { HasPermissionDirective } from '../../shared/directives/has-permission.directive';
 import { IconComponent } from '../../shared/components/icon/icon.component';
@@ -19,6 +18,7 @@ import type { IDepartment } from '../../core/models/user.model';
 import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { ExportMenuComponent } from '../../shared/components/export-menu/export-menu.component';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'khd-department-list',
@@ -44,7 +44,7 @@ export class DepartmentListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly departmentService = inject(DepartmentService);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly toast = inject(ToastService);
 
   readonly displayedColumns = ['code', 'nameTh', 'parent', 'actions'];
   readonly departments = signal<IDepartment[]>([]);
@@ -117,6 +117,7 @@ export class DepartmentListComponent {
       next: () => {
         this.saving.set(false);
         this.showForm.set(false);
+        this.toast.success(editing ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มข้อมูลแล้ว');
         this.editingId.set(null);
         this.form.reset({ code: '', nameTh: '', nameEn: '', parentId: '' });
         this.fetch();
@@ -135,7 +136,7 @@ export class DepartmentListComponent {
       },
       error: () => {
         this.exporting.set(false);
-        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('Export Excel ไม่สำเร็จ');
       },
     });
   }
@@ -150,7 +151,7 @@ export class DepartmentListComponent {
       },
       error: () => {
         this.exporting.set(false);
-        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('Export CSV ไม่สำเร็จ');
       },
     });
   }
@@ -168,7 +169,7 @@ export class DepartmentListComponent {
         filename: `departments-${Date.now()}.pdf`,
       });
     } catch {
-      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      this.toast.error('Export PDF ไม่สำเร็จ');
     } finally {
       this.exporting.set(false);
     }
@@ -181,7 +182,10 @@ export class DepartmentListComponent {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        this.departmentService.remove(dept.id).subscribe(() => this.fetch());
+        this.departmentService.remove(dept.id).subscribe(() => {
+          this.toast.success('ลบข้อมูลแล้ว');
+          this.fetch();
+        });
       }
     });
   }

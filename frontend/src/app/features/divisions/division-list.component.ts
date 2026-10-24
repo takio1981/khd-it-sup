@@ -14,6 +14,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import type { IDepartment, IDivision } from '../../core/models/user.model';
 import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'khd-division-list',
@@ -38,6 +39,7 @@ export class DivisionListComponent {
   private readonly divisionService = inject(DivisionService);
   private readonly departmentService = inject(DepartmentService);
   private readonly dialog = inject(MatDialog);
+  private readonly toast = inject(ToastService);
 
   readonly displayedColumns = ['code', 'nameTh', 'nameEn', 'department', 'actions'];
   readonly divisions = signal<IDivision[]>([]);
@@ -95,6 +97,7 @@ export class DivisionListComponent {
       next: () => {
         this.saving.set(false);
         this.showForm.set(false);
+        this.toast.success(editing ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มข้อมูลแล้ว');
         this.editingId.set(null);
         this.form.reset({ code: '', nameTh: '', nameEn: '', departmentId: '' });
         this.fetch();
@@ -114,7 +117,10 @@ export class DivisionListComponent {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        this.divisionService.remove(division.id).subscribe(() => this.fetch());
+        this.divisionService.remove(division.id).subscribe(() => {
+          this.toast.success('ลบข้อมูลแล้ว');
+          this.fetch();
+        });
       }
     });
   }

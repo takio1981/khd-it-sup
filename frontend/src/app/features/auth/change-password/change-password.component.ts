@@ -6,6 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
+import { homeRouteFor } from '../../../layout/nav-items';
 import { AuthLayoutComponent } from '../../../shared/components/auth-layout/auth-layout.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { environment } from '../../../../environments/environment';
@@ -43,6 +44,7 @@ export class ChangePasswordComponent {
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly forced = this.authService.currentUser()?.mustChangePassword ?? false;
+  readonly homeLink = homeRouteFor((p) => this.authService.hasAnyPermission(p));
 
   readonly form = this.fb.nonNullable.group(
     {

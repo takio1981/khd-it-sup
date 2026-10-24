@@ -12,6 +12,7 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import type { IPosition } from '../../core/models/user.model';
 import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'khd-position-list',
@@ -34,6 +35,7 @@ export class PositionListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly positionService = inject(PositionService);
   private readonly dialog = inject(MatDialog);
+  private readonly toast = inject(ToastService);
 
   readonly displayedColumns = ['code', 'nameTh', 'nameEn', 'actions'];
   readonly positions = signal<IPosition[]>([]);
@@ -88,6 +90,7 @@ export class PositionListComponent {
       next: () => {
         this.saving.set(false);
         this.showForm.set(false);
+        this.toast.success(editing ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มข้อมูลแล้ว');
         this.editingId.set(null);
         this.form.reset({ code: '', nameTh: '', nameEn: '' });
         this.fetch();
@@ -107,7 +110,10 @@ export class PositionListComponent {
     });
     ref.afterClosed().subscribe((confirmed) => {
       if (confirmed) {
-        this.positionService.remove(position.id).subscribe(() => this.fetch());
+        this.positionService.remove(position.id).subscribe(() => {
+          this.toast.success('ลบข้อมูลแล้ว');
+          this.fetch();
+        });
       }
     });
   }

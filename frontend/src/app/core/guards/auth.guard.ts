@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import type { CanActivateFn } from '@angular/router';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { homeRouteFor } from '../../layout/nav-items';
 
 /** ป้องกัน route ที่ต้อง login — ใช้ร่วมกับ provideAppInitializer(silentRefresh) ที่ทำงานก่อน router activate เสมอ */
 export const authGuard: CanActivateFn = (_route, state) => {
@@ -23,7 +24,7 @@ export const guestGuard: CanActivateFn = () => {
   if (!authService.isAuthenticated()) {
     return true;
   }
-  return router.createUrlTree(['/dashboard']);
+  return router.parseUrl(homeRouteFor((p) => authService.hasAnyPermission(p)));
 };
 
 /** บังคับให้ผู้ใช้ที่ mustChangePassword=true ไปเปลี่ยนรหัสผ่านก่อนใช้งานหน้าอื่นในระบบ */

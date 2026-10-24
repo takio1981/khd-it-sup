@@ -9,7 +9,6 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxjs';
 import { SparePartService } from '../../../core/services/spare-part.service';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
@@ -24,6 +23,7 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { ExportMenuComponent } from '../../../shared/components/export-menu/export-menu.component';
 import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -119,7 +119,7 @@ export class SparePartListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly sparePartService = inject(SparePartService);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly toast = inject(ToastService);
 
   readonly displayedColumns = ['code', 'name', 'quantityOnHand', 'reorderLevel', 'unit', 'actions'];
   readonly parts = signal<ISparePart[]>([]);
@@ -226,6 +226,7 @@ export class SparePartListComponent {
       next: () => {
         this.saving.set(false);
         this.showForm.set(false);
+        this.toast.success(editing ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มข้อมูลแล้ว');
         this.editingId.set(null);
         this.fetch();
       },
@@ -247,7 +248,7 @@ export class SparePartListComponent {
       },
       error: () => {
         this.exporting.set(false);
-        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('Export Excel ไม่สำเร็จ');
       },
     });
   }
@@ -262,7 +263,7 @@ export class SparePartListComponent {
       },
       error: () => {
         this.exporting.set(false);
-        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('Export CSV ไม่สำเร็จ');
       },
     });
   }
@@ -280,7 +281,7 @@ export class SparePartListComponent {
         filename: `spare-parts-${Date.now()}.pdf`,
       });
     } catch {
-      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      this.toast.error('Export PDF ไม่สำเร็จ');
     } finally {
       this.exporting.set(false);
     }
@@ -292,12 +293,12 @@ export class SparePartListComponent {
       if (!result) return;
       this.sparePartService.recordTransaction(part.id, { type: result.type, quantity: result.quantity, note: result.note || undefined }).subscribe({
         next: () => {
-          this.snackBar.open('ปรับสต็อกแล้ว', 'ปิด', { duration: 2000 });
+          this.toast.success('ปรับสต็อกแล้ว');
           this.fetch();
         },
         error: (err) => {
           const message = err?.error?.error?.message ?? 'ปรับสต็อกไม่สำเร็จ';
-          this.snackBar.open(message, 'ปิด', { duration: 3000 });
+          this.toast.error(message);
         },
       });
     });

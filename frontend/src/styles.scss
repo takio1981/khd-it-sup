@@ -257,6 +257,13 @@ html.dark-theme .khd-status-badge {
   ));
 }
 
+// มือถือ: ยกแถบแจ้งผลขึ้นเหนือแถบเมนูล่าง (สูง 64px) ไม่ให้บังปุ่มเมนู
+@media (max-width: 768px) {
+  .mat-mdc-snack-bar-container {
+    margin-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
 // --- ตาราง (mat-table) — หัวตารางเรียบ แถว hover ---
 .mat-mdc-table .mat-mdc-header-row {
   background-color: rgb(var(--khd-surface-2));

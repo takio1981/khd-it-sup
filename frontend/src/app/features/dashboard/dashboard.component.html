@@ -14,7 +14,7 @@
     </mat-menu>
   </khd-page-header>
 
-  <nav class="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="เมนูลัด">
+  <nav class="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="เมนูลัดหน้าแรก">
     @for (q of quickLinks(); track q.label) {
       @if (q.route) {
         <a [routerLink]="q.route" class="khd-card group flex items-center gap-3 !p-3 no-underline transition-shadow hover:shadow-softLg sm:!p-4">

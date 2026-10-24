@@ -54,9 +54,11 @@
             <button mat-menu-item *khdHasPermission="'ticket:assign'" (click)="openAssignDialog()">
               <khd-icon name="users" [size]="18" class="mr-3" />มอบหมายช่าง
             </button>
-            <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="openInspectionDialog()">
-              <khd-icon name="clipboard-document-list" [size]="18" class="mr-3" />บันทึกผลตรวจสอบเบื้องต้น
-            </button>
+            @if (canEditSummary()) {
+              <button mat-menu-item (click)="openInspectionDialog()">
+                <khd-icon name="clipboard-document-list" [size]="18" class="mr-3" />บันทึกผลตรวจสอบเบื้องต้น
+              </button>
+            }
             <button mat-menu-item *khdHasPermission="'spare_part:issue'" (click)="openIssuePartDialog()">
               <khd-icon name="archive-box" [size]="18" class="mr-3" />เบิกอะไหล่
             </button>
@@ -86,7 +88,7 @@
           งานนี้ถูกยกเลิกแล้ว
         </div>
       } @else if (stepTrail().length > 0) {
-        <div class="-mx-4 mt-5 overflow-x-auto px-4 md:-mx-5 md:px-5">
+        <div #trailScroller class="relative -mx-4 mt-5 overflow-x-auto px-4 md:-mx-5 md:px-5">
           <ol class="m-0 flex min-w-max list-none items-start p-0" aria-label="ขั้นตอนการซ่อม">
             @for (step of stepTrail(); track step.id; let last = $last; let i = $index) {
               <li class="flex items-start">
@@ -160,7 +162,19 @@
               }
             </div>
           </div>
-        } @else {
+        }
+        @if (blockedByAssignment()) {
+          <p class="m-0 mt-3 flex items-start gap-2 rounded-xl bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+            <khd-icon name="information-circle" [size]="18" class="mt-0.5 shrink-0" />
+            <span>
+              @if (t.assignedTechnician) {
+                งานนี้มอบหมายให้ <strong>{{ t.assignedTechnician.fullName }}</strong> — ผู้รับผิดชอบงาน ผู้แจ้ง หรือผู้ดูแลระบบเท่านั้นที่เปลี่ยนขั้นตอนได้
+              } @else {
+                งานนี้ยังไม่ได้มอบหมายช่าง — มอบหมายช่างผู้รับผิดชอบก่อน (ปุ่ม "เพิ่มเติม" → "มอบหมายช่าง") หรือให้ผู้ดูแลระบบเปลี่ยนขั้นตอน
+              }
+            </span>
+          </p>
+        } @else if (!hasNextActions()) {
           <p class="m-0 mt-5 flex items-center gap-2 rounded-xl bg-surface-2 px-4 py-3 text-sm text-muted">
             <khd-icon name="clock" [size]="18" class="shrink-0" />
             ขณะนี้อยู่ขั้นตอน "{{ t.progress.currentStepNameTh }}" — ระบบจะแจ้งเตือนเมื่อสถานะเปลี่ยน
@@ -351,9 +365,11 @@
                 <khd-icon name="check-circle" [size]="18" class="text-emerald-600" />
                 <h2 class="m-0 text-base font-semibold">สรุปผลการซ่อมจากช่าง</h2>
               </div>
-              <button mat-button *khdHasPermission="'ticket:update_status'" (click)="openEditRepairSummary()">
-                <khd-icon name="pencil-square" [size]="16" class="mr-1" />แก้ไข
-              </button>
+              @if (canEditSummary()) {
+                <button mat-button (click)="openEditRepairSummary()">
+                  <khd-icon name="pencil-square" [size]="16" class="mr-1" />แก้ไข
+                </button>
+              }
             </div>
             <dl class="m-0 space-y-3 text-sm">
               @if (t.rootCause) {

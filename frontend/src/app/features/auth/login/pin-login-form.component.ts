@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
+import { homeRouteFor } from '../../../layout/nav-items';
 import { UserAvatarComponent } from '../../../shared/components/user-avatar/user-avatar.component';
 import { PinInputComponent } from '../../../shared/components/pin-input/pin-input.component';
 import { AuthLayoutComponent } from '../../../shared/components/auth-layout/auth-layout.component';
@@ -53,7 +54,7 @@ export class PinLoginFormComponent {
 
     this.authService.loginWithPin({ pin }).subscribe({
       next: () => {
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? homeRouteFor((p) => this.authService.hasAnyPermission(p));
         void this.router.navigateByUrl(returnUrl);
       },
       error: (err) => {

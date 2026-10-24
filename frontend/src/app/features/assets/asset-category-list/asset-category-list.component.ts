@@ -6,7 +6,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { AssetService } from '../../../core/services/asset.service';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
@@ -14,6 +13,7 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
 import type { IAssetCategory } from '../../../core/models/asset.model';
 import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'khd-asset-category-list',
@@ -37,7 +37,7 @@ export class AssetCategoryListComponent {
   private readonly fb = inject(FormBuilder);
   private readonly assetService = inject(AssetService);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly toast = inject(ToastService);
 
   readonly displayedColumns = ['code', 'nameTh', 'nameEn', 'requiresSerial', 'actions'];
   readonly categories = signal<IAssetCategory[]>([]);
@@ -100,6 +100,7 @@ export class AssetCategoryListComponent {
       next: () => {
         this.saving.set(false);
         this.showForm.set(false);
+        this.toast.success(editing ? 'บันทึกการแก้ไขแล้ว' : 'เพิ่มข้อมูลแล้ว');
         this.editingId.set(null);
         this.fetch();
       },
@@ -122,7 +123,7 @@ export class AssetCategoryListComponent {
         next: () => this.fetch(),
         error: (err) => {
           const message = err?.error?.error?.message ?? 'ไม่สามารถปิดใช้งานประเภทครุภัณฑ์นี้ได้';
-          this.snackBar.open(message, 'ปิด', { duration: 4000 });
+          this.toast.error(message);
         },
       });
     });

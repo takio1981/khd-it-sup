@@ -9,18 +9,18 @@
     <a mat-stroked-button routerLink="/auth/login">เข้าสู่ระบบ</a>
   </header>
 
-  <section class="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-6 sm:px-6 md:grid-cols-[1.1fr_0.9fr] md:pt-12">
-    <div class="text-center md:text-left">
+  <section class="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-6 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] md:pt-12">
+    <div class="text-center lg:text-left">
       <p class="m-0 text-sm font-medium text-brand-primary">IT Service Desk · {{ orgName }}</p>
       <h1 class="m-0 mt-3 text-[32px] font-semibold leading-tight sm:text-[40px]">
         ระบบแจ้งซ่อมอุปกรณ์<br class="hidden sm:block" />และระบบคอมพิวเตอร์
       </h1>
-      <p class="m-0 mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted md:mx-0">
+      <p class="m-0 mx-auto mt-4 max-w-lg text-base leading-relaxed text-muted lg:mx-0">
         แจ้งซ่อมได้ภายในไม่กี่คลิก ติดตามทุกขั้นตอนจนรับเครื่องคืน และจัดการยืม-คืนครุภัณฑ์ไอทีของทุกหน่วยงานในที่เดียว
       </p>
-      <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row md:justify-start">
-        <a mat-flat-button routerLink="/auth/login" class="!h-12 !px-8 !text-[15px]">เข้าสู่ระบบ</a>
-        <a mat-stroked-button routerLink="/qr/scanner" class="!h-12 !px-6">
+      <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+        <a mat-flat-button routerLink="/auth/login" class="!h-12 !whitespace-nowrap !px-8 !text-[15px]">เข้าสู่ระบบ</a>
+        <a mat-stroked-button routerLink="/qr/scanner" class="!h-12 !whitespace-nowrap !px-6">
           <khd-icon name="qr-code" [size]="18" class="mr-2" />
           สแกน QR แจ้งซ่อม / ยืม-คืน
         </a>

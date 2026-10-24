@@ -30,7 +30,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (error.status !== 401) {
         const message = error.error?.error?.message ?? 'เกิดข้อผิดพลาดในการเชื่อมต่อระบบ';
-        snackBar.open(message, 'ปิด', { duration: 4000, panelClass: ['khd-snackbar-error'] });
+        snackBar.open(message, 'ปิด', { duration: 4000, panelClass: 'khd-toast-error' });
       }
 
       return throwError(() => error);
