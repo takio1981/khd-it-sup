@@ -683,42 +683,45 @@ export class WorkflowDiagramsComponent {
     return `\n${classDef}\n${linkStyleLine}\n${classLine}`;
   }
 
-  /** สีธีมของผัง mermaid — ยึดโทนเขียวของแบรนด์ (brand-primary #006C45) ให้เข้ากับสีระบบทั้งโหมดสว่าง/มืด */
+  /** สีธีมของผัง mermaid — โทนกรมท่า/น้ำเงินของแบรนด์ (ตรงกับ token ใน styles.scss) ทั้งโหมดสว่าง/มืด */
   private buildThemeVariables(mode: ThemeMode): Record<string, string> {
+    const fontFamily = '"IBM Plex Sans Thai", "Noto Sans Thai", sans-serif';
     if (mode === 'dark') {
       return {
-        background: '#171717',
-        primaryColor: '#0f3d2c',
-        primaryTextColor: '#e5f7ee',
-        primaryBorderColor: '#00A86B',
-        lineColor: '#34d399',
-        secondaryColor: '#262626',
-        secondaryTextColor: '#e5e7eb',
-        secondaryBorderColor: '#525252',
-        tertiaryColor: '#1f2937',
-        tertiaryTextColor: '#e5e7eb',
-        tertiaryBorderColor: '#525252',
-        textColor: '#e5e7eb',
-        edgeLabelBackground: '#171717',
-        clusterBkg: '#1f2937',
+        background: '#121B2B',
+        primaryColor: '#1A2C4D',
+        primaryTextColor: '#E6EBF2',
+        primaryBorderColor: '#7AACFF',
+        lineColor: '#7AACFF',
+        secondaryColor: '#172235',
+        secondaryTextColor: '#E6EBF2',
+        secondaryBorderColor: '#334766',
+        tertiaryColor: '#121B2B',
+        tertiaryTextColor: '#E6EBF2',
+        tertiaryBorderColor: '#334766',
+        textColor: '#E6EBF2',
+        edgeLabelBackground: '#121B2B',
+        clusterBkg: '#172235',
+        fontFamily,
         fontSize: '14px',
       };
     }
     return {
       background: '#ffffff',
-      primaryColor: '#E3F2E9',
-      primaryTextColor: '#0f2e22',
-      primaryBorderColor: '#006C45',
-      lineColor: '#006C45',
-      secondaryColor: '#F7FAF8',
-      secondaryTextColor: '#1f2937',
-      secondaryBorderColor: '#d1d5db',
+      primaryColor: '#EAF1FF',
+      primaryTextColor: '#0B2545',
+      primaryBorderColor: '#1F6FD1',
+      lineColor: '#1F6FD1',
+      secondaryColor: '#F4F6FA',
+      secondaryTextColor: '#111B2D',
+      secondaryBorderColor: '#C3CCD9',
       tertiaryColor: '#ffffff',
-      tertiaryTextColor: '#1f2937',
-      tertiaryBorderColor: '#d1d5db',
-      textColor: '#1f2937',
+      tertiaryTextColor: '#111B2D',
+      tertiaryBorderColor: '#C3CCD9',
+      textColor: '#111B2D',
       edgeLabelBackground: '#ffffff',
-      clusterBkg: '#F7FAF8',
+      clusterBkg: '#F4F6FA',
+      fontFamily,
       fontSize: '14px',
     };
   }

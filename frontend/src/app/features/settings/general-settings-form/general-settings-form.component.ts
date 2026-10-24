@@ -10,6 +10,8 @@ import { SettingsService } from '../../../core/services/settings.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import type { IOrgSettings } from '../../../core/models/settings.model';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'khd-general-settings-form',
@@ -23,6 +25,8 @@ import type { IOrgSettings } from '../../../core/models/settings.model';
     MatSlideToggleModule,
     MatProgressSpinnerModule,
     IconComponent,
+    PageHeaderComponent,
+    LoadingStateComponent,
   ],
   templateUrl: './general-settings-form.component.html',
 })

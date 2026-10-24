@@ -1,9 +1,9 @@
+<div class="mx-auto max-w-3xl space-y-4">
+  <khd-page-header title="ตั้งค่าทั่วไป" subtitle="ข้อมูลองค์กร โลโก้ และเซิร์ฟเวอร์อีเมลที่ระบบใช้ส่งแจ้งเตือน" />
 @if (loading()) {
-  <div class="flex justify-center py-16">
-    <p class="text-sm text-neutral-400">กำลังโหลด...</p>
-  </div>
+  <khd-loading-state />
 } @else {
-  <div class="space-y-4 max-w-2xl">
+  <div class="space-y-4">
     <div class="khd-card">
       <h2 class="m-0 mb-1 text-base font-semibold">ข้อมูลองค์กร</h2>
       <p class="text-xs text-neutral-500 mb-4">ชื่อองค์กรและโลโก้ที่แสดงในแถบเมนูของทุกหน้า</p>
@@ -101,3 +101,4 @@
     }
   </div>
 }
+</div>
