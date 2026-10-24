@@ -23,6 +23,7 @@ import { getAcquisitionTypeLabel } from '../../../core/constants/status.const';
 import { getCategoryIconName } from '../../../core/utils/category-icon.util';
 import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/models/asset.model';
 import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 @Component({
   selector: 'khd-asset-detail',
@@ -39,6 +40,7 @@ import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
     AssetPhotoThumbnailComponent,
     KhdNumberPipe,
     KhdDatePipe,
+    LoadingStateComponent,
   ],
   templateUrl: './asset-detail.component.html',
 })

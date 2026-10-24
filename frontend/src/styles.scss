@@ -169,8 +169,28 @@ h1, h2, h3 {
 
 // preflight ของ Tailwind ปิดอยู่ (กันชนกับ Material) — แต่ template ทั้งระบบเขียนระยะห่างด้วย utility (space-y/mt/mb)
 // โดยถือว่า <p> ไม่มี margin เอง จึงรีเซ็ตเฉพาะ <p> ไม่ให้ margin เริ่มต้นของเบราว์เซอร์ (1em) ทำให้ช่องว่างห่างเกิน
-p {
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+dl,
+dd,
+figure,
+blockquote {
   margin: 0;
+}
+// ปุ่ม <button> ธรรมดาที่ใช้เป็นลิงก์/ไอคอนในตาราง — ล้างกรอบ/พื้นของเบราว์เซอร์ (:where = specificity 0 จึงไม่ทับ
+// สไตล์ของ Material หรือ utility class ใดๆ เหมือน preflight ของ Tailwind)
+:where(button) {
+  background-color: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
 
 :focus-visible {

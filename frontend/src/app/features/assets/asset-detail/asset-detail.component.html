@@ -1,30 +1,34 @@
 @if (loading()) {
-  <div class="flex justify-center py-20">
-    <mat-spinner diameter="36" />
-  </div>
+  <khd-loading-state label="กำลังโหลดข้อมูลครุภัณฑ์…" />
 } @else if (asset(); as a) {
   <div class="space-y-4">
-    <a routerLink="/assets" class="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-brand-primary">
-      <khd-icon name="chevron-left" [size]="16" />
-      กลับไปรายการครุภัณฑ์
-    </a>
-
-    <div class="khd-card flex flex-col md:flex-row md:items-start justify-between gap-4">
-      <div>
-        <p class="text-xs text-neutral-500">{{ a.category.nameTh }}</p>
-        <h1 class="text-xl font-semibold">{{ a.assetNumber }}</h1>
-        <p class="text-sm text-neutral-500">{{ a.brand }} {{ a.model }} @if (a.serialNumber) { · S/N: {{ a.serialNumber }} }</p>
-        <div class="mt-2"><khd-status-badge [status]="a.status" /></div>
+    <div class="khd-card flex flex-col justify-between gap-4 md:flex-row md:items-start">
+      <div class="flex min-w-0 items-start gap-2">
+        <a
+          routerLink="/assets"
+          class="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-neutral-500/10 hover:text-ink"
+          aria-label="กลับไปรายการครุภัณฑ์"
+        >
+          <khd-icon name="arrow-left" [size]="20" />
+        </a>
+        <div class="min-w-0">
+          <p class="text-xs text-muted">{{ a.category.nameTh }}</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="m-0 text-[22px] font-semibold leading-tight">{{ a.assetNumber }}</h1>
+            <khd-status-badge [status]="a.status" />
+          </div>
+          <p class="mt-1 text-sm text-muted">{{ a.brand }} {{ a.model }} @if (a.serialNumber) { · S/N: {{ a.serialNumber }} }</p>
+        </div>
       </div>
 
-      <div class="flex gap-2">
+      <div class="flex shrink-0 flex-wrap gap-2">
         <button mat-stroked-button *khdHasPermission="'asset:update'" (click)="openEditForm()">
           <khd-icon name="pencil-square" [size]="18" class="!mr-1" />แก้ไข
         </button>
         <button mat-flat-button color="primary" *khdHasPermission="'qrcode:print'" [disabled]="printing()" (click)="printQr()">
           <khd-icon name="printer" [size]="18" class="!mr-1" />พิมพ์ QR
         </button>
-        <button mat-stroked-button *khdHasPermission="'asset:delete'" (click)="deleteAsset()" class="!text-red-600 !border-red-200">
+        <button mat-stroked-button *khdHasPermission="'asset:delete'" (click)="deleteAsset()" color="warn">
           <khd-icon name="trash" [size]="18" class="!mr-1" />ลบ
         </button>
       </div>
@@ -34,16 +38,16 @@
       <div class="khd-card md:col-span-2">
         <h2 class="m-0 mb-3 text-base font-semibold">ข้อมูลครุภัณฑ์</h2>
         <dl class="grid grid-cols-2 gap-y-3 text-sm">
-          <div><dt class="text-neutral-400 text-xs">เลขครุภัณฑ์ราชการ</dt><dd>{{ a.govAssetNumber ?? '-' }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">หน่วยงาน</dt><dd>{{ a.department?.nameTh ?? '-' }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">สถานที่</dt><dd>{{ a.building?.name }} {{ a.floor?.name }} {{ a.room?.name }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">ผู้รับผิดชอบ</dt><dd>{{ a.owner?.fullName ?? '-' }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">วันที่จัดซื้อ</dt><dd>{{ a.purchaseDate ?? '-' }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">หมดประกัน</dt><dd>{{ a.warrantyExpireDate ?? '-' }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">ราคา</dt><dd>{{ a.price | khdNumber:2 }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">ประเภทการได้มา</dt><dd>{{ acquisitionTypeLabel(a.acquisitionType) }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">หน่วยนับ</dt><dd>{{ a.unitType ?? '-' }}</dd></div>
-          <div><dt class="text-neutral-400 text-xs">ปีงบประมาณ</dt><dd>{{ a.budgetYear ?? '-' }}</dd></div>
+          <div><dt class="text-xs text-muted">เลขครุภัณฑ์ราชการ</dt><dd>{{ a.govAssetNumber ?? '-' }}</dd></div>
+          <div><dt class="text-xs text-muted">หน่วยงาน</dt><dd>{{ a.department?.nameTh ?? '-' }}</dd></div>
+          <div><dt class="text-xs text-muted">สถานที่</dt><dd>{{ a.building?.name }} {{ a.floor?.name }} {{ a.room?.name }}</dd></div>
+          <div><dt class="text-xs text-muted">ผู้รับผิดชอบ</dt><dd>{{ a.owner?.fullName ?? '-' }}</dd></div>
+          <div><dt class="text-xs text-muted">วันที่จัดซื้อ</dt><dd>{{ a.purchaseDate ? (a.purchaseDate | khdDate) : '-' }}</dd></div>
+          <div><dt class="text-xs text-muted">หมดประกัน</dt><dd>{{ a.warrantyExpireDate ? (a.warrantyExpireDate | khdDate) : '-' }}</dd></div>
+          <div><dt class="text-xs text-muted">ราคา</dt><dd>{{ a.price ? (a.price | khdNumber: 2) + ' บาท' : '-' }}</dd></div>
+          <div><dt class="text-xs text-muted">ประเภทการได้มา</dt><dd>{{ acquisitionTypeLabel(a.acquisitionType) }}</dd></div>
+          <div><dt class="text-xs text-muted">หน่วยนับ</dt><dd>{{ a.unitType ?? '-' }}</dd></div>
+          <div><dt class="text-xs text-muted">ปีงบประมาณ</dt><dd>{{ a.budgetYear ?? '-' }}</dd></div>
         </dl>
         @if (a.remark) {
           <div class="mt-3 pt-3 border-t border-black/5 dark:border-white/10">
@@ -55,9 +59,9 @@
           <div class="mt-3 pt-3 border-t border-black/5 dark:border-white/10">
             <p class="text-neutral-400 text-xs mb-2">ข้อมูลจากระบบต้นทาง ({{ a.externalSource }})</p>
             <dl class="grid grid-cols-2 gap-y-3 text-sm">
-              <div><dt class="text-neutral-400 text-xs">รหัสอ้างอิงต้นทาง</dt><dd>{{ a.externalId ?? '-' }}</dd></div>
-              <div><dt class="text-neutral-400 text-xs">รหัสจำแนกครุภัณฑ์ราชการ</dt><dd>{{ a.equipClassificationCode ?? '-' }}</dd></div>
-              <div class="col-span-2"><dt class="text-neutral-400 text-xs">ชื่อจำแนกครุภัณฑ์ราชการ</dt><dd>{{ a.equipClassificationName ?? '-' }}</dd></div>
+              <div><dt class="text-xs text-muted">รหัสอ้างอิงต้นทาง</dt><dd>{{ a.externalId ?? '-' }}</dd></div>
+              <div><dt class="text-xs text-muted">รหัสจำแนกครุภัณฑ์ราชการ</dt><dd>{{ a.equipClassificationCode ?? '-' }}</dd></div>
+              <div class="col-span-2"><dt class="text-xs text-muted">ชื่อจำแนกครุภัณฑ์ราชการ</dt><dd>{{ a.equipClassificationName ?? '-' }}</dd></div>
             </dl>
           </div>
         }

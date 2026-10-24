@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AssetLoanService } from '../../../core/services/asset-loan.service';
@@ -13,6 +12,7 @@ import { AssetLoanReturnFormComponent } from '../asset-loan-return-form/asset-lo
 import type { IAssetLoan, AssetLoanStatus } from '../../../core/models/asset-loan.model';
 import type { AssetLoanTimelineEventType, IAssetLoanTimelineEvent } from '../../../core/models/asset-loan-timeline.model';
 import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 const STATUS_LABEL_TH: Record<AssetLoanStatus, string> = { BORROWED: 'กำลังยืม', OVERDUE: 'เกินกำหนด', RETURNED: 'คืนแล้ว' };
 const STATUS_COLOR: Record<AssetLoanStatus, string> = { BORROWED: '#3B82F6', OVERDUE: '#EF4444', RETURNED: '#22C55E' };
@@ -37,7 +37,7 @@ const EVENT_LABEL_TH: Record<AssetLoanTimelineEventType, string> = {
   selector: 'khd-asset-loan-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ RouterLink, MatButtonModule, MatProgressSpinnerModule, IconComponent, KhdNumberPipe, KhdDatePipe],
+  imports: [ RouterLink, MatButtonModule, IconComponent, KhdNumberPipe, KhdDatePipe, LoadingStateComponent],
   templateUrl: './asset-loan-detail.component.html',
 })
 export class AssetLoanDetailComponent {
