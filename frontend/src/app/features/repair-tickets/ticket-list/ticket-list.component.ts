@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatePipe, NgClass } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -9,16 +9,19 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxjs';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
 import { SocketService } from '../../../core/services/socket.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
-import { URGENCY_LABEL_TH, URGENCY_COLOR } from '../../../core/constants/status.const';
+import { URGENCY_LABEL_TH, URGENCY_COLOR, STATUS_LABEL_TH } from '../../../core/constants/status.const';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { ExportMenuComponent } from '../../../shared/components/export-menu/export-menu.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
+import { ToastService } from '../../../core/services/toast.service';
 import { TicketFormComponent } from '../ticket-form/ticket-form.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
@@ -26,6 +29,8 @@ import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { IRepairTicketListItem } from '../../../core/models/repair-ticket.model';
 import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
+import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -37,7 +42,6 @@ const EXPORT_PDF_MAX_ROWS = 500;
   imports: [
     RouterLink,
     FormsModule,
-    DatePipe,
     NgClass,
     MatTableModule,
     MatPaginatorModule,
@@ -45,11 +49,16 @@ const EXPORT_PDF_MAX_ROWS = 500;
     MatSelectModule,
     MatInputModule,
     MatButtonModule,
-    MatMenuModule,
     StatusBadgeComponent,
     IconComponent,
     HasPermissionDirective,
     KhdNumberPipe,
+    PageHeaderComponent,
+    ExportMenuComponent,
+    EmptyStateComponent,
+    LoadingStateComponent,
+    KhdDatePipe,
+    FilterBarComponent,
   ],
   templateUrl: './ticket-list.component.html',
 })
@@ -58,13 +67,16 @@ export class TicketListComponent {
   private readonly socketService = inject(SocketService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly exporting = signal(false);
 
   readonly urgencyLabels = URGENCY_LABEL_TH;
   readonly urgencyColor = URGENCY_COLOR;
+  readonly statusLabels = STATUS_LABEL_TH;
+  /** สถานะของ workflow ปัจจุบัน (v2) เรียงตามลำดับขั้นตอน */
+  readonly statusOptions = ['SUBMITTED', 'RECEIVED', 'WAITING_PARTS', 'VENDOR_REPAIR', 'TESTING', 'COMPLETED', 'USER_ACCEPTANCE', 'CLOSED', 'CANCELLED'];
 
   readonly displayedColumns = ['ticketNumber', 'description', 'urgency', 'status', 'reportedBy', 'technician', 'createdAt'];
   readonly tickets = signal<IRepairTicketListItem[]>([]);
@@ -105,6 +117,14 @@ export class TicketListComponent {
     this.keyword$.next(this.keyword);
   }
 
+  clearFilters(): void {
+    this.keyword = '';
+    this.status = '';
+    this.urgency = '';
+    this.keyword$.next('');
+    this.onFilterChange();
+  }
+
   onFilterChange(): void {
     this.pageIndex.set(0);
     this.fetch();
@@ -134,7 +154,7 @@ export class TicketListComponent {
   }
 
   openCreateForm(): void {
-    const ref = this.dialog.open(TicketFormComponent, { width: '520px' });
+    const ref = this.dialog.open(TicketFormComponent, { width: '560px' });
     ref.afterClosed().subscribe((ticket) => {
       if (ticket) {
         this.fetch();
@@ -161,7 +181,7 @@ export class TicketListComponent {
       },
       error: () => {
         this.exporting.set(false);
-        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('Export Excel ไม่สำเร็จ');
       },
     });
   }
@@ -176,7 +196,7 @@ export class TicketListComponent {
       },
       error: () => {
         this.exporting.set(false);
-        this.snackBar.open('Export CSV ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('Export CSV ไม่สำเร็จ');
       },
     });
   }
@@ -202,7 +222,7 @@ export class TicketListComponent {
         filename: `repair-tickets-${Date.now()}.pdf`,
       });
     } catch {
-      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      this.toast.error('Export PDF ไม่สำเร็จ');
     } finally {
       this.exporting.set(false);
     }

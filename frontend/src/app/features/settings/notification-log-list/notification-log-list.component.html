@@ -2,20 +2,12 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <p class="text-sm text-neutral-500">ประวัติการแจ้งเตือนทุกช่องทาง (Email/Telegram/LINE) ใช้ตรวจสอบสถานะการส่ง</p>
     <div class="flex gap-2">
-      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
-        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-        Export
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
-        <button mat-menu-item (click)="exportCsv()">CSV</button>
-        <button mat-menu-item (click)="exportPdf()">PDF</button>
-      </mat-menu>
+      <khd-export-menu [disabled]="exporting()" (excel)="exportExcel()" (csv)="exportCsv()" (pdf)="exportPdf()" />
     </div>
   </div>
 
-  <div class="khd-card !p-3 flex flex-col sm:flex-row gap-3">
-    <mat-form-field appearance="outline" class="sm:w-56 !mb-[-1.25em]">
+  <khd-filter-bar>
+    <mat-form-field appearance="outline" class="sm:w-56">
       <mat-label>ช่องทาง</mat-label>
       <mat-select [(ngModel)]="channel" (ngModelChange)="onFilterChange()">
         <mat-option value="">ทั้งหมด</mat-option>
@@ -27,7 +19,7 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="sm:w-56 !mb-[-1.25em]">
+    <mat-form-field appearance="outline" class="sm:w-56">
       <mat-label>สถานะ</mat-label>
       <mat-select [(ngModel)]="status" (ngModelChange)="onFilterChange()">
         <mat-option value="">ทั้งหมด</mat-option>
@@ -37,7 +29,7 @@
         <mat-option value="READ">อ่านแล้ว</mat-option>
       </mat-select>
     </mat-form-field>
-  </div>
+  </khd-filter-bar>
 
   <div class="khd-card !p-0 overflow-x-auto">
     <table mat-table [dataSource]="logs()" class="w-full">
@@ -76,15 +68,15 @@
 
       <ng-container matColumnDef="createdAt">
         <th mat-header-cell *matHeaderCellDef>เวลา</th>
-        <td mat-cell *matCellDef="let n" data-label="เวลา">{{ n.createdAt | date: 'd MMM yyyy, HH:mm' }}</td>
+        <td mat-cell *matCellDef="let n" data-label="เวลา">{{ n.createdAt | khdDate: 'datetime' }}</td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
 
     @if (!loading() && logs().length === 0) {
-      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบประวัติการแจ้งเตือนที่ตรงกับเงื่อนไข</p>
+      <khd-empty-state [compact]="true" title="ไม่พบประวัติการแจ้งเตือนที่ตรงกับเงื่อนไข" />
     }
 
     <mat-paginator

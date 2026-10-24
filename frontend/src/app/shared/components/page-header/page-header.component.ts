@@ -39,7 +39,20 @@ import { IconComponent } from '../icon/icon.component';
   `,
   styles: `
     .khd-page-actions:empty { display: none; }
-    .khd-page-actions ::ng-deep .mat-mdc-button-base { white-space: nowrap; }
+    .khd-page-actions ::ng-deep .mat-mdc-button-base { white-space: nowrap; flex-shrink: 0; }
+    /* มือถือ: ปุ่มเรียงแถวเดียวเลื่อนแนวนอนได้ และปุ่มหลัก (flat) อยู่หน้าสุด แทนการตกหลายบรรทัดจนดันเนื้อหาลง */
+    @media (max-width: 639.98px) {
+      .khd-page-actions {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        margin: 0 -1rem;
+        padding: 0 1rem 2px;
+        scrollbar-width: none;
+      }
+      .khd-page-actions::-webkit-scrollbar { display: none; }
+      .khd-page-actions ::ng-deep > .mat-mdc-unelevated-button,
+      .khd-page-actions ::ng-deep > * > .mat-mdc-unelevated-button { order: -1; }
+    }
   `,
 })
 export class PageHeaderComponent {

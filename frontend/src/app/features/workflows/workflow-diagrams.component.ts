@@ -4,6 +4,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { ThemeService, type ThemeMode } from '../../core/services/theme.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 interface IWorkflowSection {
   key: string;
@@ -340,7 +341,7 @@ const BACKUP_DIAGRAM = `flowchart TD
   selector: 'khd-workflow-diagrams',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatTabsModule, MatProgressSpinnerModule, IconComponent],
+  imports: [MatTabsModule, MatProgressSpinnerModule, IconComponent, PageHeaderComponent],
   templateUrl: './workflow-diagrams.component.html',
   styleUrl: './workflow-diagrams.component.scss',
 })
@@ -373,7 +374,7 @@ export class WorkflowDiagramsComponent {
     key: 'overview',
     title: 'ภาพรวมการเชื่อมโยงและการส่งข้อมูลระหว่างระบบ',
     icon: 'share',
-    iconColor: 'text-brand-primary dark:text-emerald-400',
+    iconColor: 'text-brand-primary',
     description:
       'ทุกระบบเชื่อมกันผ่านครุภัณฑ์และ QR Code เป็นจุดศูนย์กลาง — สแกนแล้วระบบจะตรวจสอบสถานะและงานค้างก่อนพาไปยังหน้าที่ถูกต้องเสมอ ทุกการเปลี่ยนแปลงข้อมูลจะถูกบันทึกและแจ้งเตือนออกไปอัตโนมัติ',
     notes: [

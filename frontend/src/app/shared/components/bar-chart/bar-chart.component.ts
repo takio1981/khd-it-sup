@@ -22,7 +22,7 @@ export interface IBarChartDatum {
 export class BarChartComponent {
   readonly data = input.required<IBarChartDatum[]>();
   readonly orientation = input<'horizontal' | 'vertical'>('horizontal');
-  readonly defaultColor = input<string>('#006C45');
+  readonly defaultColor = input<string>('#1F6FD1');
   readonly valueSuffix = input<string>('');
   readonly emptyMessage = input<string>('ไม่มีข้อมูล');
 

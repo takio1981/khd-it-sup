@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
@@ -22,6 +21,9 @@ import { BackupRestoreDialogComponent, type IBackupRestoreDialogData } from '../
 import { downloadBlob } from '../../../core/utils/download.util';
 import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 import type { BackupAction, BackupScope, IBackupLog, IBackupStatus, IBackupTableGroup } from '../../../core/models/backup.model';
+import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -50,7 +52,6 @@ function formatBytes(bytes: number | null): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
-    DatePipe,
     MatTableModule,
     MatPaginatorModule,
     MatFormFieldModule,
@@ -61,6 +62,9 @@ function formatBytes(bytes: number | null): string {
     MatProgressSpinnerModule,
     IconComponent,
     BackupTablePickerComponent,
+    KhdDatePipe,
+    EmptyStateComponent,
+    FilterBarComponent,
   ],
   providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   templateUrl: './backup-list.component.html',

@@ -1,12 +1,5 @@
 <div class="space-y-4">
-  <div>
-    <a routerLink="/departments" class="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-brand-primary mb-1">
-      <khd-icon name="chevron-left" [size]="16" />
-      กลับไปหน้าจัดการสถานที่/หน่วยงาน
-    </a>
-    <h1 class="text-xl font-semibold">จัดการอาคาร/ชั้น/ห้อง</h1>
-    <p class="text-sm text-neutral-500">เลือกอาคารเพื่อดูชั้น และเลือกชั้นเพื่อดูห้อง ตามลำดับ</p>
-  </div>
+  <khd-page-header title="จัดการอาคาร/ชั้น/ห้อง" subtitle="เลือกอาคารเพื่อดูชั้น และเลือกชั้นเพื่อดูห้อง ตามลำดับ" backLink="/departments" backLabel="กลับไปหน้าจัดการสถานที่/หน่วยงาน"></khd-page-header>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
     <!-- Buildings -->
@@ -27,11 +20,11 @@
 
       @if (showBuildingForm()) {
         <form [formGroup]="buildingForm" (ngSubmit)="submitBuilding()" class="space-y-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 p-3">
-          <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>รหัสอาคาร</mat-label>
             <input matInput formControlName="code" />
           </mat-form-field>
-          <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>ชื่ออาคาร</mat-label>
             <input matInput formControlName="name" />
           </mat-form-field>
@@ -59,14 +52,14 @@
               <button
                 *khdHasPermission="'asset:update'"
                 (click)="openEditBuildingForm(b)"
-                class="appearance-none rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 p-1.5"
+                class="khd-row-action"
               >
                 <khd-icon name="pencil-square" [size]="13" />
               </button>
               <button
                 *khdHasPermission="'asset:delete'"
                 (click)="deleteBuilding(b)"
-                class="appearance-none rounded-full border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 p-1.5"
+                class="khd-row-action khd-row-action-danger"
               >
                 <khd-icon name="trash" [size]="13" />
               </button>
@@ -97,11 +90,11 @@
       } @else {
         @if (showFloorForm()) {
           <form [formGroup]="floorForm" (ngSubmit)="submitFloor()" class="space-y-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 p-3">
-            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+            <mat-form-field appearance="outline" class="w-full">
               <mat-label>รหัสชั้น</mat-label>
               <input matInput formControlName="code" />
             </mat-form-field>
-            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+            <mat-form-field appearance="outline" class="w-full">
               <mat-label>ชื่อชั้น</mat-label>
               <input matInput formControlName="name" />
             </mat-form-field>
@@ -129,14 +122,14 @@
                 <button
                   *khdHasPermission="'asset:update'"
                   (click)="openEditFloorForm(f)"
-                  class="appearance-none rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 p-1.5"
+                  class="khd-row-action"
                 >
                   <khd-icon name="pencil-square" [size]="13" />
                 </button>
                 <button
                   *khdHasPermission="'asset:delete'"
                   (click)="deleteFloor(f)"
-                  class="appearance-none rounded-full border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 p-1.5"
+                  class="khd-row-action khd-row-action-danger"
                 >
                   <khd-icon name="trash" [size]="13" />
                 </button>
@@ -168,15 +161,15 @@
       } @else {
         @if (showRoomForm()) {
           <form [formGroup]="roomForm" (ngSubmit)="submitRoom()" class="space-y-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 p-3">
-            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+            <mat-form-field appearance="outline" class="w-full">
               <mat-label>รหัสห้อง</mat-label>
               <input matInput formControlName="code" />
             </mat-form-field>
-            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+            <mat-form-field appearance="outline" class="w-full">
               <mat-label>ชื่อห้อง</mat-label>
               <input matInput formControlName="name" />
             </mat-form-field>
-            <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+            <mat-form-field appearance="outline" class="w-full">
               <mat-label>หน่วยงานที่ใช้งาน</mat-label>
               <mat-select formControlName="departmentId">
                 <mat-option value="">ไม่ระบุ</mat-option>
@@ -205,14 +198,14 @@
                 <button
                   *khdHasPermission="'asset:update'"
                   (click)="openEditRoomForm(r)"
-                  class="appearance-none rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 p-1.5"
+                  class="khd-row-action"
                 >
                   <khd-icon name="pencil-square" [size]="13" />
                 </button>
                 <button
                   *khdHasPermission="'asset:delete'"
                   (click)="deleteRoom(r)"
-                  class="appearance-none rounded-full border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 p-1.5"
+                  class="khd-row-action khd-row-action-danger"
                 >
                   <khd-icon name="trash" [size]="13" />
                 </button>

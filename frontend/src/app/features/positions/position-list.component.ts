@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,13 +11,13 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import type { IPosition } from '../../core/models/user.model';
 import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'khd-position-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterLink,
     ReactiveFormsModule,
     MatTableModule,
     MatFormFieldModule,
@@ -27,6 +26,7 @@ import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
     IconComponent,
     HasPermissionDirective,
     KhdNumberPipe,
+    PageHeaderComponent,
   ],
   templateUrl: './position-list.component.html',
 })

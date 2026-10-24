@@ -1,21 +1,22 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 import { NotificationService } from '../../../core/services/notification.service';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
 import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 import type { INotificationLog, NotificationChannel, NotificationStatus } from '../../../core/models/notification.model';
+import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { ExportMenuComponent } from '../../../shared/components/export-menu/export-menu.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -46,7 +47,7 @@ const STATUS_COLOR: Record<string, string> = {
   providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, DatePipe, MatTableModule, MatPaginatorModule, MatFormFieldModule, MatSelectModule, MatButtonModule, MatMenuModule, IconComponent],
+  imports: [FormsModule, MatTableModule, MatPaginatorModule, MatFormFieldModule, MatSelectModule, MatButtonModule, KhdDatePipe, EmptyStateComponent, ExportMenuComponent, FilterBarComponent],
   templateUrl: './notification-log-list.component.html',
 })
 export class NotificationLogListComponent {

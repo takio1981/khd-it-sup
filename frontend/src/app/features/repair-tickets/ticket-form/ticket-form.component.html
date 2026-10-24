@@ -2,43 +2,58 @@
 
 <form [formGroup]="form" (ngSubmit)="submit()">
   <mat-dialog-content class="!flex !flex-col !gap-1">
+    <p class="m-0 mb-2 text-xs font-semibold tracking-wide text-muted">ปัญหาที่พบ</p>
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>รายละเอียดปัญหา</mat-label>
-      <textarea matInput formControlName="description" rows="3"></textarea>
+      <textarea matInput formControlName="description" rows="3" placeholder="เช่น เปิดเครื่องไม่ติด มีเสียงดังผิดปกติ ปริ้นเตอร์กระดาษติด"></textarea>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>ความเร่งด่วน</mat-label>
-      <mat-select formControlName="urgency">
+    <div class="mb-4">
+      <p class="m-0 mb-1.5 text-sm text-ink">ความเร่งด่วน</p>
+      <mat-button-toggle-group formControlName="urgency" class="!flex w-full" aria-label="ความเร่งด่วน" [hideSingleSelectionIndicator]="true">
         @for (u of ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']; track u) {
-          <mat-option [value]="u">{{ urgencyLabels[u] }}</mat-option>
+          <mat-button-toggle [value]="u" class="flex-1">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-full" [style.background-color]="urgencyColor[u]"></span>
+              {{ urgencyLabels[u] }}
+            </span>
+          </mat-button-toggle>
         }
-      </mat-select>
-    </mat-form-field>
+      </mat-button-toggle-group>
+    </div>
 
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>ประเภทปัญหา (ถ้ามี)</mat-label>
       <input matInput formControlName="problemType" placeholder="เช่น ฮาร์ดแวร์, ซอฟต์แวร์, เครือข่าย" />
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>สถานที่</mat-label>
-      <input matInput formControlName="locationNote" />
-    </mat-form-field>
+    <p class="m-0 mb-2 mt-1 text-xs font-semibold tracking-wide text-muted">สถานที่และการติดต่อ</p>
+    <div class="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>สถานที่</mat-label>
+        <input matInput formControlName="locationNote" placeholder="อาคาร / ชั้น / ห้อง" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>เบอร์โทรติดต่อกลับ</mat-label>
+        <input matInput formControlName="contactPhone" inputmode="tel" />
+      </mat-form-field>
+    </div>
 
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>เบอร์โทรติดต่อกลับ</mat-label>
-      <input matInput formControlName="contactPhone" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>ประเภทอุปกรณ์</mat-label>
-      <mat-select formControlName="equipmentType">
-        @for (t of equipmentTypeOptions; track t) {
-          <mat-option [value]="t">{{ equipmentTypeLabels[t] }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+    <p class="m-0 mb-2 mt-1 text-xs font-semibold tracking-wide text-muted">ข้อมูลอุปกรณ์</p>
+    <div class="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>ประเภทอุปกรณ์</mat-label>
+        <mat-select formControlName="equipmentType">
+          @for (t of equipmentTypeOptions; track t) {
+            <mat-option [value]="t">{{ equipmentTypeLabels[t] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>สีเครื่อง</mat-label>
+        <input matInput formControlName="deviceColor" />
+      </mat-form-field>
+    </div>
     @if (form.value.equipmentType === 'OTHER') {
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>ระบุประเภทอุปกรณ์</mat-label>
@@ -46,33 +61,28 @@
       </mat-form-field>
     }
 
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>สีเครื่อง</mat-label>
-      <input matInput formControlName="deviceColor" />
-    </mat-form-field>
-
-    <div class="mb-2">
-      <p class="text-sm text-neutral-500 mb-1">อุปกรณ์ที่มาพร้อมเครื่อง</p>
-      <div class="flex flex-col gap-1">
+    <div class="mb-2 rounded-xl border border-solid border-line p-3">
+      <p class="m-0 mb-1 text-sm text-ink">อุปกรณ์ที่มาพร้อมเครื่อง</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2">
         <mat-checkbox formControlName="hasAdapterCable">สาย Adapter</mat-checkbox>
         <mat-checkbox formControlName="hasVgaCable">สาย VGA/RGB/DVI/HDMI</mat-checkbox>
         <mat-checkbox formControlName="hasPowerCable">สาย POWER AC</mat-checkbox>
         <mat-checkbox formControlName="hasOtherAccessory">อื่นๆ ระบุ</mat-checkbox>
       </div>
+      @if (form.value.hasOtherAccessory) {
+        <mat-form-field appearance="outline" class="mt-2 w-full">
+          <mat-label>ระบุอุปกรณ์เสริมอื่นๆ</mat-label>
+          <input matInput formControlName="otherAccessoryNote" />
+        </mat-form-field>
+      }
     </div>
-    @if (form.value.hasOtherAccessory) {
-      <mat-form-field appearance="outline" class="w-full">
-        <mat-label>ระบุอุปกรณ์เสริมอื่นๆ</mat-label>
-        <input matInput formControlName="otherAccessoryNote" />
-      </mat-form-field>
-    }
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
     <button mat-button type="button" mat-dialog-close>ยกเลิก</button>
-    <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
+    <button mat-flat-button type="submit" [disabled]="form.invalid || saving()">
       @if (saving()) {
-        <mat-spinner diameter="18" class="!inline-block !mr-2" />
+        <mat-spinner diameter="18" class="!mr-2 !inline-block" />
       }
       ส่งแจ้งซ่อม
     </button>

@@ -5,7 +5,6 @@ import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/m
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged, firstValueFrom, Subject } from 'rxjs';
@@ -18,6 +17,10 @@ import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { IVendor } from '../../../core/models/vendor.model';
 import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { ExportMenuComponent } from '../../../shared/components/export-menu/export-menu.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -34,11 +37,14 @@ const EXPORT_PDF_MAX_ROWS = 500;
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    MatMenuModule,
     MatSlideToggleModule,
     IconComponent,
     HasPermissionDirective,
     KhdNumberPipe,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    ExportMenuComponent,
+    FilterBarComponent,
   ],
   templateUrl: './vendor-list.component.html',
 })

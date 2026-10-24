@@ -1,30 +1,20 @@
 <div class="space-y-4">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <a routerLink="/assets" class="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-brand-primary mb-1">
-        <khd-icon name="chevron-left" [size]="16" />
-        กลับไปรายการครุภัณฑ์
-      </a>
-      <h1 class="text-xl font-semibold">นำเข้าครุภัณฑ์จาก MOPH AssetTracker</h1>
-      <p class="text-sm text-neutral-500">
-        ซิงค์ข้อมูลครุภัณฑ์จากระบบ MOPH AssetTracker เข้าสู่ระบบนี้อัตโนมัติทุกวันเวลา 02:00 น. หรือกดนำเข้าทันทีได้จากปุ่มด้านล่าง
-      </p>
-    </div>
+  <khd-page-header title="นำเข้าครุภัณฑ์จาก MOPH AssetTracker" subtitle="ซิงค์ข้อมูลครุภัณฑ์จากระบบ MOPH AssetTracker เข้าสู่ระบบนี้อัตโนมัติทุกวันเวลา 02:00 น. หรือกดนำเข้าทันทีได้จากปุ่มด้านล่าง" backLink="/assets" backLabel="กลับไปรายการครุภัณฑ์">
     <button mat-flat-button color="primary" [disabled]="running()" (click)="startImport()">
-      @if (running()) {
-        <mat-spinner diameter="18" class="!inline-block !mr-2" />
-        กำลังซิงค์...
-      } @else {
-        <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
-        นำเข้าครุภัณฑ์จาก MOPH ตอนนี้
-      }
+    @if (running()) {
+    <mat-spinner diameter="18" class="!inline-block !mr-2" />
+    กำลังซิงค์...
+    } @else {
+    <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
+    นำเข้าครุภัณฑ์จาก MOPH ตอนนี้
+    }
     </button>
-  </div>
+  </khd-page-header>
 
   @if (!loadingStatus() && lastRun(); as run) {
     <div class="khd-card space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h2 class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+        <h2 class="text-sm font-semibold text-brand-primary">
           ผลการซิงค์{{ running() ? 'ล่าสุด (กำลังทำงานอยู่)' : 'ล่าสุด' }}
         </h2>
         <span class="text-xs text-neutral-500">
@@ -45,7 +35,7 @@
           <div class="text-xs text-neutral-500">พบทั้งหมด</div>
         </div>
         <div class="rounded-lg border border-emerald-200 dark:border-emerald-800 p-3 text-center">
-          <div class="text-lg font-semibold text-emerald-700 dark:text-emerald-400">{{ run.created | khdNumber }}</div>
+          <div class="text-lg font-semibold text-brand-primary">{{ run.created | khdNumber }}</div>
           <div class="text-xs text-neutral-500">สร้างใหม่</div>
         </div>
         <div class="rounded-lg border border-sky-200 dark:border-sky-800 p-3 text-center">

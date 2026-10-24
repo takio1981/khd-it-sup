@@ -1,39 +1,29 @@
 <div class="space-y-4">
-  <div>
-    <h1 class="text-xl font-semibold">รายงาน</h1>
-    <p class="text-sm text-neutral-500">รวบรวมรายงานของระบบไว้ในที่เดียว — ประวัติแจ้งซ่อม, ประวัติยืม-คืน, ภาระงานช่าง/เจ้าหน้าที่ไอที</p>
-  </div>
+  <khd-page-header title="รายงาน" subtitle="รวบรวมรายงานของระบบไว้ในที่เดียว — ประวัติแจ้งซ่อม, ประวัติยืม-คืน, ภาระงานช่าง/เจ้าหน้าที่ไอที"></khd-page-header>
 
   <mat-tab-group animationDuration="150ms">
     <mat-tab label="ประวัติแจ้งซ่อม">
       <div class="pt-4 space-y-4">
         <div class="flex justify-end">
-          <button mat-stroked-button [matMenuTriggerFor]="ticketExportMenu" [disabled]="ticketExporting()">
-            <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-            Export
-          </button>
-          <mat-menu #ticketExportMenu="matMenu">
-            <button mat-menu-item (click)="exportTicketsExcel()">Excel (.xlsx)</button>
-            <button mat-menu-item (click)="exportTicketsCsv()">CSV</button>
-          </mat-menu>
+          <khd-export-menu [disabled]="ticketExporting()" [formats]="['excel', 'csv']" (excel)="exportTicketsExcel()" (csv)="exportTicketsCsv()" />
         </div>
 
-        <div class="khd-card !p-3 flex flex-col sm:flex-row flex-wrap gap-3">
-          <mat-form-field appearance="outline" class="sm:w-44 !mb-[-1.25em]">
+        <khd-filter-bar>
+          <mat-form-field appearance="outline" class="sm:w-44">
             <mat-label>ตั้งแต่วันที่</mat-label>
             <input matInput [matDatepicker]="ticketFromPicker" [(ngModel)]="ticketDateFrom" (ngModelChange)="onTicketFilterChange()" />
             <mat-datepicker-toggle matIconSuffix [for]="ticketFromPicker" />
             <mat-datepicker #ticketFromPicker />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="sm:w-44 !mb-[-1.25em]">
+          <mat-form-field appearance="outline" class="sm:w-44">
             <mat-label>ถึงวันที่</mat-label>
             <input matInput [matDatepicker]="ticketToPicker" [(ngModel)]="ticketDateTo" (ngModelChange)="onTicketFilterChange()" />
             <mat-datepicker-toggle matIconSuffix [for]="ticketToPicker" />
             <mat-datepicker #ticketToPicker />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="sm:w-56 !mb-[-1.25em]">
+          <mat-form-field appearance="outline" class="sm:w-56">
             <mat-label>แผนก/กลุ่มงาน</mat-label>
             <mat-select [(ngModel)]="ticketDepartmentId" (ngModelChange)="onTicketFilterChange()">
               <mat-option value="">ทั้งหมด</mat-option>
@@ -43,7 +33,7 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="sm:w-48 !mb-[-1.25em]">
+          <mat-form-field appearance="outline" class="sm:w-48">
             <mat-label>ความเร่งด่วน</mat-label>
             <mat-select [(ngModel)]="ticketUrgency" (ngModelChange)="onTicketFilterChange()">
               <mat-option value="">ทั้งหมด</mat-option>
@@ -53,7 +43,7 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="sm:w-64 !mb-[-1.25em]">
+          <mat-form-field appearance="outline" class="sm:w-64">
             <mat-label>ครุภัณฑ์/อุปกรณ์</mat-label>
             <input
               matInput
@@ -73,7 +63,7 @@
               }
             </mat-autocomplete>
           </mat-form-field>
-        </div>
+        </khd-filter-bar>
 
         <div class="khd-card !p-0 overflow-x-auto">
           <table mat-table [dataSource]="tickets()" class="w-full">
@@ -116,15 +106,15 @@
 
             <ng-container matColumnDef="createdAt">
               <th mat-header-cell *matHeaderCellDef>วันที่แจ้ง</th>
-              <td mat-cell *matCellDef="let t" data-label="วันที่แจ้ง">{{ t.createdAt | date: 'd MMM yyyy' }}</td>
+              <td mat-cell *matCellDef="let t" data-label="วันที่แจ้ง">{{ t.createdAt | khdDate }}</td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="ticketColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: ticketColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+            <tr mat-row *matRowDef="let row; columns: ticketColumns"></tr>
           </table>
 
           @if (!ticketLoading() && tickets().length === 0) {
-            <p class="text-center text-sm text-neutral-400 py-10">ไม่พบใบแจ้งซ่อมที่ตรงกับเงื่อนไข</p>
+            <khd-empty-state [compact]="true" title="ไม่พบใบแจ้งซ่อมที่ตรงกับเงื่อนไข" />
           }
 
           <mat-paginator
@@ -141,32 +131,25 @@
     <mat-tab label="ประวัติการยืม-คืน">
       <div class="pt-4 space-y-4">
         <div class="flex justify-end">
-          <button mat-stroked-button [matMenuTriggerFor]="loanExportMenu" [disabled]="loanExporting()">
-            <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-            Export
-          </button>
-          <mat-menu #loanExportMenu="matMenu">
-            <button mat-menu-item (click)="exportLoansExcel()">Excel (.xlsx)</button>
-            <button mat-menu-item (click)="exportLoansCsv()">CSV</button>
-          </mat-menu>
+          <khd-export-menu [disabled]="loanExporting()" [formats]="['excel', 'csv']" (excel)="exportLoansExcel()" (csv)="exportLoansCsv()" />
         </div>
 
-        <div class="khd-card !p-3 flex flex-col sm:flex-row flex-wrap gap-3">
-          <mat-form-field appearance="outline" class="sm:w-44 !mb-[-1.25em]">
+        <khd-filter-bar>
+          <mat-form-field appearance="outline" class="sm:w-44">
             <mat-label>ตั้งแต่วันที่</mat-label>
             <input matInput [matDatepicker]="loanFromPicker" [(ngModel)]="loanDateFrom" (ngModelChange)="onLoanFilterChange()" />
             <mat-datepicker-toggle matIconSuffix [for]="loanFromPicker" />
             <mat-datepicker #loanFromPicker />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="sm:w-44 !mb-[-1.25em]">
+          <mat-form-field appearance="outline" class="sm:w-44">
             <mat-label>ถึงวันที่</mat-label>
             <input matInput [matDatepicker]="loanToPicker" [(ngModel)]="loanDateTo" (ngModelChange)="onLoanFilterChange()" />
             <mat-datepicker-toggle matIconSuffix [for]="loanToPicker" />
             <mat-datepicker #loanToPicker />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="sm:w-48 !mb-[-1.25em]">
+          <mat-form-field appearance="outline" class="sm:w-48">
             <mat-label>สถานะ</mat-label>
             <mat-select [(ngModel)]="loanStatus" (ngModelChange)="onLoanFilterChange()">
               <mat-option value="">ทั้งหมด</mat-option>
@@ -176,7 +159,7 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="sm:w-64 !mb-[-1.25em]">
+          <mat-form-field appearance="outline" class="sm:w-64">
             <mat-label>ครุภัณฑ์/อุปกรณ์</mat-label>
             <input
               matInput
@@ -196,10 +179,10 @@
               }
             </mat-autocomplete>
           </mat-form-field>
-        </div>
+        </khd-filter-bar>
 
         <div class="khd-card">
-          <h2 class="text-sm font-medium mb-3">ยืม-คืนแยกรายแผนก/กลุ่มงาน (ตามหน่วยงานของผู้ยืม)</h2>
+          <h2 class="m-0 mb-3 text-base font-semibold">ยืม-คืนแยกรายแผนก/กลุ่มงาน (ตามหน่วยงานของผู้ยืม)</h2>
           <khd-bar-chart [data]="loanDepartmentChartData()" orientation="horizontal" />
         </div>
 
@@ -224,12 +207,12 @@
 
             <ng-container matColumnDef="borrowDate">
               <th mat-header-cell *matHeaderCellDef>วันที่ยืม</th>
-              <td mat-cell *matCellDef="let l" data-label="วันที่ยืม">{{ l.borrowDate | date: 'd MMM yyyy' }}</td>
+              <td mat-cell *matCellDef="let l" data-label="วันที่ยืม">{{ l.borrowDate | khdDate }}</td>
             </ng-container>
 
             <ng-container matColumnDef="expectedReturnDate">
               <th mat-header-cell *matHeaderCellDef>กำหนดคืน</th>
-              <td mat-cell *matCellDef="let l" data-label="กำหนดคืน">{{ l.expectedReturnDate ? (l.expectedReturnDate | date: 'd MMM yyyy') : '-' }}</td>
+              <td mat-cell *matCellDef="let l" data-label="กำหนดคืน">{{ l.expectedReturnDate ? (l.expectedReturnDate | khdDate) : '-' }}</td>
             </ng-container>
 
             <ng-container matColumnDef="status">
@@ -252,11 +235,11 @@
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="loanColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: loanColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+            <tr mat-row *matRowDef="let row; columns: loanColumns"></tr>
           </table>
 
           @if (!loanLoading() && loans().length === 0) {
-            <p class="text-center text-sm text-neutral-400 py-10">ไม่พบรายการยืม-คืนที่ตรงกับเงื่อนไข</p>
+            <khd-empty-state [compact]="true" title="ไม่พบรายการยืม-คืนที่ตรงกับเงื่อนไข" />
           }
 
           <mat-paginator

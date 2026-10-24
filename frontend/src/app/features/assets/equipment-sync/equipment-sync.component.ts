@@ -10,6 +10,7 @@ import { EquipmentSyncService } from '../../../core/services/equipment-sync.serv
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import type { IEquipmentSyncStatus } from '../../../core/models/equipment-sync.model';
 import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -17,7 +18,7 @@ const POLL_INTERVAL_MS = 3000;
   selector: 'khd-equipment-sync',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, MatButtonModule, MatProgressSpinnerModule, MatExpansionModule, IconComponent, KhdNumberPipe],
+  imports: [RouterLink, MatButtonModule, MatProgressSpinnerModule, MatExpansionModule, IconComponent, KhdNumberPipe, PageHeaderComponent],
   templateUrl: './equipment-sync.component.html',
 })
 export class EquipmentSyncComponent {

@@ -5,10 +5,7 @@
 } @else if (settings(); as s) {
   <div class="space-y-4 max-w-2xl">
     <div class="khd-card">
-      <div class="flex items-center gap-2 mb-1">
-        <khd-icon name="circle-stack" [size]="18" class="text-emerald-500" />
-        <h2 class="text-sm font-medium">สำรองข้อมูลอัตโนมัติ</h2>
-      </div>
+      <h2 class="m-0 mb-1 text-base font-semibold">สำรองข้อมูลอัตโนมัติ</h2>
       <p class="text-xs text-neutral-500 mb-4">สำรองข้อมูลทุกวันเวลา 03:00 น. (เวลาไทย) ตามขอบเขตที่กำหนดไว้ด้านล่าง</p>
 
       <div class="flex items-center justify-between py-2 border-b border-black/5 dark:border-white/10">
@@ -20,7 +17,7 @@
       </div>
 
       <div class="py-3 border-b border-black/5 dark:border-white/10">
-        <mat-form-field appearance="outline" class="w-48 !mb-[-1.25em]">
+        <mat-form-field appearance="outline" class="w-48">
           <mat-label>ขอบเขต</mat-label>
           <mat-select [value]="s.scope" [disabled]="!canManage() || saving()" (selectionChange)="onScopeChange($event.value)">
             <mat-option value="FULL">ทั้งหมด</mat-option>
@@ -46,7 +43,7 @@
           <p class="text-sm font-medium">เก็บไฟล์สำรองข้อมูลอัตโนมัติไว้กี่วัน</p>
           <p class="text-xs text-neutral-500">ไฟล์ที่เก่ากว่านี้จะถูกลบอัตโนมัติ (ไม่กระทบไฟล์ที่กดสำรองเองหรือไฟล์สำรองนิรภัยก่อนกู้คืน)</p>
         </div>
-        <mat-form-field appearance="outline" class="w-full sm:w-24 shrink-0 !mb-[-1.25em]">
+        <mat-form-field appearance="outline" class="w-full sm:w-24 shrink-0">
           <input matInput type="number" min="1" max="365" [(ngModel)]="retentionDaysInput" [disabled]="!canManage() || saving()" (blur)="saveRetentionDays()" />
         </mat-form-field>
       </div>

@@ -20,6 +20,10 @@ import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { ISparePart, SparePartTxnType } from '../../../core/models/spare-part.model';
 import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { ExportMenuComponent } from '../../../shared/components/export-menu/export-menu.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -104,6 +108,10 @@ export class StockAdjustDialogComponent {
     IconComponent,
     HasPermissionDirective,
     KhdNumberPipe,
+    FilterBarComponent,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    ExportMenuComponent,
   ],
   templateUrl: './spare-part-list.component.html',
 })

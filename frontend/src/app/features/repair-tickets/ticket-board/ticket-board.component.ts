@@ -3,7 +3,6 @@ import { Router, RouterLink } from '@angular/router';
 import { CdkDropList, CdkDropListGroup, CdkDrag, type CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { forkJoin } from 'rxjs';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
 import { WorkflowService } from '../../../core/services/workflow.service';
@@ -11,6 +10,8 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { URGENCY_LABEL_TH, URGENCY_COLOR } from '../../../core/constants/status.const';
 import type { IRepairTicketListItem } from '../../../core/models/repair-ticket.model';
 import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
 
 const BOARD_TEMPLATE_CODE = 'REPAIR_INTERNAL';
 /** DRAFT ไม่มี transition ใดๆ ในระบบเข้าไปถึง (ตั๋วจริงไม่เคยอยู่สถานะนี้) จึงไม่ต้องแสดงเป็นคอลัมน์ */
@@ -30,7 +31,7 @@ interface IKanbanColumn {
   selector: 'khd-ticket-board',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, CdkDropList, CdkDropListGroup, CdkDrag, MatButtonModule, MatProgressSpinnerModule, IconComponent, KhdNumberPipe],
+  imports: [RouterLink, CdkDropList, CdkDropListGroup, CdkDrag, MatButtonModule, IconComponent, KhdNumberPipe, PageHeaderComponent, LoadingStateComponent],
   templateUrl: './ticket-board.component.html',
   styleUrl: './ticket-board.component.scss',
 })

@@ -8,7 +8,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { BackupService } from '../../../core/services/backup.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { BackupTablePickerComponent } from '../backup-table-picker/backup-table-picker.component';
 import type { BackupScope, IBackupSettings, IBackupTableGroup } from '../../../core/models/backup.model';
 
@@ -23,7 +22,6 @@ import type { BackupScope, IBackupSettings, IBackupTableGroup } from '../../../c
     MatSelectModule,
     MatInputModule,
     MatButtonModule,
-    IconComponent,
     BackupTablePickerComponent,
   ],
   templateUrl: './backup-settings-form.component.html',

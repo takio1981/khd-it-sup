@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, HostListener, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,6 +25,7 @@ import { TicketFormComponent } from '../../features/repair-tickets/ticket-form/t
 import { ACCOUNT_NAV_GROUP, NAV_GROUPS, type INavItem } from '../nav-items';
 import { environment } from '../../../environments/environment';
 import type { IInAppNotification } from '../../core/models/notification.model';
+import { KhdDatePipe } from '../../shared/pipes/khd-date.pipe';
 
 const COLLAPSED_KEY = 'khd-sidebar-collapsed';
 
@@ -36,7 +37,6 @@ const COLLAPSED_KEY = 'khd-sidebar-collapsed';
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
-    DatePipe,
     NgTemplateOutlet,
     MatSidenavModule,
     MatMenuModule,
@@ -45,6 +45,7 @@ const COLLAPSED_KEY = 'khd-sidebar-collapsed';
     MatTooltipModule,
     IconComponent,
     UserAvatarComponent,
+    KhdDatePipe,
   ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',

@@ -6,7 +6,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DepartmentService } from '../../core/services/department.service';
@@ -18,6 +17,8 @@ import { exportTableToPdf } from '../../core/utils/pdf-table-export.util';
 import { formatKhdNumber } from '../../core/utils/number-format.util';
 import type { IDepartment } from '../../core/models/user.model';
 import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ExportMenuComponent } from '../../shared/components/export-menu/export-menu.component';
 
 @Component({
   selector: 'khd-department-list',
@@ -31,10 +32,11 @@ import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
     MatInputModule,
     MatSelectModule,
     MatButtonModule,
-    MatMenuModule,
     IconComponent,
     HasPermissionDirective,
     KhdNumberPipe,
+    PageHeaderComponent,
+    ExportMenuComponent,
   ],
   templateUrl: './department-list.component.html',
 })

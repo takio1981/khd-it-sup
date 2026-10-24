@@ -235,7 +235,7 @@
             }
             <p class="khd-doc-signdate">
               ({{ data.ticket.summaryByUser?.fullName ?? '-' }}) ช่างผู้ซ่อม
-              @if (data.ticket.summaryAt) { · {{ data.ticket.summaryAt | date: 'd MMM yyyy' }} }
+              @if (data.ticket.summaryAt) { · {{ data.ticket.summaryAt | khdDate }} }
             </p>
           </div>
           <div class="khd-doc-signbox">

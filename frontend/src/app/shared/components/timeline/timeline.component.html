@@ -13,7 +13,7 @@
       <div class="khd-card !p-3 ml-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <p class="text-sm font-medium">{{ row.statusLabel }}</p>
-          <p class="text-xs text-neutral-400">{{ row.event.eventTime | date: 'd MMM yyyy, HH:mm' }}</p>
+          <p class="text-xs text-neutral-400">{{ row.event.eventTime | khdDate: 'datetime' }}</p>
         </div>
 
         @if (row.event.comment) {

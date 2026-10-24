@@ -94,6 +94,17 @@ html {
   @include mat.dialog-overrides((
     container-shape: 20px,
     container-color: rgb(var(--khd-surface)),
+    subhead-size: 18px,
+    subhead-weight: 600,
+    subhead-color: rgb(var(--khd-ink)),
+    supporting-text-color: rgb(var(--khd-text)),
+    actions-padding: 8px 24px 20px,
+  ));
+  @include mat.button-toggle-overrides((
+    shape: 10px,
+    divider-color: rgb(var(--khd-border)),
+    selected-state-background-color: rgb(var(--khd-primary) / 0.12),
+    selected-state-text-color: rgb(var(--khd-primary)),
   ));
   @include mat.menu-overrides((
     container-shape: 12px,
@@ -154,6 +165,12 @@ body {
 h1, h2, h3 {
   text-wrap: balance;
   color: rgb(var(--khd-ink));
+}
+
+// preflight ของ Tailwind ปิดอยู่ (กันชนกับ Material) — แต่ template ทั้งระบบเขียนระยะห่างด้วย utility (space-y/mt/mb)
+// โดยถือว่า <p> ไม่มี margin เอง จึงรีเซ็ตเฉพาะ <p> ไม่ให้ margin เริ่มต้นของเบราว์เซอร์ (1em) ทำให้ช่องว่างห่างเกิน
+p {
+  margin: 0;
 }
 
 :focus-visible {
@@ -231,6 +248,46 @@ html.dark-theme .khd-status-badge {
   font-variant-numeric: tabular-nums;
 }
 
+// ปุ่มดำเนินการในแถวตาราง (แก้ไข/ลบ/ปรับสต็อก ฯลฯ)
+.khd-row-action {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgb(var(--khd-border));
+  border-radius: 8px;
+  background: rgb(var(--khd-surface));
+  color: rgb(var(--khd-primary));
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms, border-color 120ms;
+
+  &:hover {
+    background: rgb(var(--khd-primary) / 0.08);
+    border-color: rgb(var(--khd-primary) / 0.35);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+}
+.khd-row-action-danger {
+  color: #dc2626;
+
+  &:hover {
+    background: rgb(220 38 38 / 0.08);
+    border-color: rgb(220 38 38 / 0.35);
+  }
+}
+html.dark-theme .khd-row-action-danger {
+  color: #f87171;
+}
+
 // แถบตัวกรองบนหน้ารายการ — ช่องกรอกกะทัดรัด และซ่อนพื้นที่ hint ใต้ช่อง (แทน hack !mb-[-1.25em] เดิมในแต่ละหน้า)
 .khd-filter-bar {
   @apply khd-card flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center;
@@ -239,6 +296,11 @@ html.dark-theme .khd-status-badge {
 
   .mat-mdc-form-field-subscript-wrapper {
     display: none;
+  }
+}
+@media (max-width: 639.98px) {
+  .khd-filter-collapsed > :not(:first-child):not(.khd-filter-toggle) {
+    display: none !important;
   }
 }
 

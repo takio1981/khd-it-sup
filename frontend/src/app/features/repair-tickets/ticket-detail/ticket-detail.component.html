@@ -1,278 +1,275 @@
 @if (loading()) {
-  <div class="flex justify-center py-20">
-    <mat-spinner diameter="36" />
-  </div>
+  <khd-loading-state label="กำลังโหลดใบแจ้งซ่อม…" />
 } @else if (ticket(); as t) {
   <div class="space-y-4">
-    <a routerLink="/repair-tickets" class="inline-flex items-center gap-1 text-sm text-neutral-500 hover:text-brand-primary">
-      <khd-icon name="chevron-left" [size]="16" />
-      กลับไปรายการงานแจ้งซ่อม
-    </a>
-
-    <div class="khd-card">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div>
-          <p class="text-xs text-neutral-500">ใบแจ้งซ่อม</p>
-          <div class="flex items-center gap-2">
-            <h1 class="text-xl font-semibold">{{ t.ticketNumber }}</h1>
-            @if (!t.firstViewedBy) {
-              <span class="relative flex h-2.5 w-2.5 shrink-0" title="งานใหม่ — ยังไม่มีแอดมิน/ช่างเข้าดู">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+    <section class="khd-card">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div class="flex min-w-0 items-start gap-2">
+          <a
+            routerLink="/repair-tickets"
+            class="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-neutral-500/10 hover:text-ink"
+            aria-label="กลับไปรายการงานแจ้งซ่อม"
+          >
+            <khd-icon name="arrow-left" [size]="20" />
+          </a>
+          <div class="min-w-0">
+            <p class="m-0 text-xs text-muted">ใบแจ้งซ่อม</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <h1 class="m-0 text-[22px] font-semibold leading-tight">{{ t.ticketNumber }}</h1>
+              <khd-status-badge [status]="t.status" />
+              <span class="khd-status-badge" [style.background-color]="urgencyColor[t.urgency] + '1F'" [style.color]="urgencyColor[t.urgency]">
+                ความเร่งด่วน{{ urgencyLabels[t.urgency] }}
               </span>
-            }
-          </div>
-          @if (t.firstViewedBy) {
-            <p class="text-xs text-neutral-400 mt-0.5">
-              <khd-icon name="check-circle" [size]="12" class="!inline text-emerald-500 !mr-1" />
-              เข้าดูโดย {{ t.firstViewedBy.fullName }} · {{ t.firstViewedAt | date: 'd MMM yyyy, HH:mm' }}
+              @if (!t.firstViewedBy) {
+                <span class="khd-status-badge bg-red-500/10 text-red-600">
+                  <span class="relative flex h-2 w-2">
+                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span>
+                    <span class="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+                  </span>
+                  งานใหม่
+                </span>
+              }
+            </div>
+            <p class="m-0 mt-1 text-xs text-muted">
+              แจ้งโดย {{ t.reportedBy.fullName }} · {{ t.createdAt | khdDate: 'datetime' }}
+              @if (t.firstViewedBy) {
+                · เข้าดูโดย {{ t.firstViewedBy.fullName }} ({{ t.firstViewedAt | khdDate: 'short-datetime' }})
+              }
             </p>
-          }
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <khd-status-badge [status]="t.status" />
 
-          <button mat-icon-button [matMenuTriggerFor]="actionMenu" [disabled]="acting()" aria-label="เมนูดำเนินการ">
-            <khd-icon name="chevron-down" [size]="20" />
+        <div class="flex shrink-0 flex-wrap gap-2">
+          <button mat-stroked-button *khdHasPermission="'document:print'" (click)="openPrintPreview()">
+            <khd-icon name="printer" [size]="18" class="mr-1.5" />
+            พิมพ์ใบแจ้งซ่อม
           </button>
-          <mat-menu #actionMenu="matMenu">
-            <div class="px-3 pt-2 pb-1 text-xs font-medium text-neutral-400 select-none">เปลี่ยนสถานะ</div>
-            @if (canReceive()) {
-              <button mat-menu-item *khdHasPermission="'ticket:receive'" (click)="receive()">
-                <khd-icon name="clipboard-document-list" [size]="16" class="!mr-2" />รับเรื่อง
-              </button>
-            }
-            @for (tr of availableTransitions(); track tr.toStep.id) {
-              <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="transition(tr.toStep.stepCode, tr.conditionKey)">
-                <khd-icon name="arrow-path" [size]="16" class="!mr-2" />{{ tr.label ?? ('ไปยัง ' + tr.toStep.stepNameTh) }}
-              </button>
-            }
-            <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="openInspectionDialog()">
-              <khd-icon name="clipboard-document-list" [size]="16" class="!mr-2" />บันทึกผลตรวจสอบเบื้องต้น
+          @if (hasMoreActions()) {
+            <button mat-stroked-button [matMenuTriggerFor]="moreMenu" [disabled]="acting()">
+              <khd-icon name="ellipsis-horizontal" [size]="18" class="mr-1.5" />
+              เพิ่มเติม
             </button>
-            @if (canClose() && (hasFullClosePermission() || isOwnTicketReporter())) {
-              <button mat-menu-item *khdHasPermission="['ticket:close', 'ticket:accept']" (click)="openAcceptDialog()">
-                <khd-icon name="check-circle" [size]="16" class="!mr-2" />
-                {{ hasFullClosePermission() ? 'ปิดงาน' : 'เซ็นรับงาน' }}
-              </button>
-            }
-
-            <mat-divider />
-            <div class="px-3 pt-2 pb-1 text-xs font-medium text-neutral-400 select-none">การดำเนินการอื่น</div>
-            <button mat-menu-item *khdHasPermission="'document:print'" (click)="openPrintPreview()">
-              <khd-icon name="printer" [size]="16" class="!mr-2" />พิมพ์ใบแจ้งซ่อม
-            </button>
+          }
+          <mat-menu #moreMenu="matMenu" xPosition="before">
             <button mat-menu-item *khdHasPermission="'ticket:assign'" (click)="openAssignDialog()">
-              <khd-icon name="users" [size]="16" class="!mr-2" />มอบหมายช่าง
+              <khd-icon name="users" [size]="18" class="mr-3" />มอบหมายช่าง
+            </button>
+            <button mat-menu-item *khdHasPermission="'ticket:update_status'" (click)="openInspectionDialog()">
+              <khd-icon name="clipboard-document-list" [size]="18" class="mr-3" />บันทึกผลตรวจสอบเบื้องต้น
             </button>
             <button mat-menu-item *khdHasPermission="'spare_part:issue'" (click)="openIssuePartDialog()">
-              <khd-icon name="archive-box" [size]="16" class="!mr-2" />เบิกอะไหล่
+              <khd-icon name="archive-box" [size]="18" class="mr-3" />เบิกอะไหล่
             </button>
             @if (t.status === 'VENDOR_REPAIR' && !vendorOrder()) {
               <button mat-menu-item *khdHasPermission="'vendor:manage'" (click)="openCreateVendorOrderForm()">
-                <khd-icon name="building-office-2" [size]="16" class="!mr-2" />สร้างใบส่งซ่อมภายนอก
+                <khd-icon name="truck" [size]="18" class="mr-3" />สร้างใบส่งซ่อมภายนอก
               </button>
             }
             @if (canApproveDigitalHealthHead()) {
               <button mat-menu-item *khdHasPermission="'ticket:approve'" (click)="approveDigitalHealthHead()">
-                <khd-icon name="pencil-square" [size]="16" class="!mr-2" />ลงนามอนุมัติ (หัวหน้ากลุ่มงานสุขภาพดิจิทัล)
+                <khd-icon name="pencil-square" [size]="18" class="mr-3" />ลงนามอนุมัติ (หัวหน้ากลุ่มงานสุขภาพดิจิทัล)
               </button>
             }
-
             @if (canCancel()) {
               <mat-divider />
               <button mat-menu-item *khdHasPermission="'ticket:cancel'" (click)="openCancelDialog()" class="!text-red-600">
-                <khd-icon name="x-circle" [size]="16" class="!mr-2" />ยกเลิกงาน
+                <khd-icon name="x-circle" [size]="18" class="mr-3" />ยกเลิกงาน
               </button>
             }
           </mat-menu>
         </div>
       </div>
 
-      <div class="mt-4">
-        <div class="flex items-center justify-between text-xs text-neutral-500 mb-1">
-          <span>{{ t.progress.currentStepNameTh }}</span>
-          <span>{{ t.progress.progressPercent }}%</span>
+      @if (t.status === 'CANCELLED') {
+        <div class="mt-4 flex items-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+          <khd-icon name="x-circle" [size]="18" />
+          งานนี้ถูกยกเลิกแล้ว
         </div>
-        <mat-progress-bar mode="determinate" [value]="t.progress.progressPercent" />
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div class="khd-card lg:col-span-1 space-y-3 text-sm">
-        <h2 class="text-sm font-medium">รายละเอียด</h2>
-        <p class="text-neutral-600 dark:text-neutral-300">{{ t.description }}</p>
-
-        @if (t.asset) {
-          <div class="flex items-center gap-3 p-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/60">
-            @if (t.asset.photos.length > 0) {
-              <khd-asset-photo-thumbnail [fileUrl]="t.asset.photos[0].fileUrl" />
-            } @else {
-              <div
-                class="h-24 w-24 shrink-0 flex items-center justify-center rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900"
-              >
-                <khd-icon [name]="assetCategoryIconName(t.asset.category)" [size]="32" class="text-neutral-400" />
-              </div>
+      } @else if (stepTrail().length > 0) {
+        <div class="-mx-4 mt-5 overflow-x-auto px-4 md:-mx-5 md:px-5">
+          <ol class="m-0 flex min-w-max list-none items-start p-0" aria-label="ขั้นตอนการซ่อม">
+            @for (step of stepTrail(); track step.id; let last = $last; let i = $index) {
+              <li class="flex items-start">
+                <div class="flex w-[92px] flex-col items-center text-center" [attr.aria-current]="step.state === 'current' ? 'step' : null">
+                  <span
+                    class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-solid text-xs font-semibold"
+                    [class]="
+                      step.state === 'done'
+                        ? 'border-brand-primary bg-brand-primary text-white'
+                        : step.state === 'current'
+                          ? 'border-brand-primary bg-brand-primary/10 text-brand-primary ring-4 ring-brand-primary/15'
+                          : 'border-line bg-surface text-neutral-400'
+                    "
+                  >
+                    @if (step.state === 'done') {
+                      <khd-icon name="check-circle" [size]="18" />
+                    } @else {
+                      {{ i + 1 }}
+                    }
+                  </span>
+                  <span
+                    class="mt-1.5 text-[11.5px] leading-snug"
+                    [class]="step.state === 'current' ? 'font-semibold text-ink' : step.state === 'done' ? 'text-ink' : 'text-muted'"
+                  >
+                    {{ step.name }}
+                  </span>
+                </div>
+                @if (!last) {
+                  <span class="mt-4 h-0.5 w-6 shrink-0 rounded-full" [class]="step.state === 'done' ? 'bg-brand-primary' : 'bg-line'"></span>
+                }
+              </li>
             }
-            <div class="min-w-0">
-              <a [routerLink]="['/assets', t.asset.id]" class="block truncate font-medium text-brand-primary hover:underline">{{
-                t.asset.assetNumber
-              }}</a>
-              @if (t.asset.category) {
-                <p class="truncate text-xs text-neutral-500">{{ t.asset.category.nameTh }}</p>
-              }
-              @if (t.asset.brand || t.asset.model) {
-                <p class="truncate text-xs text-neutral-500">{{ t.asset.brand }} {{ t.asset.model }}</p>
-              }
-            </div>
-          </div>
-        }
+          </ol>
+        </div>
+      }
 
-        <dl class="space-y-2 pt-2 border-t border-black/5 dark:border-white/10">
-          <div class="flex justify-between"><dt class="text-neutral-400">ความเร่งด่วน</dt><dd>{{ urgencyLabels[t.urgency] }}</dd></div>
-          <div class="flex justify-between"><dt class="text-neutral-400">ผู้แจ้ง</dt><dd>{{ t.reportedBy.fullName }}</dd></div>
-          @if (t.department) {
-            <div class="flex justify-between"><dt class="text-neutral-400">หน่วยงาน</dt><dd>{{ t.department.nameTh }}</dd></div>
-          }
-          @if (t.assignedTechnician) {
-            <div class="flex justify-between"><dt class="text-neutral-400">ช่างผู้รับผิดชอบ</dt><dd>{{ t.assignedTechnician.fullName }}</dd></div>
-          }
-          @if (t.locationNote) {
-            <div class="flex justify-between"><dt class="text-neutral-400">สถานที่</dt><dd>{{ t.locationNote }}</dd></div>
-          }
-          @if (t.contactPhone) {
-            <div class="flex justify-between"><dt class="text-neutral-400">เบอร์ติดต่อ</dt><dd>{{ t.contactPhone }}</dd></div>
-          }
-          @if (t.equipmentType) {
-            <div class="flex justify-between">
-              <dt class="text-neutral-400">ประเภทอุปกรณ์</dt>
-              <dd>{{ t.equipmentType === 'OTHER' ? (t.equipmentTypeOther || 'อื่นๆ') : equipmentTypeLabels[t.equipmentType] }}</dd>
-            </div>
-          }
-          @if (t.deviceColor) {
-            <div class="flex justify-between"><dt class="text-neutral-400">สีเครื่อง</dt><dd>{{ t.deviceColor }}</dd></div>
-          }
-          @if (t.hasAdapterCable || t.hasVgaCable || t.hasPowerCable || t.hasOtherAccessory) {
-            <div class="flex justify-between">
-              <dt class="text-neutral-400">อุปกรณ์ที่มาด้วย</dt>
-              <dd class="text-right">
-                @if (t.hasAdapterCable) { <span class="block">สาย Adapter</span> }
-                @if (t.hasVgaCable) { <span class="block">สาย VGA/RGB/DVI/HDMI</span> }
-                @if (t.hasPowerCable) { <span class="block">สาย POWER AC</span> }
-                @if (t.hasOtherAccessory) { <span class="block">{{ t.otherAccessoryNote || 'อื่นๆ' }}</span> }
-              </dd>
-            </div>
-          }
-          <div class="flex justify-between"><dt class="text-neutral-400">วันที่แจ้ง</dt><dd>{{ t.createdAt | date: 'd MMM yyyy, HH:mm' }}</dd></div>
-        </dl>
-
-        <div class="pt-2 border-t border-black/5 dark:border-white/10 text-sm">
-          @if (t.unitHeadApprovedAt) {
-            <p class="text-xs text-neutral-500">
-              <khd-icon name="check-circle" [size]="14" class="!inline text-emerald-500 !mr-1" />
-              หัวหน้างาน/กลุ่มงานลงนามแล้ว โดย {{ t.unitHeadApprovedBy?.fullName }} · {{ t.unitHeadApprovedAt | date: 'd MMM yyyy, HH:mm' }}
+      @if (t.status !== 'CLOSED' && t.status !== 'CANCELLED') {
+        @if (hasNextActions()) {
+          <div class="mt-5 rounded-xl border border-solid border-brand-primary/20 bg-brand-primary/[0.05] p-3 sm:p-4">
+            <p class="m-0 mb-2.5 flex items-center gap-1.5 text-sm font-semibold text-ink">
+              <khd-icon name="arrow-path" [size]="16" class="text-brand-primary" />
+              ขั้นตอนถัดไป
             </p>
-          } @else if (canShowApproveUnitHead()) {
-            <button
-              mat-stroked-button
-              class="!w-full !text-xs"
-              *khdHasPermission="['ticket:approve', 'ticket:approve_unit_head']"
-              [disabled]="acting()"
-              (click)="approveUnitHead()"
-            >
-              <khd-icon name="pencil-square" [size]="14" class="!mr-1" />ลงนามอนุมัติ (หัวหน้างาน/กลุ่มงาน)
-            </button>
-          }
-        </div>
-
-        <div class="pt-2 border-t border-black/5 dark:border-white/10">
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-xs font-medium text-neutral-500">ไฟล์แนบ ({{ t.attachments.length | khdNumber }})</h3>
-            <button mat-button class="!text-xs" *khdHasPermission="'ticket:upload_attachment'" (click)="triggerFileInput()">
-              <khd-icon name="paper-clip" [size]="14" class="!mr-1" />แนบไฟล์
-            </button>
-            <input #fileInput type="file" multiple accept="image/*,video/*" class="hidden" (change)="onFilesSelected($event)" />
-          </div>
-          <p class="text-[11px] text-neutral-400 !mt-[-4px] mb-2">รองรับไฟล์รูปภาพหรือวิดีโอ ขนาดไม่เกิน 5 MB ต่อไฟล์ (สูงสุด 5 ไฟล์ต่อครั้ง)</p>
-          @if (t.attachments.length > 0) {
             <div class="flex flex-wrap gap-2">
-              @for (att of t.attachments; track att.id) {
-                <khd-attachment-thumbnail [fileUrl]="att.fileUrl" [fileType]="att.fileType" />
+              @if (canReceiveNow()) {
+                <button mat-flat-button [disabled]="acting()" (click)="receive()">
+                  <khd-icon name="clipboard-document-list" [size]="18" class="mr-1.5" />รับเรื่อง
+                </button>
+              }
+              @if (showInspectNext()) {
+                <button mat-flat-button [disabled]="acting()" (click)="openInspectionDialog()">
+                  <khd-icon name="clipboard-document-list" [size]="18" class="mr-1.5" />บันทึกผลตรวจสอบเบื้องต้น
+                </button>
+              }
+              @for (tr of nextTransitions(); track tr.toStep.id; let first = $first) {
+                @if (first && !canReceiveNow() && !showInspectNext()) {
+                  <button mat-flat-button [disabled]="acting()" (click)="transition(tr.toStep.stepCode, tr.conditionKey)">
+                    {{ tr.label ?? 'ไปยัง ' + tr.toStep.stepNameTh }}
+                  </button>
+                } @else {
+                  <button mat-stroked-button [disabled]="acting()" (click)="transition(tr.toStep.stepCode, tr.conditionKey)">
+                    {{ tr.label ?? 'ไปยัง ' + tr.toStep.stepNameTh }}
+                  </button>
+                }
+              }
+              @if (canCloseNow()) {
+                <button mat-flat-button [disabled]="acting()" (click)="openAcceptDialog()">
+                  <khd-icon name="check-circle" [size]="18" class="mr-1.5" />
+                  {{ hasFullClosePermission() ? 'ปิดงาน' : 'เซ็นรับงาน' }}
+                </button>
               }
             </div>
-          }
-        </div>
+          </div>
+        } @else {
+          <p class="m-0 mt-5 flex items-center gap-2 rounded-xl bg-surface-2 px-4 py-3 text-sm text-muted">
+            <khd-icon name="clock" [size]="18" class="shrink-0" />
+            ขณะนี้อยู่ขั้นตอน "{{ t.progress.currentStepNameTh }}" — ระบบจะแจ้งเตือนเมื่อสถานะเปลี่ยน
+          </p>
+        }
+      }
+    </section>
 
-        @if (partsUsed().length > 0) {
-          <div class="pt-2 border-t border-black/5 dark:border-white/10">
-            <h3 class="text-xs font-medium text-neutral-500 mb-2">อะไหล่ที่เบิกใช้ ({{ partsUsed().length | khdNumber }})</h3>
-            <div class="space-y-1">
-              @for (txn of partsUsed(); track txn.id) {
-                <div class="flex items-center justify-between text-xs">
-                  <span>{{ txn.sparePart.code }} - {{ txn.sparePart.name }}</span>
-                  <span class="text-neutral-500">{{ txn.quantity | khdNumber }} {{ txn.sparePart.unit }}</span>
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div class="min-w-0 space-y-4 lg:col-span-2">
+        <section class="khd-card space-y-4">
+          <div>
+            <h2 class="m-0 mb-1.5 text-base font-semibold">รายละเอียดปัญหา</h2>
+            <p class="m-0 whitespace-pre-line text-sm text-ink">{{ t.description }}</p>
+          </div>
+
+          @if (t.asset) {
+            <div class="flex items-center gap-3 rounded-xl border border-solid border-line bg-surface-2 p-2.5">
+              @if (t.asset.photos.length > 0) {
+                <khd-asset-photo-thumbnail [fileUrl]="t.asset.photos[0].fileUrl" />
+              } @else {
+                <div class="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-solid border-line bg-surface">
+                  <khd-icon [name]="assetCategoryIconName(t.asset.category)" [size]="32" class="text-neutral-400" />
                 </div>
               }
+              <div class="min-w-0">
+                <p class="m-0 text-xs text-muted">ครุภัณฑ์ที่แจ้งซ่อม</p>
+                <a [routerLink]="['/assets', t.asset.id]" class="block truncate font-semibold text-brand-primary no-underline hover:underline">
+                  {{ t.asset.assetNumber }}
+                </a>
+                @if (t.asset.category) {
+                  <p class="m-0 truncate text-xs text-muted">{{ t.asset.category.nameTh }}</p>
+                }
+                @if (t.asset.brand || t.asset.model) {
+                  <p class="m-0 truncate text-xs text-muted">{{ t.asset.brand }} {{ t.asset.model }}</p>
+                }
+              </div>
             </div>
+          }
+
+          <div class="border-0 border-t border-solid border-line pt-4">
+            <div class="mb-1 flex items-center justify-between gap-2">
+              <h3 class="m-0 text-sm font-semibold">ไฟล์แนบ ({{ t.attachments.length | khdNumber }})</h3>
+              <button mat-button *khdHasPermission="'ticket:upload_attachment'" (click)="triggerFileInput()">
+                <khd-icon name="paper-clip" [size]="16" class="mr-1" />แนบไฟล์
+              </button>
+              <input #fileInput type="file" multiple accept="image/*,video/*" class="hidden" (change)="onFilesSelected($event)" />
+            </div>
+            <p class="m-0 mb-2 text-[11px] text-muted">รูปภาพหรือวิดีโอ ไม่เกิน 5 MB ต่อไฟล์ (สูงสุด 5 ไฟล์ต่อครั้ง)</p>
+            @if (t.attachments.length > 0) {
+              <div class="flex flex-wrap gap-2">
+                @for (att of t.attachments; track att.id) {
+                  <khd-attachment-thumbnail [fileUrl]="att.fileUrl" [fileType]="att.fileType" />
+                }
+              </div>
+            }
           </div>
-        }
+        </section>
 
-        <div class="pt-2 border-t border-black/5 dark:border-white/10">
-          <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
-            <mat-label>เพิ่มความคิดเห็น</mat-label>
-            <textarea matInput rows="2" [ngModel]="commentText()" (ngModelChange)="commentText.set($event)"></textarea>
-          </mat-form-field>
-          <button mat-flat-button color="primary" class="!mt-3 !w-full" [disabled]="!commentText().trim()" (click)="submitComment()">
-            ส่งความคิดเห็น
-          </button>
-        </div>
-      </div>
-
-      <div class="lg:col-span-2 space-y-4">
         @if (t.inspectedAt) {
-          <div class="khd-card">
-            <div class="flex items-center gap-2 mb-3">
+          <section class="khd-card">
+            <div class="mb-3 flex items-center gap-2">
               <khd-icon name="clipboard-document-list" [size]="18" class="text-brand-primary" />
-              <h2 class="text-sm font-medium">ผลตรวจสอบเบื้องต้น (ก่อนซ่อม)</h2>
+              <h2 class="m-0 text-base font-semibold">ผลตรวจสอบเบื้องต้น (ก่อนซ่อม)</h2>
             </div>
-            <dl class="space-y-3 text-sm">
+            <dl class="m-0 space-y-3 text-sm">
               <div>
-                <dt class="text-xs text-neutral-400 mb-0.5">ผลการตรวจสอบ</dt>
-                <dd class="text-neutral-700 dark:text-neutral-200">{{ outcomeLabels[t.inspectionOutcome!] }}</dd>
+                <dt class="mb-0.5 text-xs text-muted">ผลการตรวจสอบ</dt>
+                <dd class="m-0">{{ outcomeLabels[t.inspectionOutcome!] }}</dd>
               </div>
               @if (t.inspectionOutcome === 'IN_HOUSE' && t.requestPartsNeeded) {
                 <div>
-                  <dt class="text-xs text-neutral-400 mb-0.5">รายการอะไหล่ที่ขออนุมัติซื้อ</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200">
-                    @if (t.requestedPart1Name) { <span class="block">1. {{ t.requestedPart1Name }} จำนวน {{ t.requestedPart1Qty | khdNumber }}</span> }
-                    @if (t.requestedPart2Name) { <span class="block">2. {{ t.requestedPart2Name }} จำนวน {{ t.requestedPart2Qty | khdNumber }}</span> }
-                    @if (t.requestedPart3Name) { <span class="block">3. {{ t.requestedPart3Name }} จำนวน {{ t.requestedPart3Qty | khdNumber }}</span> }
+                  <dt class="mb-0.5 text-xs text-muted">รายการอะไหล่ที่ขออนุมัติซื้อ</dt>
+                  <dd class="m-0">
+                    @if (t.requestedPart1Name) {
+                      <span class="block">1. {{ t.requestedPart1Name }} จำนวน {{ t.requestedPart1Qty | khdNumber }}</span>
+                    }
+                    @if (t.requestedPart2Name) {
+                      <span class="block">2. {{ t.requestedPart2Name }} จำนวน {{ t.requestedPart2Qty | khdNumber }}</span>
+                    }
+                    @if (t.requestedPart3Name) {
+                      <span class="block">3. {{ t.requestedPart3Name }} จำนวน {{ t.requestedPart3Qty | khdNumber }}</span>
+                    }
                   </dd>
                 </div>
               }
               @if (t.inspectionOutcome === 'SEND_EXTERNAL' && t.sendExternalReason) {
                 <div>
-                  <dt class="text-xs text-neutral-400 mb-0.5">เหตุผลที่ส่งซ่อมภายนอก</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200 whitespace-pre-line">{{ t.sendExternalReason }}</dd>
+                  <dt class="mb-0.5 text-xs text-muted">เหตุผลที่ส่งซ่อมภายนอก</dt>
+                  <dd class="m-0 whitespace-pre-line">{{ t.sendExternalReason }}</dd>
                 </div>
               }
             </dl>
-            <p class="text-xs text-neutral-400 mt-3 pt-3 border-t border-black/5 dark:border-white/10">
-              ตรวจสอบโดย {{ t.inspectedBy?.fullName }} · {{ t.inspectedAt | date: 'd MMM yyyy, HH:mm' }}
+            <p class="m-0 mt-3 border-0 border-t border-solid border-line pt-3 text-xs text-muted">
+              ตรวจสอบโดย {{ t.inspectedBy?.fullName }} · {{ t.inspectedAt | khdDate: 'datetime' }}
               @if (t.digitalHealthHeadApprovedAt) {
-                <br />ลงนามรับรองโดย {{ t.digitalHealthHeadApprovedBy?.fullName }} · {{ t.digitalHealthHeadApprovedAt | date: 'd MMM yyyy, HH:mm' }}
+                <br />ลงนามรับรองโดย {{ t.digitalHealthHeadApprovedBy?.fullName }} · {{ t.digitalHealthHeadApprovedAt | khdDate: 'datetime' }}
               }
             </p>
-          </div>
+          </section>
         }
 
         @if (showCreateVendorOrder()) {
-          <div class="khd-card">
-            <div class="flex items-center gap-2 mb-3">
-              <khd-icon name="building-office-2" [size]="18" class="text-orange-500" />
-              <h2 class="text-sm font-medium">สร้างใบส่งซ่อมภายนอก</h2>
+          <section class="khd-card">
+            <div class="mb-3 flex items-center gap-2">
+              <khd-icon name="truck" [size]="18" class="text-orange-500" />
+              <h2 class="m-0 text-base font-semibold">สร้างใบส่งซ่อมภายนอก</h2>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <mat-form-field appearance="outline">
                 <mat-label>ผู้รับซ่อม</mat-label>
                 <mat-select [(ngModel)]="newVendorId">
@@ -286,65 +283,55 @@
                 <input matInput type="number" [(ngModel)]="newQuotationAmount" />
               </mat-form-field>
             </div>
-            <div class="flex justify-end gap-2 mt-2">
+            <div class="flex justify-end gap-2">
               <button mat-button type="button" (click)="cancelCreateVendorOrder()">ยกเลิก</button>
-              <button mat-flat-button color="primary" [disabled]="!newVendorId || savingVendorOrder()" (click)="createVendorOrder()">
-                สร้างใบส่งซ่อม
-              </button>
+              <button mat-flat-button [disabled]="!newVendorId || savingVendorOrder()" (click)="createVendorOrder()">สร้างใบส่งซ่อม</button>
             </div>
-          </div>
+          </section>
         }
 
         @if (vendorOrder(); as vo) {
-          <div class="khd-card">
-            <div class="flex items-center gap-2 mb-3">
-              <khd-icon name="building-office-2" [size]="18" class="text-orange-500" />
-              <h2 class="text-sm font-medium">ใบส่งซ่อมภายนอก</h2>
+          <section class="khd-card">
+            <div class="mb-3 flex items-center gap-2">
+              <khd-icon name="truck" [size]="18" class="text-orange-500" />
+              <h2 class="m-0 text-base font-semibold">ใบส่งซ่อมภายนอก</h2>
             </div>
-            <dl class="space-y-3 text-sm mb-3">
-              <div class="flex justify-between">
-                <dt class="text-xs text-neutral-400">ผู้รับซ่อม</dt>
-                <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.vendor.name }} @if (vo.vendor.phone) { ({{ vo.vendor.phone }}) }</dd>
-              </div>
+            <dl class="m-0 mb-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+              <dt class="text-muted">ผู้รับซ่อม</dt>
+              <dd class="m-0 text-right">{{ vo.vendor.name }} @if (vo.vendor.phone) { ({{ vo.vendor.phone }}) }</dd>
               @if (vo.quotationAmount) {
-                <div class="flex justify-between">
-                  <dt class="text-xs text-neutral-400">ราคาประเมิน</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.quotationAmount | khdNumber:2 }} บาท</dd>
-                </div>
+                <dt class="text-muted">ราคาประเมิน</dt>
+                <dd class="m-0 text-right tabular-nums">{{ vo.quotationAmount | khdNumber: 2 }} บาท</dd>
               }
               @if (vo.poNumber) {
-                <div class="flex justify-between">
-                  <dt class="text-xs text-neutral-400">เลขที่ใบสั่งซ่อม</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.poNumber }}</dd>
-                </div>
+                <dt class="text-muted">เลขที่ใบสั่งซ่อม</dt>
+                <dd class="m-0 text-right">{{ vo.poNumber }}</dd>
               }
               @if (vo.warrantyUntil) {
-                <div class="flex justify-between">
-                  <dt class="text-xs text-neutral-400">รับประกันถึง</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200">{{ vo.warrantyUntil | date: 'd MMM yyyy' }}</dd>
-                </div>
+                <dt class="text-muted">รับประกันถึง</dt>
+                <dd class="m-0 text-right">{{ vo.warrantyUntil | khdDate }}</dd>
               }
             </dl>
 
-            <div class="flex flex-wrap items-center gap-2 mb-3">
-              <button mat-stroked-button type="button" class="!text-xs" *khdHasPermission="'vendor:manage'" (click)="qFile.click()">
-                <khd-icon name="paper-clip" [size]="14" class="!mr-1" />แนบใบเสนอราคา
+            <div class="mb-3 flex flex-wrap items-center gap-2">
+              <button mat-stroked-button type="button" *khdHasPermission="'vendor:manage'" (click)="qFile.click()">
+                <khd-icon name="paper-clip" [size]="16" class="mr-1" />แนบใบเสนอราคา
               </button>
               <input #qFile type="file" class="hidden" (change)="onQuotationFileSelected($event)" />
               @if (vo.quotationFileUrl) {
-                <button mat-button type="button" class="!text-xs" (click)="viewVendorFile(vo.quotationFileUrl)">ดูใบเสนอราคา</button>
+                <button mat-button type="button" (click)="viewVendorFile(vo.quotationFileUrl)">ดูใบเสนอราคา</button>
               }
-              <button mat-stroked-button type="button" class="!text-xs" *khdHasPermission="'vendor:manage'" (click)="iFile.click()">
-                <khd-icon name="paper-clip" [size]="14" class="!mr-1" />แนบใบแจ้งหนี้/ใบเสร็จ
+              <button mat-stroked-button type="button" *khdHasPermission="'vendor:manage'" (click)="iFile.click()">
+                <khd-icon name="paper-clip" [size]="16" class="mr-1" />แนบใบแจ้งหนี้/ใบเสร็จ
               </button>
               <input #iFile type="file" class="hidden" (change)="onInvoiceFileSelected($event)" />
               @if (vo.invoiceFileUrl) {
-                <button mat-button type="button" class="!text-xs" (click)="viewVendorFile(vo.invoiceFileUrl)">ดูใบแจ้งหนี้/ใบเสร็จ</button>
+                <button mat-button type="button" (click)="viewVendorFile(vo.invoiceFileUrl)">ดูใบแจ้งหนี้/ใบเสร็จ</button>
               }
             </div>
 
-            <div class="flex items-end gap-2" *khdHasPermission="'vendor:manage'">
-              <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
+            <div class="khd-filter-bar !border-0 !bg-transparent !p-0 !shadow-none" *khdHasPermission="'vendor:manage'">
+              <mat-form-field appearance="outline" class="sm:flex-1">
                 <mat-label>สถานะงานส่งซ่อม</mat-label>
                 <mat-select [(ngModel)]="selectedVendorOrderStatus">
                   @for (s of vendorOrderStatuses; track s) {
@@ -352,61 +339,166 @@
                   }
                 </mat-select>
               </mat-form-field>
-              <button mat-flat-button color="primary" [disabled]="savingVendorOrder()" (click)="updateVendorOrderStatus()">อัปเดต</button>
+              <button mat-flat-button [disabled]="savingVendorOrder()" (click)="updateVendorOrderStatus()">อัปเดตสถานะ</button>
             </div>
-          </div>
+          </section>
         }
 
         @if (t.rootCause || t.repairAction) {
-          <div class="khd-card">
-            <div class="flex items-center justify-between gap-2 mb-3">
+          <section class="khd-card">
+            <div class="mb-3 flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <khd-icon name="clipboard-document-list" [size]="18" class="text-emerald-500" />
-                <h2 class="text-sm font-medium">สรุปผลการซ่อมจากช่าง</h2>
+                <khd-icon name="check-circle" [size]="18" class="text-emerald-600" />
+                <h2 class="m-0 text-base font-semibold">สรุปผลการซ่อมจากช่าง</h2>
               </div>
-              <button mat-button class="!text-xs" *khdHasPermission="'ticket:update_status'" (click)="openEditRepairSummary()">
-                <khd-icon name="pencil-square" [size]="14" class="!mr-1" />แก้ไข
+              <button mat-button *khdHasPermission="'ticket:update_status'" (click)="openEditRepairSummary()">
+                <khd-icon name="pencil-square" [size]="16" class="mr-1" />แก้ไข
               </button>
             </div>
-            <dl class="space-y-3 text-sm">
+            <dl class="m-0 space-y-3 text-sm">
               @if (t.rootCause) {
                 <div>
-                  <dt class="text-xs text-neutral-400 mb-0.5">สาเหตุที่พบ</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200 whitespace-pre-line">{{ t.rootCause }}</dd>
+                  <dt class="mb-0.5 text-xs text-muted">สาเหตุที่พบ</dt>
+                  <dd class="m-0 whitespace-pre-line">{{ t.rootCause }}</dd>
                 </div>
               }
               @if (t.repairAction) {
                 <div>
-                  <dt class="text-xs text-neutral-400 mb-0.5">วิธีการดำเนินการซ่อม</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200 whitespace-pre-line">{{ t.repairAction }}</dd>
+                  <dt class="mb-0.5 text-xs text-muted">วิธีการดำเนินการซ่อม</dt>
+                  <dd class="m-0 whitespace-pre-line">{{ t.repairAction }}</dd>
                 </div>
               }
               @if (t.partsUsed) {
                 <div>
-                  <dt class="text-xs text-neutral-400 mb-0.5">อะไหล่/อุปกรณ์ที่ใช้</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200 whitespace-pre-line">{{ t.partsUsed }}</dd>
+                  <dt class="mb-0.5 text-xs text-muted">อะไหล่/อุปกรณ์ที่ใช้</dt>
+                  <dd class="m-0 whitespace-pre-line">{{ t.partsUsed }}</dd>
                 </div>
               }
               @if (t.recommendation) {
                 <div>
-                  <dt class="text-xs text-neutral-400 mb-0.5">ข้อเสนอแนะ/คำแนะนำป้องกัน</dt>
-                  <dd class="text-neutral-700 dark:text-neutral-200 whitespace-pre-line">{{ t.recommendation }}</dd>
+                  <dt class="mb-0.5 text-xs text-muted">ข้อเสนอแนะ/คำแนะนำป้องกัน</dt>
+                  <dd class="m-0 whitespace-pre-line">{{ t.recommendation }}</dd>
                 </div>
               }
             </dl>
             @if (t.summaryByUser) {
-              <p class="text-xs text-neutral-400 mt-3 pt-3 border-t border-black/5 dark:border-white/10">
-                บันทึกโดย {{ t.summaryByUser.fullName }} · {{ t.summaryAt | date: 'd MMM yyyy, HH:mm' }}
+              <p class="m-0 mt-3 border-0 border-t border-solid border-line pt-3 text-xs text-muted">
+                บันทึกโดย {{ t.summaryByUser.fullName }} · {{ t.summaryAt | khdDate: 'datetime' }}
               </p>
             }
-          </div>
+          </section>
         }
 
-        <div>
-          <h2 class="text-sm font-medium mb-3">Timeline</h2>
+        <section class="khd-card">
+          <h2 class="m-0 mb-4 text-base font-semibold">ประวัติการดำเนินงาน</h2>
           <khd-timeline [events]="timeline()" [attachments]="t.attachments" />
-        </div>
+        </section>
       </div>
+
+      <aside class="min-w-0 space-y-4">
+        <section class="khd-card">
+          <h2 class="m-0 mb-3 text-base font-semibold">ข้อมูลงาน</h2>
+          <dl class="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 text-sm">
+            <dt class="text-muted">ผู้แจ้ง</dt>
+            <dd class="m-0 text-right">{{ t.reportedBy.fullName }}</dd>
+            @if (t.department) {
+              <dt class="text-muted">หน่วยงาน</dt>
+              <dd class="m-0 text-right">{{ t.department.nameTh }}</dd>
+            }
+            <dt class="text-muted">ช่างผู้รับผิดชอบ</dt>
+            <dd class="m-0 text-right">
+              @if (t.assignedTechnician) {
+                {{ t.assignedTechnician.fullName }}
+              } @else {
+                <span class="text-neutral-400">ยังไม่มอบหมาย</span>
+              }
+            </dd>
+            @if (t.locationNote) {
+              <dt class="text-muted">สถานที่</dt>
+              <dd class="m-0 text-right">{{ t.locationNote }}</dd>
+            }
+            @if (t.contactPhone) {
+              <dt class="text-muted">เบอร์ติดต่อ</dt>
+              <dd class="m-0 text-right">
+                <a [href]="'tel:' + t.contactPhone" class="text-brand-primary no-underline hover:underline">{{ t.contactPhone }}</a>
+              </dd>
+            }
+            @if (t.equipmentType) {
+              <dt class="text-muted">ประเภทอุปกรณ์</dt>
+              <dd class="m-0 text-right">{{ t.equipmentType === 'OTHER' ? t.equipmentTypeOther || 'อื่นๆ' : equipmentTypeLabels[t.equipmentType] }}</dd>
+            }
+            @if (t.deviceColor) {
+              <dt class="text-muted">สีเครื่อง</dt>
+              <dd class="m-0 text-right">{{ t.deviceColor }}</dd>
+            }
+            @if (t.hasAdapterCable || t.hasVgaCable || t.hasPowerCable || t.hasOtherAccessory) {
+              <dt class="text-muted">อุปกรณ์ที่มาด้วย</dt>
+              <dd class="m-0 text-right">
+                @if (t.hasAdapterCable) {
+                  <span class="block">สาย Adapter</span>
+                }
+                @if (t.hasVgaCable) {
+                  <span class="block">สาย VGA/RGB/DVI/HDMI</span>
+                }
+                @if (t.hasPowerCable) {
+                  <span class="block">สาย POWER AC</span>
+                }
+                @if (t.hasOtherAccessory) {
+                  <span class="block">{{ t.otherAccessoryNote || 'อื่นๆ' }}</span>
+                }
+              </dd>
+            }
+            <dt class="text-muted">วันที่แจ้ง</dt>
+            <dd class="m-0 text-right">{{ t.createdAt | khdDate: 'datetime' }}</dd>
+          </dl>
+
+          <div class="mt-4 border-0 border-t border-solid border-line pt-3 text-sm">
+            @if (t.unitHeadApprovedAt) {
+              <p class="m-0 flex items-start gap-1.5 text-xs text-muted">
+                <khd-icon name="check-circle" [size]="16" class="shrink-0 text-emerald-600" />
+                <span>หัวหน้างาน/กลุ่มงานลงนามแล้ว โดย {{ t.unitHeadApprovedBy?.fullName }} · {{ t.unitHeadApprovedAt | khdDate: 'datetime' }}</span>
+              </p>
+            } @else if (canShowApproveUnitHead()) {
+              <button
+                mat-stroked-button
+                class="!w-full"
+                *khdHasPermission="['ticket:approve', 'ticket:approve_unit_head']"
+                [disabled]="acting()"
+                (click)="approveUnitHead()"
+              >
+                <khd-icon name="pencil-square" [size]="16" class="mr-1.5" />ลงนามอนุมัติ (หัวหน้างาน/กลุ่มงาน)
+              </button>
+            } @else {
+              <p class="m-0 text-xs text-muted">ยังไม่มีการลงนามของหัวหน้างาน/กลุ่มงาน</p>
+            }
+          </div>
+        </section>
+
+        @if (partsUsed().length > 0) {
+          <section class="khd-card">
+            <h2 class="m-0 mb-2 text-base font-semibold">อะไหล่ที่เบิกใช้ ({{ partsUsed().length | khdNumber }})</h2>
+            <ul class="m-0 list-none space-y-1.5 p-0">
+              @for (txn of partsUsed(); track txn.id) {
+                <li class="flex items-center justify-between gap-2 text-sm">
+                  <span class="min-w-0 truncate">{{ txn.sparePart.code }} - {{ txn.sparePart.name }}</span>
+                  <span class="shrink-0 text-muted tabular-nums">{{ txn.quantity | khdNumber }} {{ txn.sparePart.unit }}</span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        <section class="khd-card">
+          <h2 class="m-0 mb-3 text-base font-semibold">ความคิดเห็น</h2>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>พิมพ์ความคิดเห็นหรือข้อมูลเพิ่มเติม</mat-label>
+            <textarea matInput rows="3" [ngModel]="commentText()" (ngModelChange)="commentText.set($event)"></textarea>
+          </mat-form-field>
+          <button mat-flat-button class="!w-full" [disabled]="!commentText().trim()" (click)="submitComment()">
+            <khd-icon name="paper-airplane" [size]="16" class="mr-1.5" />ส่งความคิดเห็น
+          </button>
+        </section>
+      </aside>
     </div>
   </div>
 }

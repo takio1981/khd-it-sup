@@ -1,21 +1,8 @@
 <div class="space-y-4">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-semibold">ประวัติเอกสารราชการที่ออกแล้ว</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} ฉบับ — เลขที่เอกสารออกจากระบบอัตโนมัติ ไม่ซ้ำ ไม่ข้าม</p>
-    </div>
-    <div class="flex gap-2">
-      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
-        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-        Export
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
-        <button mat-menu-item (click)="exportCsv()">CSV</button>
-        <button mat-menu-item (click)="exportPdf()">PDF</button>
-      </mat-menu>
-    </div>
-  </div>
+  <khd-page-header title="ประวัติเอกสารราชการที่ออกแล้ว">
+    <p meta class="m-0 mt-1 text-sm text-muted">ทั้งหมด {{ total() | khdNumber }} ฉบับ — เลขที่เอกสารออกจากระบบอัตโนมัติ ไม่ซ้ำ ไม่ข้าม</p>
+    <khd-export-menu [disabled]="exporting()" (excel)="exportExcel()" (csv)="exportCsv()" (pdf)="exportPdf()" />
+  </khd-page-header>
 
   <div class="khd-card !p-0 overflow-x-auto">
     <table mat-table [dataSource]="docs()" class="w-full">
@@ -42,7 +29,7 @@
 
       <ng-container matColumnDef="generatedAt">
         <th mat-header-cell *matHeaderCellDef>วันที่ออกเอกสาร</th>
-        <td mat-cell *matCellDef="let d" data-label="วันที่ออกเอกสาร">{{ d.generatedAt | date: 'd MMM yyyy, HH:mm' }}</td>
+        <td mat-cell *matCellDef="let d" data-label="วันที่ออกเอกสาร">{{ d.generatedAt | khdDate: 'datetime' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="actions">
@@ -55,11 +42,11 @@
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
 
     @if (!loading() && docs().length === 0) {
-      <p class="text-center text-sm text-neutral-400 py-10">ยังไม่มีเอกสารที่ออกเลขที่แล้ว</p>
+      <khd-empty-state [compact]="true" title="ยังไม่มีเอกสารที่ออกเลขที่แล้ว" />
     }
 
     <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="pageIndex()" [pageSizeOptions]="[10, 20, 50]" (page)="onPage($event)" />

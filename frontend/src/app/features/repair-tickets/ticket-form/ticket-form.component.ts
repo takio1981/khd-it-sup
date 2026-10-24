@@ -7,8 +7,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
-import { EQUIPMENT_TYPE_LABEL_TH, EQUIPMENT_TYPE_OPTIONS, URGENCY_LABEL_TH } from '../../../core/constants/status.const';
+import { EQUIPMENT_TYPE_LABEL_TH, EQUIPMENT_TYPE_OPTIONS, URGENCY_COLOR, URGENCY_LABEL_TH } from '../../../core/constants/status.const';
 import type { ICreateTicketPayload } from '../../../core/models/repair-ticket.model';
 
 @Component({
@@ -24,6 +25,7 @@ import type { ICreateTicketPayload } from '../../../core/models/repair-ticket.mo
     MatCheckboxModule,
     MatButtonModule,
     MatProgressSpinnerModule,
+    MatButtonToggleModule,
   ],
   templateUrl: './ticket-form.component.html',
 })
@@ -33,6 +35,7 @@ export class TicketFormComponent {
   readonly dialogRef = inject(MatDialogRef<TicketFormComponent>);
 
   readonly urgencyLabels = URGENCY_LABEL_TH;
+  readonly urgencyColor = URGENCY_COLOR;
   readonly equipmentTypeOptions = EQUIPMENT_TYPE_OPTIONS;
   readonly equipmentTypeLabels = EQUIPMENT_TYPE_LABEL_TH;
   readonly saving = signal(false);

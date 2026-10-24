@@ -11,7 +11,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
-import { DatePipe } from '@angular/common';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 import { AssetLoanService } from '../../core/services/asset-loan.service';
@@ -27,6 +26,11 @@ import { AssetLoanReturnFormComponent } from './asset-loan-return-form/asset-loa
 import type { IAssetLoan, AssetLoanStatus } from '../../core/models/asset-loan.model';
 import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
 import { provideKhdPaginatorIntl } from '../../core/utils/khd-paginator-intl.util';
+import { KhdDatePipe } from '../../shared/pipes/khd-date.pipe';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { ExportMenuComponent } from '../../shared/components/export-menu/export-menu.component';
+import { FilterBarComponent } from '../../shared/components/filter-bar/filter-bar.component';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -49,7 +53,6 @@ const STATUS_COLOR: Record<string, string> = {
   providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   imports: [
     FormsModule,
-    DatePipe,
     MatTableModule,
     MatPaginatorModule,
     MatFormFieldModule,
@@ -60,6 +63,11 @@ const STATUS_COLOR: Record<string, string> = {
     IconComponent,
     HasPermissionDirective,
     KhdNumberPipe,
+    KhdDatePipe,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    ExportMenuComponent,
+    FilterBarComponent,
   ],
   templateUrl: './asset-loan-list.component.html',
 })

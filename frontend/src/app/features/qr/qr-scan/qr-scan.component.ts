@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -16,7 +15,6 @@ import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
-import { PageWatermarkComponent } from '../../../shared/components/page-watermark/page-watermark.component';
 import {
   CameraCaptureDialogComponent,
   type ICameraCaptureDialogData,
@@ -25,6 +23,7 @@ import { URGENCY_LABEL_TH } from '../../../core/constants/status.const';
 import { getCategoryIconName } from '../../../core/utils/category-icon.util';
 import type { ICreateTicketPayload } from '../../../core/models/repair-ticket.model';
 import type { IUserListItem } from '../../../core/models/user.model';
+import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
 
 type LoanAction = 'borrow' | 'return';
 
@@ -100,7 +99,7 @@ export class QrLoginDialogComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    DatePipe,
+    KhdDatePipe,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -109,7 +108,6 @@ export class QrLoginDialogComponent {
     MatAutocompleteModule,
     StatusBadgeComponent,
     IconComponent,
-    PageWatermarkComponent,
   ],
   templateUrl: './qr-scan.component.html',
 })

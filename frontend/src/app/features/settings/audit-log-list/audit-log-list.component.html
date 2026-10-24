@@ -1,29 +1,15 @@
 <div class="space-y-4">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-semibold">ประวัติการใช้งานระบบ (Audit Log)</h1>
-      <p class="text-sm text-neutral-500">ประวัติการกระทำทุกโมดูลในระบบ (บันทึกอัตโนมัติ แก้ไข/ลบไม่ได้) ใช้ตรวจสอบย้อนหลัง</p>
-    </div>
-    <div class="flex gap-2">
-      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
-        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-        Export
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
-        <button mat-menu-item (click)="exportCsv()">CSV</button>
-        <button mat-menu-item (click)="exportPdf()">PDF</button>
-      </mat-menu>
-    </div>
-  </div>
+  <khd-page-header title="ประวัติการใช้งานระบบ (Audit Log)" subtitle="ประวัติการกระทำทุกโมดูลในระบบ (บันทึกอัตโนมัติ แก้ไข/ลบไม่ได้) ใช้ตรวจสอบย้อนหลัง">
+    <khd-export-menu [disabled]="exporting()" (excel)="exportExcel()" (csv)="exportCsv()" (pdf)="exportPdf()" />
+  </khd-page-header>
 
-  <div class="khd-card !p-3 flex flex-col sm:flex-row flex-wrap gap-3">
-    <mat-form-field appearance="outline" class="sm:w-48 !mb-[-1.25em]">
+  <khd-filter-bar>
+    <mat-form-field appearance="outline" class="sm:w-48">
       <mat-label>โมดูล</mat-label>
       <input matInput [(ngModel)]="module" (ngModelChange)="onFilterChange()" placeholder="เช่น repair-tickets" />
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="sm:w-52 !mb-[-1.25em]">
+    <mat-form-field appearance="outline" class="sm:w-52">
       <mat-label>การกระทำ</mat-label>
       <mat-select [(ngModel)]="action" (ngModelChange)="onFilterChange()">
         <mat-option value="">ทั้งหมด</mat-option>
@@ -33,26 +19,26 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="sm:w-44 !mb-[-1.25em]">
+    <mat-form-field appearance="outline" class="sm:w-44">
       <mat-label>ตั้งแต่วันที่</mat-label>
       <input matInput [matDatepicker]="fromPicker" [(ngModel)]="dateFrom" (ngModelChange)="onFilterChange()" />
       <mat-datepicker-toggle matIconSuffix [for]="fromPicker" />
       <mat-datepicker #fromPicker />
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="sm:w-44 !mb-[-1.25em]">
+    <mat-form-field appearance="outline" class="sm:w-44">
       <mat-label>ถึงวันที่</mat-label>
       <input matInput [matDatepicker]="toPicker" [(ngModel)]="dateTo" (ngModelChange)="onFilterChange()" />
       <mat-datepicker-toggle matIconSuffix [for]="toPicker" />
       <mat-datepicker #toPicker />
     </mat-form-field>
-  </div>
+  </khd-filter-bar>
 
   <div class="khd-card !p-0 overflow-x-auto">
     <table mat-table [dataSource]="logs()" class="w-full">
       <ng-container matColumnDef="createdAt">
         <th mat-header-cell *matHeaderCellDef>เวลา</th>
-        <td mat-cell *matCellDef="let l" data-label="เวลา">{{ l.createdAt | date: 'd MMM yyyy, HH:mm' }}</td>
+        <td mat-cell *matCellDef="let l" data-label="เวลา">{{ l.createdAt | khdDate: 'datetime' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="user">
@@ -85,11 +71,11 @@
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
 
     @if (!loading() && logs().length === 0) {
-      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบประวัติที่ตรงกับเงื่อนไข</p>
+      <khd-empty-state [compact]="true" title="ไม่พบประวัติที่ตรงกับเงื่อนไข" />
     }
 
     <mat-paginator

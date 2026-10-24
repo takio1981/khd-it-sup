@@ -32,7 +32,7 @@
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div class="khd-card md:col-span-2">
-        <h2 class="text-sm font-medium mb-3">ข้อมูลครุภัณฑ์</h2>
+        <h2 class="m-0 mb-3 text-base font-semibold">ข้อมูลครุภัณฑ์</h2>
         <dl class="grid grid-cols-2 gap-y-3 text-sm">
           <div><dt class="text-neutral-400 text-xs">เลขครุภัณฑ์ราชการ</dt><dd>{{ a.govAssetNumber ?? '-' }}</dd></div>
           <div><dt class="text-neutral-400 text-xs">หน่วยงาน</dt><dd>{{ a.department?.nameTh ?? '-' }}</dd></div>
@@ -91,7 +91,7 @@
       </div>
 
       <div class="khd-card" *khdHasPermission="'qrcode:print'">
-        <h2 class="text-sm font-medium mb-3">QR Code</h2>
+        <h2 class="m-0 mb-3 text-base font-semibold">QR Code</h2>
         @if (qrDataUrl(); as qr) {
           <img [src]="qr" alt="QR Code" class="w-full rounded-lg border border-black/5" />
         } @else {
@@ -129,7 +129,7 @@
             >
               <div>
                 <span class="font-medium">{{ h.ticketNumber }}</span>
-                <span class="text-neutral-400 ml-2">{{ h.createdAt | date: 'd MMM yyyy' }}</span>
+                <span class="text-neutral-400 ml-2">{{ h.createdAt | khdDate }}</span>
               </div>
               <khd-status-badge [status]="h.status" />
             </a>

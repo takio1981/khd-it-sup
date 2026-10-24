@@ -1,49 +1,36 @@
 <div class="space-y-4">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-semibold">ครุภัณฑ์</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} รายการ</p>
-    </div>
-    <div class="flex items-center gap-2">
-      @if (selectedIds().size > 0) {
-        <button mat-stroked-button color="primary" *khdHasPermission="'qrcode:print'" [disabled]="printing()" (click)="printSelected()">
-          <khd-icon name="printer" [size]="18" class="!mr-1" />
-          พิมพ์ QR ที่เลือก ({{ selectedIds().size | khdNumber }})
-        </button>
-      }
-      <button mat-stroked-button *khdHasPermission="'asset:update'" routerLink="/assets/categories">
-        <khd-icon name="adjustments-horizontal" [size]="18" class="!mr-1" />
-        จัดการประเภทครุภัณฑ์
-      </button>
-      <button mat-stroked-button *khdHasPermission="'asset:create'" routerLink="/assets/import">
-        <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
-        นำเข้าครุภัณฑ์จาก MOPH
-      </button>
-      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
-        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-        Export
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
-        <button mat-menu-item (click)="exportCsv()">CSV</button>
-        <button mat-menu-item (click)="exportPdf()">PDF</button>
-      </mat-menu>
-      <button mat-flat-button color="primary" *khdHasPermission="'asset:create'" (click)="openCreateForm()">
-        <khd-icon name="plus" [size]="18" class="!mr-1" />
-        เพิ่มครุภัณฑ์
-      </button>
-    </div>
-  </div>
+  <khd-page-header title="ครุภัณฑ์">
+    <p meta class="m-0 mt-1 text-sm text-muted">ทั้งหมด {{ total() | khdNumber }} รายการ</p>
+    @if (selectedIds().size > 0) {
+    <button mat-stroked-button color="primary" *khdHasPermission="'qrcode:print'" [disabled]="printing()" (click)="printSelected()">
+    <khd-icon name="printer" [size]="18" class="!mr-1" />
+    พิมพ์ QR ที่เลือก ({{ selectedIds().size | khdNumber }})
+    </button>
+    }
+    <button mat-stroked-button *khdHasPermission="'asset:update'" routerLink="/assets/categories">
+    <khd-icon name="adjustments-horizontal" [size]="18" class="!mr-1" />
+    จัดการประเภทครุภัณฑ์
+    </button>
+    <button mat-stroked-button *khdHasPermission="'asset:create'" routerLink="/assets/import">
+    <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
+    นำเข้าครุภัณฑ์จาก MOPH
+    </button>
+    <khd-export-menu [disabled]="exporting()" (excel)="exportExcel()" (csv)="exportCsv()" (pdf)="exportPdf()" />
+    <button mat-flat-button color="primary" *khdHasPermission="'asset:create'" (click)="openCreateForm()">
+    <khd-icon name="plus" [size]="18" class="!mr-1" />
+    เพิ่มครุภัณฑ์
+    </button>
+  </khd-page-header>
 
-  <div class="khd-card !p-3 flex flex-col gap-3">
-    <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+  <khd-filter-bar>
+    <mat-form-field appearance="outline" class="w-full">
       <mat-label>ค้นหา (เลขครุภัณฑ์ / Serial / ยี่ห้อ / รหัสจำแนกครุภัณฑ์)</mat-label>
       <input matInput [(ngModel)]="keyword" (ngModelChange)="onKeywordChange()" />
-      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="!mr-2 text-neutral-400" />
+      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="ml-3 mr-2 text-neutral-400" />
     </mat-form-field>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      <mat-form-field appearance="outline" class="!mb-[-1.25em]">
+      <mat-form-field appearance="outline">
         <mat-label>ประเภทครุภัณฑ์</mat-label>
         <mat-select [(ngModel)]="categoryId" (ngModelChange)="onFilterChange()">
           <mat-option value="">ทั้งหมด</mat-option>
@@ -53,7 +40,7 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="!mb-[-1.25em]">
+      <mat-form-field appearance="outline">
         <mat-label>หน่วยงาน</mat-label>
         <mat-select [(ngModel)]="departmentId" (ngModelChange)="onFilterChange()">
           <mat-option value="">ทั้งหมด</mat-option>
@@ -63,7 +50,7 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="!mb-[-1.25em]">
+      <mat-form-field appearance="outline">
         <mat-label>สถานะ</mat-label>
         <mat-select [(ngModel)]="status" (ngModelChange)="onFilterChange()">
           <mat-option value="">ทั้งหมด</mat-option>
@@ -73,7 +60,7 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="!mb-[-1.25em]">
+      <mat-form-field appearance="outline">
         <mat-label>ประเภทการได้มา</mat-label>
         <mat-select [(ngModel)]="acquisitionType" (ngModelChange)="onFilterChange()">
           <mat-option value="">ทั้งหมด</mat-option>
@@ -83,7 +70,7 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="!mb-[-1.25em]">
+      <mat-form-field appearance="outline">
         <mat-label>ปีงบประมาณ</mat-label>
         <mat-select [(ngModel)]="budgetYear" (ngModelChange)="onFilterChange()">
           <mat-option value="">ทั้งหมด</mat-option>
@@ -93,7 +80,7 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="!mb-[-1.25em]">
+      <mat-form-field appearance="outline">
         <mat-label>แหล่งที่มา</mat-label>
         <mat-select [(ngModel)]="externalSource" (ngModelChange)="onFilterChange()">
           <mat-option value="">ทั้งหมด</mat-option>
@@ -102,7 +89,7 @@
         </mat-select>
       </mat-form-field>
     </div>
-  </div>
+  </khd-filter-bar>
 
   <div class="khd-card !p-0 overflow-x-auto">
     <table mat-table [dataSource]="assets()" [multiTemplateDataRows]="true" class="w-full">
@@ -178,10 +165,10 @@
                     <div><span class="text-neutral-400">ราคา:</span> {{ a.price | khdNumber:2 }}</div>
                   }
                   @if (a.purchaseDate) {
-                    <div><span class="text-neutral-400">วันที่ซื้อ:</span> {{ a.purchaseDate | date: 'd MMM yyyy' }}</div>
+                    <div><span class="text-neutral-400">วันที่ซื้อ:</span> {{ a.purchaseDate | khdDate }}</div>
                   }
                   @if (a.warrantyExpireDate) {
-                    <div><span class="text-neutral-400">หมดประกัน:</span> {{ a.warrantyExpireDate | date: 'd MMM yyyy' }}</div>
+                    <div><span class="text-neutral-400">หมดประกัน:</span> {{ a.warrantyExpireDate | khdDate }}</div>
                   }
                   @if (a.unitType) {
                     <div><span class="text-neutral-400">หน่วยนับ:</span> {{ a.unitType }}</div>
@@ -244,13 +231,13 @@
         mat-row
         *matRowDef="let row; columns: displayedColumns"
         (click)="toggleExpand(row)"
-        class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer"
+        class=" cursor-pointer"
       ></tr>
       <tr mat-row *matRowDef="let row; columns: detailColumns" class="!h-0 mat-row-detail"></tr>
     </table>
 
     @if (!loading() && assets().length === 0) {
-      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบครุภัณฑ์ที่ตรงกับเงื่อนไข</p>
+      <khd-empty-state [compact]="true" title="ไม่พบครุภัณฑ์ที่ตรงกับเงื่อนไข" />
     }
 
     <mat-paginator

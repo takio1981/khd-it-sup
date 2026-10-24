@@ -1,34 +1,21 @@
 <div class="space-y-4">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-semibold">ผู้ขาย/ผู้รับซ่อมภายนอก</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} ราย</p>
-    </div>
-    <div class="flex gap-2">
-      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
-        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-        Export
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
-        <button mat-menu-item (click)="exportCsv()">CSV</button>
-        <button mat-menu-item (click)="exportPdf()">PDF</button>
-      </mat-menu>
-      <button
-        mat-flat-button
-        color="primary"
-        *khdHasPermission="'vendor:manage'"
-        (click)="showForm() ? cancelForm() : openCreateForm()"
-      >
-        <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
-        {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มผู้ขาย/ผู้รับซ่อม' }}
-      </button>
-    </div>
-  </div>
+  <khd-page-header title="ผู้ขาย/ผู้รับซ่อมภายนอก">
+    <p meta class="m-0 mt-1 text-sm text-muted">ทั้งหมด {{ total() | khdNumber }} ราย</p>
+    <khd-export-menu [disabled]="exporting()" (excel)="exportExcel()" (csv)="exportCsv()" (pdf)="exportPdf()" />
+    <button
+    mat-flat-button
+    color="primary"
+    *khdHasPermission="'vendor:manage'"
+    (click)="showForm() ? cancelForm() : openCreateForm()"
+    >
+    <khd-icon [name]="showForm() ? 'x-mark' : 'plus'" [size]="18" class="!mr-1" />
+    {{ showForm() ? 'ปิดฟอร์ม' : 'เพิ่มผู้ขาย/ผู้รับซ่อม' }}
+    </button>
+  </khd-page-header>
 
   @if (showForm()) {
     <form [formGroup]="form" (ngSubmit)="submit()" class="khd-card grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <h2 class="sm:col-span-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+      <h2 class="sm:col-span-2 text-sm font-semibold text-brand-primary">
         {{ editingId() ? 'แก้ไขข้อมูล' : 'เพิ่มผู้ขาย/ผู้รับซ่อมใหม่' }}
       </h2>
       <mat-form-field appearance="outline">
@@ -71,13 +58,13 @@
     </form>
   }
 
-  <div class="khd-card !p-3">
-    <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+  <khd-filter-bar>
+    <mat-form-field appearance="outline" class="w-full">
       <mat-label>ค้นหา (รหัส / ชื่อ)</mat-label>
       <input matInput [(ngModel)]="keyword" (ngModelChange)="onKeywordChange()" />
-      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="!mr-2 text-neutral-400" />
+      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="ml-3 mr-2 text-neutral-400" />
     </mat-form-field>
-  </div>
+  </khd-filter-bar>
 
   <div class="khd-card !p-0 overflow-x-auto">
     <table mat-table [dataSource]="vendors()" class="w-full">
@@ -121,7 +108,7 @@
             <button
               *khdHasPermission="'vendor:manage'"
               (click)="openEditForm(v)"
-              class="appearance-none inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 text-xs font-medium px-3 py-1 transition-colors"
+              class="khd-row-action"
             >
               <khd-icon name="pencil-square" [size]="14" />
               แก้ไข
@@ -129,7 +116,7 @@
             <button
               *khdHasPermission="'vendor:manage'"
               (click)="toggleActive(v)"
-              class="appearance-none inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 text-xs font-medium px-3 py-1 transition-colors"
+              class="khd-row-action"
             >
               {{ v.isActive ? 'ปิดใช้งาน' : 'เปิดใช้งาน' }}
             </button>
@@ -138,11 +125,11 @@
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
 
     @if (!loading() && vendors().length === 0) {
-      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบผู้ขาย/ผู้รับซ่อมที่ตรงกับเงื่อนไข</p>
+      <khd-empty-state [compact]="true" title="ไม่พบผู้ขาย/ผู้รับซ่อมที่ตรงกับเงื่อนไข" />
     }
 
     <mat-paginator [length]="total()" [pageSize]="pageSize()" [pageIndex]="pageIndex()" [pageSizeOptions]="[10, 20, 50]" (page)="onPage($event)" />

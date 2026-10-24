@@ -43,12 +43,12 @@ export interface IBackupRestoreDialogData {
         }
       </div>
 
-      <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+      <mat-form-field appearance="outline" class="w-full">
         <mat-label>รหัสผ่านของคุณ (ยืนยันตัวตนอีกครั้ง)</mat-label>
         <input matInput type="password" [(ngModel)]="confirmPassword" [disabled]="submitting()" autocomplete="current-password" />
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+      <mat-form-field appearance="outline" class="w-full">
         <mat-label>พิมพ์ชื่อไฟล์ "{{ data.log.fileName }}" เพื่อยืนยัน</mat-label>
         <input matInput [(ngModel)]="confirmFileName" [disabled]="submitting()" autocomplete="off" />
       </mat-form-field>

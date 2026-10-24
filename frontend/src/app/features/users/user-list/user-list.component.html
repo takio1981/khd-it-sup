@@ -1,37 +1,24 @@
 <div class="space-y-4">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-semibold">ผู้ใช้งาน</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} คน</p>
-    </div>
-    <div class="flex items-center gap-2">
-      <button mat-stroked-button *khdHasPermission="'user:update'" routerLink="/users/positions">
-        <khd-icon name="adjustments-horizontal" [size]="18" class="!mr-1" />
-        จัดการตำแหน่งงาน
-      </button>
-      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
-        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-        Export
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
-        <button mat-menu-item (click)="exportCsv()">CSV</button>
-        <button mat-menu-item (click)="exportPdf()">PDF</button>
-      </mat-menu>
-      <button mat-flat-button color="primary" *khdHasPermission="'user:create'" (click)="openCreateForm()">
-        <khd-icon name="plus" [size]="18" class="!mr-1" />
-        เพิ่มผู้ใช้
-      </button>
-    </div>
-  </div>
+  <khd-page-header title="ผู้ใช้งาน">
+    <p meta class="m-0 mt-1 text-sm text-muted">ทั้งหมด {{ total() | khdNumber }} คน</p>
+    <button mat-stroked-button *khdHasPermission="'user:update'" routerLink="/users/positions">
+    <khd-icon name="adjustments-horizontal" [size]="18" class="!mr-1" />
+    จัดการตำแหน่งงาน
+    </button>
+    <khd-export-menu [disabled]="exporting()" (excel)="exportExcel()" (csv)="exportCsv()" (pdf)="exportPdf()" />
+    <button mat-flat-button color="primary" *khdHasPermission="'user:create'" (click)="openCreateForm()">
+    <khd-icon name="plus" [size]="18" class="!mr-1" />
+    เพิ่มผู้ใช้
+    </button>
+  </khd-page-header>
 
-  <div class="khd-card !p-3">
-    <mat-form-field appearance="outline" class="w-full !mb-[-1.25em]">
+  <khd-filter-bar>
+    <mat-form-field appearance="outline" class="w-full">
       <mat-label>ค้นหา (ชื่อ / username / อีเมล)</mat-label>
       <input matInput [(ngModel)]="keyword" (ngModelChange)="onKeywordChange()" />
-      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="!mr-2 text-neutral-400" />
+      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="ml-3 mr-2 text-neutral-400" />
     </mat-form-field>
-  </div>
+  </khd-filter-bar>
 
   <div class="khd-card !p-0 overflow-x-auto">
     <table mat-table [dataSource]="users()" class="w-full">
@@ -97,11 +84,11 @@
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns" class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     </table>
 
     @if (!loading() && users().length === 0) {
-      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบผู้ใช้ที่ตรงกับเงื่อนไข</p>
+      <khd-empty-state [compact]="true" title="ไม่พบผู้ใช้ที่ตรงกับเงื่อนไข" />
     }
 
     <mat-paginator

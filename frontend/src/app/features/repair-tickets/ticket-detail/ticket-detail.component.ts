@@ -1,17 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, ViewChild, ElementRef } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { RepairTicketService } from '../../../core/services/repair-ticket.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SparePartService } from '../../../core/services/spare-part.service';
@@ -25,7 +21,7 @@ import { TicketPrintPreviewGeneralComponent } from '../../../shared/components/t
 import { AttachmentThumbnailComponent } from '../../../shared/components/attachment-thumbnail/attachment-thumbnail.component';
 import { AssetPhotoThumbnailComponent } from '../../../shared/components/asset-photo-thumbnail/asset-photo-thumbnail.component';
 import { HasPermissionDirective } from '../../../shared/directives/has-permission.directive';
-import { EQUIPMENT_TYPE_LABEL_TH, INSPECTION_OUTCOME_LABEL_TH, URGENCY_LABEL_TH } from '../../../core/constants/status.const';
+import { EQUIPMENT_TYPE_LABEL_TH, INSPECTION_OUTCOME_LABEL_TH, URGENCY_COLOR, URGENCY_LABEL_TH } from '../../../core/constants/status.const';
 import { getCategoryIconName } from '../../../core/utils/category-icon.util';
 import {
   CancelTicketDialogComponent,
@@ -42,6 +38,11 @@ import type { IInspectionPayload, IRepairTicketDetail, ITimelineEvent } from '..
 import type { ISparePartTransaction } from '../../../core/models/spare-part.model';
 import type { IVendor, IVendorRepairOrder, VendorRepairStatus } from '../../../core/models/vendor.model';
 import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
+import { ToastService } from '../../../core/services/toast.service';
+import { LoadingStateComponent } from '../../../shared/components/loading-state/loading-state.component';
+import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
+
+const BRANCH_STEP_CODES = new Set(['WAITING_PARTS', 'VENDOR_REPAIR', 'WAITING_APPROVAL']);
 
 const VENDOR_ORDER_STATUSES: VendorRepairStatus[] = [
   'QUOTATION_REQUESTED',
@@ -75,11 +76,8 @@ const VENDOR_ORDER_STATUS_LABEL_TH: Record<string, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
-    DatePipe,
     FormsModule,
     MatButtonModule,
-    MatProgressBarModule,
-    MatProgressSpinnerModule,
     MatMenuModule,
     MatDividerModule,
     MatFormFieldModule,
@@ -92,6 +90,8 @@ const VENDOR_ORDER_STATUS_LABEL_TH: Record<string, string> = {
     AssetPhotoThumbnailComponent,
     HasPermissionDirective,
     KhdNumberPipe,
+    LoadingStateComponent,
+    KhdDatePipe,
   ],
   templateUrl: './ticket-detail.component.html',
 })
@@ -102,7 +102,7 @@ export class TicketDetailComponent {
   private readonly vendorService = inject(VendorService);
   private readonly vendorRepairOrderService = inject(VendorRepairOrderService);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   readonly partsUsed = signal<ISparePartTransaction[]>([]);
@@ -179,6 +179,45 @@ export class TicketDetailComponent {
     () => !!this.ticket() && !!this.ticket()!.inspectedAt && !this.ticket()!.digitalHealthHeadApprovedAt,
   );
 
+  /** แถบลำดับขั้นตอน — แสดงเส้นทางหลัก ส่วนขั้นตอนทางแยก (รออะไหล่/ส่งซ่อมภายนอก) แสดงเฉพาะตอนที่งานอยู่ขั้นนั้นจริง */
+  readonly stepTrail = computed(() => {
+    const wf = this.ticket()?.workflowInstance;
+    if (!wf) return [];
+    const current = wf.currentStep;
+    return wf.template.steps
+      .filter((s) => s.stepOrder < 99 && s.stepCode !== 'DRAFT' && (s.id === current.id || !BRANCH_STEP_CODES.has(s.stepCode)))
+      .sort((a, b) => a.stepOrder - b.stepOrder)
+      .map((s) => ({
+        id: s.id,
+        name: s.stepNameTh,
+        state: s.id === current.id ? 'current' : s.stepOrder < current.stepOrder ? 'done' : 'todo',
+      }));
+  });
+
+  private readonly canUpdateStatus = computed(() => !!this.authService.currentUser() && this.authService.hasAnyPermission(['ticket:update_status']));
+  readonly canReceiveNow = computed(() => this.canReceive() && this.authService.hasAnyPermission(['ticket:receive']));
+  readonly showInspectNext = computed(() => this.canUpdateStatus() && this.ticket()?.status === 'RECEIVED' && !this.ticket()?.inspectedAt);
+  /** ปุ่มไปขั้นถัดไปตาม workflow — ตัดเส้นทาง "ไปยังรับเรื่อง" ออกเมื่อมีปุ่ม "รับเรื่อง" (endpoint เฉพาะ) อยู่แล้ว กันปุ่มซ้ำ */
+  readonly nextTransitions = computed(() =>
+    this.canUpdateStatus() ? this.availableTransitions().filter((tr) => !(this.canReceive() && tr.toStep.stepCode === 'RECEIVED')) : [],
+  );
+  readonly canCloseNow = computed(
+    () =>
+      this.canClose() &&
+      (this.hasFullClosePermission() || this.isOwnTicketReporter()) &&
+      this.authService.hasAnyPermission(['ticket:close', 'ticket:accept']),
+  );
+  readonly hasNextActions = computed(
+    () => this.canReceiveNow() || this.showInspectNext() || this.nextTransitions().length > 0 || this.canCloseNow(),
+  );
+  readonly hasMoreActions = computed(
+    () =>
+      this.authService.hasAnyPermission(['ticket:assign', 'ticket:update_status', 'spare_part:issue']) ||
+      (this.canCancel() && this.authService.hasAnyPermission(['ticket:cancel'])) ||
+      (this.canApproveDigitalHealthHead() && this.authService.hasAnyPermission(['ticket:approve'])),
+  );
+  readonly urgencyColor = URGENCY_COLOR;
+
   constructor() {
     // ใช้ effect() แทนการเรียก load() ตรง ๆ เพราะ withComponentInputBinding() ผูกค่า id
     // เข้ากับ route param "หลัง" constructor ทำงาน ไม่ใช่ระหว่างนั้น — ต้อง react ต่อการเปลี่ยนแปลงของ id()
@@ -204,7 +243,7 @@ export class TicketDetailComponent {
       error: (err) => {
         this.loading.set(false);
         const message = err?.error?.error?.message ?? 'ไม่พบใบแจ้งซ่อมนี้ อาจถูกลบไปแล้วหรือคุณไม่มีสิทธิ์เข้าถึง';
-        this.snackBar.open(message, 'ปิด', { duration: 4000 });
+        this.toast.error(message);
         void this.router.navigate(['/repair-tickets']);
       },
     });
@@ -217,14 +256,15 @@ export class TicketDetailComponent {
     });
   }
 
-  private refresh(): void {
+  private refresh(message = 'บันทึกเรียบร้อยแล้ว'): void {
     this.acting.set(false);
+    this.toast.success(message);
     this.load();
   }
 
   receive(): void {
     this.acting.set(true);
-    this.repairTicketService.receive(this.id()).subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
+    this.repairTicketService.receive(this.id()).subscribe({ next: () => this.refresh('รับเรื่องแล้ว'), error: () => this.acting.set(false) });
   }
 
   transition(toStepCode: string, conditionKey: string | null): void {
@@ -326,7 +366,7 @@ export class TicketDetailComponent {
     ref.afterClosed().subscribe((technicianId: string | undefined) => {
       if (!technicianId) return;
       this.acting.set(true);
-      this.repairTicketService.assign(this.id(), technicianId).subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
+      this.repairTicketService.assign(this.id(), technicianId).subscribe({ next: () => this.refresh('มอบหมายช่างแล้ว'), error: () => this.acting.set(false) });
     });
   }
 
@@ -339,12 +379,12 @@ export class TicketDetailComponent {
           .recordTransaction(result.sparePartId, { type: 'ISSUE', quantity: result.quantity, ticketId: this.id(), note: result.note || undefined })
           .subscribe({
             next: () => {
-              this.snackBar.open('เบิกอะไหล่แล้ว', 'ปิด', { duration: 2000 });
+              this.toast.success('เบิกอะไหล่แล้ว');
               this.load();
             },
             error: (err) => {
               const message = err?.error?.error?.message ?? 'เบิกอะไหล่ไม่สำเร็จ';
-              this.snackBar.open(message, 'ปิด', { duration: 3000 });
+              this.toast.error(message);
             },
           });
       });
@@ -373,11 +413,11 @@ export class TicketDetailComponent {
           this.selectedVendorOrderStatus = order.status;
           this.showCreateVendorOrder.set(false);
           this.savingVendorOrder.set(false);
-          this.snackBar.open('สร้างใบส่งซ่อมภายนอกแล้ว', 'ปิด', { duration: 2000 });
+          this.toast.success('สร้างใบส่งซ่อมภายนอกแล้ว');
         },
         error: () => {
           this.savingVendorOrder.set(false);
-          this.snackBar.open('สร้างใบส่งซ่อมภายนอกไม่สำเร็จ', 'ปิด', { duration: 3000 });
+          this.toast.error('สร้างใบส่งซ่อมภายนอกไม่สำเร็จ');
         },
       });
   }
@@ -390,12 +430,12 @@ export class TicketDetailComponent {
       next: (updated) => {
         this.vendorOrder.set(updated);
         this.savingVendorOrder.set(false);
-        this.snackBar.open('อัปเดตสถานะใบส่งซ่อมภายนอกแล้ว', 'ปิด', { duration: 2000 });
+        this.toast.success('อัปเดตสถานะใบส่งซ่อมภายนอกแล้ว');
         if (updated.status === 'RETURNED') this.load();
       },
       error: () => {
         this.savingVendorOrder.set(false);
-        this.snackBar.open('อัปเดตสถานะไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('อัปเดตสถานะไม่สำเร็จ');
       },
     });
   }
@@ -433,7 +473,7 @@ export class TicketDetailComponent {
     ref.afterClosed().subscribe((reason: string | undefined) => {
       if (!reason) return;
       this.acting.set(true);
-      this.repairTicketService.cancel(this.id(), reason).subscribe({ next: () => this.refresh(), error: () => this.acting.set(false) });
+      this.repairTicketService.cancel(this.id(), reason).subscribe({ next: () => this.refresh('ยกเลิกงานแล้ว'), error: () => this.acting.set(false) });
     });
   }
 
@@ -457,7 +497,7 @@ export class TicketDetailComponent {
 
     const fileList = Array.from(files);
     if (fileList.length > TicketDetailComponent.MAX_ATTACHMENT_COUNT) {
-      this.snackBar.open(`แนบไฟล์ได้สูงสุด ${TicketDetailComponent.MAX_ATTACHMENT_COUNT} ไฟล์ต่อครั้ง`, 'ปิด', { duration: 4000 });
+      this.toast.error(`แนบไฟล์ได้สูงสุด ${TicketDetailComponent.MAX_ATTACHMENT_COUNT} ไฟล์ต่อครั้ง`);
       input.value = '';
       return;
     }
@@ -466,14 +506,14 @@ export class TicketDetailComponent {
       (f) => !TicketDetailComponent.ALLOWED_ATTACHMENT_PREFIXES.some((prefix) => f.type.startsWith(prefix)),
     );
     if (invalidType) {
-      this.snackBar.open(`แนบได้เฉพาะไฟล์รูปภาพหรือวิดีโอเท่านั้น (${invalidType.name})`, 'ปิด', { duration: 4000 });
+      this.toast.error(`แนบได้เฉพาะไฟล์รูปภาพหรือวิดีโอเท่านั้น (${invalidType.name})`);
       input.value = '';
       return;
     }
 
     const tooLarge = fileList.find((f) => f.size > TicketDetailComponent.MAX_ATTACHMENT_SIZE_BYTES);
     if (tooLarge) {
-      this.snackBar.open(`ไฟล์ "${tooLarge.name}" มีขนาดเกิน 5 MB`, 'ปิด', { duration: 4000 });
+      this.toast.error(`ไฟล์ "${tooLarge.name}" มีขนาดเกิน 5 MB`);
       input.value = '';
       return;
     }
@@ -485,7 +525,7 @@ export class TicketDetailComponent {
         input.value = '';
       },
       error: () => {
-        this.snackBar.open('แนบไฟล์ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('แนบไฟล์ไม่สำเร็จ');
         input.value = '';
       },
     });

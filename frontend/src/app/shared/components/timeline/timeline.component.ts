@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { getStatusColor, getStatusLabel } from '../../../core/constants/status.const';
 import { IconComponent } from '../icon/icon.component';
 import { AttachmentThumbnailComponent } from '../attachment-thumbnail/attachment-thumbnail.component';
 import type { ITimelineAttachment, ITimelineEvent } from '../../../core/models/repair-ticket.model';
+import { KhdDatePipe } from '../../pipes/khd-date.pipe';
 
 export interface ITicketAttachmentRef {
   fileUrl: string;
@@ -53,7 +53,7 @@ function formatDuration(seconds: number | null): string | null {
   selector: 'khd-timeline',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, IconComponent, AttachmentThumbnailComponent],
+  imports: [ IconComponent, AttachmentThumbnailComponent, KhdDatePipe],
   templateUrl: './timeline.component.html',
 })
 export class TimelineComponent {

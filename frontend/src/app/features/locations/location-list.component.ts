@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,13 +13,13 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
 import type { IBuilding, IFloor, IRoom } from '../../core/models/location.model';
 import type { IDepartment } from '../../core/models/user.model';
 import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'khd-location-list',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    RouterLink,
     ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
@@ -29,6 +28,7 @@ import { KhdNumberPipe } from '../../shared/pipes/khd-number.pipe';
     IconComponent,
     HasPermissionDirective,
     KhdNumberPipe,
+    PageHeaderComponent,
   ],
   templateUrl: './location-list.component.html',
 })

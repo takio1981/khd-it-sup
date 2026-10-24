@@ -1,24 +1,48 @@
-<div class="space-y-4 pb-6">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-semibold">แดชบอร์ดภาพรวม</h1>
-      <p class="text-sm text-neutral-500">สรุปสถานะงานแจ้งซ่อมและครุภัณฑ์ทั้งหมด</p>
-    </div>
-    <div class="flex gap-2">
-      <button mat-stroked-button [disabled]="exportingExcel()" (click)="exportExcel()">
-        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-        Export Excel (สรุป+รายเดือน+อันดับหน่วยงาน)
+<div class="space-y-5 pb-6">
+  <khd-page-header [title]="'สวัสดี ' + (firstName() || 'ผู้ใช้งาน')" [subtitle]="'ภาพรวมงานแจ้งซ่อมและครุภัณฑ์ · ' + (today | khdDate: 'full')">
+    <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exportingExcel() || exportingPdf()">
+      <khd-icon name="arrow-down-tray" [size]="18" class="mr-1.5" />
+      {{ exportingExcel() || exportingPdf() ? 'กำลังส่งออก…' : 'ส่งออกรายงาน' }}
+    </button>
+    <mat-menu #exportMenu="matMenu" xPosition="before">
+      <button mat-menu-item (click)="exportExcel()">
+        <khd-icon name="document-text" [size]="18" class="mr-3 text-[#1d6f42]" />Excel — สรุป รายเดือน และอันดับหน่วยงาน
       </button>
-      <button mat-stroked-button [disabled]="exportingPdf()" (click)="exportPdf()">
-        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-        Export PDF (แท็บงานแจ้งซ่อม)
+      <button mat-menu-item (click)="exportPdf()">
+        <khd-icon name="document-text" [size]="18" class="mr-3 text-[#c2410c]" />PDF — ภาพรวมงานแจ้งซ่อม
       </button>
-    </div>
-  </div>
+    </mat-menu>
+  </khd-page-header>
+
+  <nav class="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="เมนูลัด">
+    @for (q of quickLinks(); track q.label) {
+      @if (q.route) {
+        <a [routerLink]="q.route" class="khd-card group flex items-center gap-3 !p-3 no-underline transition-shadow hover:shadow-softLg sm:!p-4">
+          <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-soft sm:h-14 sm:w-14">
+            <img [src]="'illust/' + q.img + '.webp'" alt="" class="h-full w-full object-cover" />
+          </span>
+          <span class="min-w-0">
+            <span class="block text-sm font-semibold leading-snug text-ink group-hover:text-brand-primary sm:truncate">{{ q.label }}</span>
+            <span class="hidden truncate text-xs text-muted sm:block">{{ q.hint }}</span>
+          </span>
+        </a>
+      } @else {
+        <button type="button" (click)="openCreateTicket()" class="khd-card group flex cursor-pointer items-center gap-3 !p-3 text-left font-[inherit] transition-shadow hover:shadow-softLg sm:!p-4">
+          <span class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-soft sm:h-14 sm:w-14">
+            <img [src]="'illust/' + q.img + '.webp'" alt="" class="h-full w-full object-cover" />
+          </span>
+          <span class="min-w-0">
+            <span class="block text-sm font-semibold leading-snug text-ink group-hover:text-brand-primary sm:truncate">{{ q.label }}</span>
+            <span class="hidden truncate text-xs text-muted sm:block">{{ q.hint }}</span>
+          </span>
+        </button>
+      }
+    }
+  </nav>
 
   <mat-tab-group animationDuration="150ms" class="khd-dashboard-tabs">
     <mat-tab label="งานแจ้งซ่อม">
-      <div id="khd-dashboard-print-area" class="pt-4 space-y-4 bg-white dark:bg-neutral-900">
+      <div id="khd-dashboard-print-area" class="space-y-4 bg-brand-background pt-4">
         @if (summary(); as s) {
           <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
             <khd-stat-card variant="solid" color="amber" icon="clock" label="รอดำเนินการ" [value]="s.tickets.pending" />
@@ -32,24 +56,15 @@
         }
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div class="khd-card">
-            <div class="flex items-center gap-2 mb-4">
-              <khd-icon name="document-text" [size]="18" class="text-blue-500" />
-              <h2 class="text-sm font-medium">จำนวนใบแจ้งซ่อมรายเดือน ({{ 'ปีปัจจุบัน' }})</h2>
-            </div>
+            <h2 class="m-0 mb-4 text-base font-semibold">จำนวนใบแจ้งซ่อมรายเดือน (ปีปัจจุบัน)</h2>
             <khd-bar-chart [data]="monthlyChartData()" orientation="vertical" />
           </div>
           <div class="khd-card">
-            <div class="flex items-center gap-2 mb-4">
-              <khd-icon name="wrench-screwdriver" [size]="18" class="text-amber-500" />
-              <h2 class="text-sm font-medium">ภาระงานช่างเทคนิค (งานที่ยังไม่ปิด)</h2>
-            </div>
+            <h2 class="m-0 mb-4 text-base font-semibold">ภาระงานช่างเทคนิค (งานที่ยังไม่ปิด)</h2>
             <khd-bar-chart [data]="technicianChartData()" orientation="horizontal" defaultColor="#F59E0B" />
           </div>
           <div class="khd-card lg:col-span-2">
-            <div class="flex items-center gap-2 mb-4">
-              <khd-icon name="building-office-2" [size]="18" class="text-violet-500" />
-              <h2 class="text-sm font-medium">อันดับหน่วยงานที่แจ้งซ่อมมากที่สุด</h2>
-            </div>
+            <h2 class="m-0 mb-4 text-base font-semibold">อันดับหน่วยงานที่แจ้งซ่อมมากที่สุด</h2>
             <khd-bar-chart [data]="departmentChartData()" orientation="horizontal" defaultColor="#8B5CF6" />
           </div>
         </div>
@@ -72,18 +87,12 @@
         }
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div class="khd-card">
-            <div class="flex items-center gap-2 mb-4">
-              <khd-icon name="computer-desktop" [size]="18" class="text-teal-500" />
-              <h2 class="text-sm font-medium">สถานะครุภัณฑ์</h2>
-            </div>
+            <h2 class="m-0 mb-4 text-base font-semibold">สถานะครุภัณฑ์</h2>
             <khd-bar-chart [data]="assetStatusChartData()" orientation="horizontal" />
           </div>
           <div class="khd-card">
-            <div class="flex items-center gap-2 mb-4">
-              <khd-icon name="archive-box" [size]="18" class="text-emerald-500" />
-              <h2 class="text-sm font-medium">Top 10 ครุภัณฑ์ที่ถูกแจ้งซ่อมบ่อยที่สุด</h2>
-            </div>
-            <khd-bar-chart [data]="topCategoryChartData()" orientation="horizontal" defaultColor="#00A86B" />
+            <h2 class="m-0 mb-4 text-base font-semibold">Top 10 ครุภัณฑ์ที่ถูกแจ้งซ่อมบ่อยที่สุด</h2>
+            <khd-bar-chart [data]="topCategoryChartData()" orientation="horizontal" defaultColor="#0F8F86" />
           </div>
         </div>
       </div>
@@ -102,17 +111,11 @@
         }
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div class="khd-card">
-            <div class="flex items-center gap-2 mb-4">
-              <khd-icon name="computer-desktop" [size]="18" class="text-blue-500" />
-              <h2 class="text-sm font-medium">ครุภัณฑ์ที่ถูกยืมบ่อยที่สุด</h2>
-            </div>
+            <h2 class="m-0 mb-4 text-base font-semibold">ครุภัณฑ์ที่ถูกยืมบ่อยที่สุด</h2>
             <khd-bar-chart [data]="topBorrowedAssetsChartData()" orientation="horizontal" defaultColor="#3B82F6" />
           </div>
           <div class="khd-card">
-            <div class="flex items-center gap-2 mb-4">
-              <khd-icon name="users" [size]="18" class="text-amber-500" />
-              <h2 class="text-sm font-medium">ผู้ยืมบ่อยที่สุด</h2>
-            </div>
+            <h2 class="m-0 mb-4 text-base font-semibold">ผู้ยืมบ่อยที่สุด</h2>
             <khd-bar-chart [data]="topBorrowersChartData()" orientation="horizontal" defaultColor="#F59E0B" />
           </div>
         </div>
@@ -133,17 +136,11 @@
         }
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div class="khd-card">
-            <div class="flex items-center gap-2 mb-4">
-              <khd-icon name="shield-check" [size]="18" class="text-blue-500" />
-              <h2 class="text-sm font-medium">สิทธิ์การใช้งาน (Role)</h2>
-            </div>
+            <h2 class="m-0 mb-4 text-base font-semibold">สิทธิ์การใช้งาน (Role)</h2>
             <khd-bar-chart [data]="roleChartData()" orientation="horizontal" defaultColor="#3B82F6" />
           </div>
           <div class="khd-card">
-            <div class="flex items-center gap-2 mb-4">
-              <khd-icon name="building-office-2" [size]="18" class="text-teal-500" />
-              <h2 class="text-sm font-medium">หน่วยงาน (Department)</h2>
-            </div>
+            <h2 class="m-0 mb-4 text-base font-semibold">หน่วยงาน (Department)</h2>
             <khd-bar-chart [data]="userDepartmentChartData()" orientation="horizontal" defaultColor="#14B8A6" />
           </div>
         </div>
@@ -156,10 +153,7 @@
           <khd-stat-card variant="solid" color="blue" icon="user-circle" label="ทั้งหมด" [value]="positions().length" />
         </div>
         <div class="khd-card">
-          <div class="flex items-center gap-2 mb-4">
-            <khd-icon name="adjustments-horizontal" [size]="18" class="text-teal-500" />
-            <h2 class="text-sm font-medium">จำนวนผู้ใช้งานต่อตำแหน่งงาน</h2>
-          </div>
+          <h2 class="m-0 mb-4 text-base font-semibold">จำนวนผู้ใช้งานต่อตำแหน่งงาน</h2>
           <khd-bar-chart [data]="positionChartData()" orientation="horizontal" defaultColor="#14B8A6" />
         </div>
       </div>
@@ -173,10 +167,7 @@
           <khd-stat-card variant="solid" color="teal" icon="building-office-2" label="หน่วยงานย่อย" [value]="subDeptCount()" />
         </div>
         <div class="khd-card">
-          <div class="flex items-center gap-2 mb-4">
-            <khd-icon name="archive-box" [size]="18" class="text-emerald-500" />
-            <h2 class="text-sm font-medium">จำนวนห้องที่ครอบครองต่อหน่วยงาน</h2>
-          </div>
+          <h2 class="m-0 mb-4 text-base font-semibold">จำนวนห้องที่ครอบครองต่อหน่วยงาน</h2>
           <khd-bar-chart [data]="roomsByDepartmentChartData()" orientation="horizontal" defaultColor="#10B981" emptyMessage="ยังไม่มีห้องที่ผูกกับหน่วยงาน" />
         </div>
       </div>
@@ -188,10 +179,7 @@
           <khd-stat-card variant="solid" color="blue" icon="bars-3" label="ทั้งหมด" [value]="divisions().length" />
         </div>
         <div class="khd-card">
-          <div class="flex items-center gap-2 mb-4">
-            <khd-icon name="users" [size]="18" class="text-rose-500" />
-            <h2 class="text-sm font-medium">จำนวนแผนกต่อหน่วยงาน</h2>
-          </div>
+          <h2 class="m-0 mb-4 text-base font-semibold">จำนวนแผนกต่อหน่วยงาน</h2>
           <khd-bar-chart [data]="divisionsByDepartmentChartData()" orientation="horizontal" defaultColor="#F43F5E" />
         </div>
       </div>
@@ -206,10 +194,7 @@
           <khd-stat-card variant="solid" color="red" icon="x-circle" label="ส่งไม่สำเร็จ" [value]="notifFailed()" />
         </div>
         <div class="khd-card">
-          <div class="flex items-center gap-2 mb-4">
-            <khd-icon name="bell" [size]="18" class="text-amber-500" />
-            <h2 class="text-sm font-medium">จำนวนการแจ้งเตือนต่อช่องทาง</h2>
-          </div>
+          <h2 class="m-0 mb-4 text-base font-semibold">จำนวนการแจ้งเตือนต่อช่องทาง</h2>
           <khd-bar-chart [data]="notifChannelChartData()" orientation="horizontal" defaultColor="#F59E0B" />
         </div>
       </div>

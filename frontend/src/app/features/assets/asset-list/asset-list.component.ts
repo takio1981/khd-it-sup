@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
@@ -34,6 +33,11 @@ import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
 import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { AssetStatus, IAsset, IAssetCategory } from '../../../core/models/asset.model';
 import type { IDepartment } from '../../../core/models/user.model';
+import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { ExportMenuComponent } from '../../../shared/components/export-menu/export-menu.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 
 const ASSET_STATUS_OPTIONS: AssetStatus[] = [
   'ACTIVE',
@@ -56,7 +60,6 @@ const EXPORT_PDF_MAX_ROWS = 500;
   imports: [
     RouterLink,
     FormsModule,
-    DatePipe,
     MatTableModule,
     MatPaginatorModule,
     MatFormFieldModule,
@@ -71,6 +74,11 @@ const EXPORT_PDF_MAX_ROWS = 500;
     StatusBadgeComponent,
     HasPermissionDirective,
     KhdNumberPipe,
+    KhdDatePipe,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    ExportMenuComponent,
+    FilterBarComponent,
   ],
   templateUrl: './asset-list.component.html',
 })

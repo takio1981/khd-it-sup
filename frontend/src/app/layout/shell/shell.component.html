@@ -142,7 +142,7 @@
                   <div class="min-w-0">
                     <p class="m-0 truncate text-sm font-medium text-ink">{{ n.subject }}</p>
                     <p class="m-0 line-clamp-2 text-xs text-muted">{{ n.message }}</p>
-                    <p class="m-0 mt-0.5 text-[11px] text-neutral-400">{{ n.createdAt | date: 'd MMM yyyy, HH:mm' }}</p>
+                    <p class="m-0 mt-0.5 text-[11px] text-neutral-400">{{ n.createdAt | khdDate: 'datetime' }}</p>
                   </div>
                 </div>
               </button>

@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, type WritableSignal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTableModule } from '@angular/material/table';
@@ -10,7 +9,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatAutocompleteModule, type MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
@@ -30,6 +28,11 @@ import type { IRepairTicketListItem } from '../../core/models/repair-ticket.mode
 import type { IAssetLoan, AssetLoanStatus } from '../../core/models/asset-loan.model';
 import type { IAsset } from '../../core/models/asset.model';
 import type { IDepartment } from '../../core/models/user.model';
+import { KhdDatePipe } from '../../shared/pipes/khd-date.pipe';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
+import { ExportMenuComponent } from '../../shared/components/export-menu/export-menu.component';
+import { FilterBarComponent } from '../../shared/components/filter-bar/filter-bar.component';
 
 function assetLabel(asset: IAsset): string {
   return `${asset.assetNumber}${asset.brand ? ' — ' + asset.brand : ''}${asset.model ? ' ' + asset.model : ''}`;
@@ -53,7 +56,6 @@ const LOAN_STATUS_LABEL_TH: Record<string, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
-    DatePipe,
     MatTabsModule,
     MatTableModule,
     MatPaginatorModule,
@@ -63,12 +65,16 @@ const LOAN_STATUS_LABEL_TH: Record<string, string> = {
     MatDatepickerModule,
     MatAutocompleteModule,
     MatButtonModule,
-    MatMenuModule,
     IconComponent,
     StatusBadgeComponent,
     BarChartComponent,
     TechnicianWorkloadReportComponent,
     KhdNumberPipe,
+    KhdDatePipe,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    ExportMenuComponent,
+    FilterBarComponent,
   ],
   providers: [provideNativeDateAdapter(), { provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   templateUrl: './reports.component.html',

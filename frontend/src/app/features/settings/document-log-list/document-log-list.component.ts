@@ -1,10 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { firstValueFrom } from 'rxjs';
 import { DocumentService } from '../../../core/services/document.service';
@@ -15,6 +13,10 @@ import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import type { IGeneratedDocument } from '../../../core/models/document.model';
 import { KhdNumberPipe } from '../../../shared/pipes/khd-number.pipe';
 import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
+import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { ExportMenuComponent } from '../../../shared/components/export-menu/export-menu.component';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -23,7 +25,7 @@ const EXPORT_PDF_MAX_ROWS = 500;
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
-  imports: [DatePipe, MatTableModule, MatPaginatorModule, MatButtonModule, MatMenuModule, IconComponent, KhdNumberPipe],
+  imports: [ MatTableModule, MatPaginatorModule, MatButtonModule, IconComponent, KhdNumberPipe, KhdDatePipe, PageHeaderComponent, EmptyStateComponent, ExportMenuComponent],
   templateUrl: './document-log-list.component.html',
 })
 export class DocumentLogListComponent {

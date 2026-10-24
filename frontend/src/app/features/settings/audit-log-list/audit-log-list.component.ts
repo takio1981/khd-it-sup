@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginatorIntl, type PageEvent } from '@angular/material/paginator';
@@ -8,17 +7,20 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatButtonModule } from '@angular/material/button';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { firstValueFrom } from 'rxjs';
 import { AuditLogService } from '../../../core/services/audit-log.service';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { downloadBlob } from '../../../core/utils/download.util';
 import { exportTableToPdf } from '../../../core/utils/pdf-table-export.util';
 import { formatKhdNumber } from '../../../core/utils/number-format.util';
 import { provideKhdPaginatorIntl } from '../../../core/utils/khd-paginator-intl.util';
 import type { AuditLogAction, IAuditLog } from '../../../core/models/audit-log.model';
+import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
+import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
+import { ExportMenuComponent } from '../../../shared/components/export-menu/export-menu.component';
+import { FilterBarComponent } from '../../../shared/components/filter-bar/filter-bar.component';
 
 const EXPORT_PDF_MAX_ROWS = 500;
 
@@ -56,7 +58,6 @@ const ACTION_COLOR: Record<string, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
-    DatePipe,
     MatTableModule,
     MatPaginatorModule,
     MatFormFieldModule,
@@ -64,8 +65,11 @@ const ACTION_COLOR: Record<string, string> = {
     MatInputModule,
     MatDatepickerModule,
     MatButtonModule,
-    MatMenuModule,
-    IconComponent,
+    KhdDatePipe,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    ExportMenuComponent,
+    FilterBarComponent,
   ],
   providers: [provideNativeDateAdapter(), { provide: MatPaginatorIntl, useFactory: provideKhdPaginatorIntl }],
   templateUrl: './audit-log-list.component.html',

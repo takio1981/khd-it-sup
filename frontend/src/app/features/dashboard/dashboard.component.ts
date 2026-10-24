@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { DashboardService } from '../../core/services/dashboard.service';
 import { UserService } from '../../core/services/user.service';
 import { DepartmentService } from '../../core/services/department.service';
@@ -30,6 +29,14 @@ import type { NotificationChannel } from '../../core/models/notification.model';
 import type { IAssetLoanChartData, IAssetLoanStats } from '../../core/models/asset-loan.model';
 import { downloadBlob } from '../../core/utils/download.util';
 import { exportElementToPdf } from '../../core/utils/pdf-element-export.util';
+import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
+import { TicketFormComponent } from '../repair-tickets/ticket-form/ticket-form.component';
+import { KhdDatePipe } from '../../shared/pipes/khd-date.pipe';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { MatMenuModule } from '@angular/material/menu';
+import { RouterLink } from '@angular/router';
+import { ToastService } from '../../core/services/toast.service';
 
 const THAI_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const IN_PROGRESS_STATUSES = new Set(['IN_REPAIR', 'WAITING_PARTS', 'MAINTENANCE']);
@@ -54,12 +61,16 @@ const CHANNEL_LABEL_TH: Record<NotificationChannel, string> = {
     IconComponent,
     TechnicianWorkloadReportComponent,
     HasPermissionDirective,
+    KhdDatePipe,
+    PageHeaderComponent,
+    MatMenuModule,
+    RouterLink,
   ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent {
   private readonly dashboardService = inject(DashboardService);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly toast = inject(ToastService);
 
   readonly exportingExcel = signal(false);
   readonly exportingPdf = signal(false);
@@ -71,6 +82,28 @@ export class DashboardComponent {
   private readonly notificationService = inject(NotificationService);
   private readonly assetLoanService = inject(AssetLoanService);
   private readonly authService = inject(AuthService);
+
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
+
+  readonly today = new Date();
+  readonly firstName = computed(() => (this.authService.currentUser()?.fullName ?? '').split(' ')[0]);
+  readonly quickLinks = computed(() => {
+    const can = (p: Parameters<AuthService['hasAnyPermission']>[0]) => this.authService.hasAnyPermission(p);
+    const links: { label: string; hint: string; img: string; route: string | null }[] = [];
+    if (can(['ticket:create'])) links.push({ label: 'แจ้งซ่อมใหม่', hint: 'แจ้งปัญหาอุปกรณ์/ระบบ', img: 'repair', route: null });
+    if (can(['ticket:read', 'ticket:track'])) links.push({ label: 'งานแจ้งซ่อม', hint: 'ติดตามและดำเนินงาน', img: 'workflow', route: '/repair-tickets' });
+    if (can(['asset:loan'])) links.push({ label: 'ยืม-คืนครุภัณฑ์', hint: 'ยืม คืน และโอนอุปกรณ์', img: 'loan', route: '/asset-loans' });
+    if (can(['asset:read'])) links.push({ label: 'ทะเบียนครุภัณฑ์', hint: 'ค้นหาและดูประวัติ', img: 'sync', route: '/assets' });
+    return links;
+  });
+
+  openCreateTicket(): void {
+    const ref = this.dialog.open(TicketFormComponent, { width: '560px' });
+    ref.afterClosed().subscribe((ticket) => {
+      if (ticket) void this.router.navigate(['/repair-tickets', ticket.id]);
+    });
+  }
 
   readonly summary = signal<IDashboardSummary | null>(null);
   readonly monthly = signal<IMonthlyChartPoint[]>([]);
@@ -245,7 +278,7 @@ export class DashboardComponent {
       },
       error: () => {
         this.exportingExcel.set(false);
-        this.snackBar.open('Export Excel ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+        this.toast.error('Export Excel ไม่สำเร็จ');
       },
     });
   }
@@ -256,7 +289,7 @@ export class DashboardComponent {
     try {
       await exportElementToPdf('khd-dashboard-print-area', `dashboard-${Date.now()}.pdf`, 'portrait');
     } catch {
-      this.snackBar.open('Export PDF ไม่สำเร็จ', 'ปิด', { duration: 3000 });
+      this.toast.error('Export PDF ไม่สำเร็จ');
     } finally {
       this.exportingPdf.set(false);
     }

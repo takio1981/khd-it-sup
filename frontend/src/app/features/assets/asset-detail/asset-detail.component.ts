@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, ViewChild, effect, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -23,6 +22,7 @@ import { downloadBlob } from '../../../core/utils/download.util';
 import { getAcquisitionTypeLabel } from '../../../core/constants/status.const';
 import { getCategoryIconName } from '../../../core/utils/category-icon.util';
 import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/models/asset.model';
+import { KhdDatePipe } from '../../../shared/pipes/khd-date.pipe';
 
 @Component({
   selector: 'khd-asset-detail',
@@ -30,7 +30,6 @@ import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/mo
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
-    DatePipe,
     MatButtonModule,
     MatMenuModule,
     MatProgressSpinnerModule,
@@ -39,6 +38,7 @@ import type { IAsset, IAssetCategory, IAssetHistoryItem } from '../../../core/mo
     HasPermissionDirective,
     AssetPhotoThumbnailComponent,
     KhdNumberPipe,
+    KhdDatePipe,
   ],
   templateUrl: './asset-detail.component.html',
 })

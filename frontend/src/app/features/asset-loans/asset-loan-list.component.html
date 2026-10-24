@@ -1,34 +1,21 @@
 <div class="space-y-4">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-      <h1 class="text-xl font-semibold">ยืมครุภัณฑ์-อุปกรณ์</h1>
-      <p class="text-sm text-neutral-500">ทั้งหมด {{ total() | khdNumber }} รายการ</p>
-    </div>
-    <div class="flex gap-2">
-      <button mat-stroked-button [matMenuTriggerFor]="exportMenu" [disabled]="exporting()">
-        <khd-icon name="arrow-down-tray" [size]="18" class="!mr-1" />
-        Export
-      </button>
-      <mat-menu #exportMenu="matMenu">
-        <button mat-menu-item (click)="exportExcel()">Excel (.xlsx)</button>
-        <button mat-menu-item (click)="exportCsv()">CSV</button>
-        <button mat-menu-item (click)="exportPdf()">PDF</button>
-      </mat-menu>
-      <button mat-flat-button color="primary" *khdHasPermission="'asset:loan'" (click)="openCreateForm()">
-        <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
-        ยืมอุปกรณ์
-      </button>
-    </div>
-  </div>
+  <khd-page-header title="ยืมครุภัณฑ์-อุปกรณ์">
+    <p meta class="m-0 mt-1 text-sm text-muted">ทั้งหมด {{ total() | khdNumber }} รายการ</p>
+    <khd-export-menu [disabled]="exporting()" (excel)="exportExcel()" (csv)="exportCsv()" (pdf)="exportPdf()" />
+    <button mat-flat-button color="primary" *khdHasPermission="'asset:loan'" (click)="openCreateForm()">
+    <khd-icon name="arrow-path" [size]="18" class="!mr-1" />
+    ยืมอุปกรณ์
+    </button>
+  </khd-page-header>
 
-  <div class="khd-card !p-3 flex flex-col sm:flex-row gap-3">
-    <mat-form-field appearance="outline" class="flex-1 !mb-[-1.25em]">
+  <khd-filter-bar>
+    <mat-form-field appearance="outline" class="flex-1">
       <mat-label>ค้นหา (เลขครุภัณฑ์ / ยี่ห้อ / ผู้ยืม)</mat-label>
       <input matInput [(ngModel)]="keyword" (ngModelChange)="onFilterChange()" />
-      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="!mr-2 text-neutral-400" />
+      <khd-icon matPrefix name="magnifying-glass" [size]="18" class="ml-3 mr-2 text-neutral-400" />
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="sm:w-56 !mb-[-1.25em]">
+    <mat-form-field appearance="outline" class="sm:w-56">
       <mat-label>สถานะ</mat-label>
       <mat-select [(ngModel)]="status" (ngModelChange)="onFilterChange()">
         <mat-option value="">ทั้งหมด</mat-option>
@@ -37,7 +24,7 @@
         <mat-option value="RETURNED">คืนแล้ว</mat-option>
       </mat-select>
     </mat-form-field>
-  </div>
+  </khd-filter-bar>
 
   <div class="khd-card !p-0 overflow-x-auto">
     <table mat-table [dataSource]="loans()" class="w-full">
@@ -70,12 +57,12 @@
 
       <ng-container matColumnDef="borrowDate">
         <th mat-header-cell *matHeaderCellDef>วันที่ยืม</th>
-        <td mat-cell *matCellDef="let l" data-label="วันที่ยืม">{{ l.borrowDate | date: 'd MMM yyyy' }}</td>
+        <td mat-cell *matCellDef="let l" data-label="วันที่ยืม">{{ l.borrowDate | khdDate }}</td>
       </ng-container>
 
       <ng-container matColumnDef="expectedReturnDate">
         <th mat-header-cell *matHeaderCellDef>กำหนดคืน</th>
-        <td mat-cell *matCellDef="let l" data-label="กำหนดคืน">{{ l.expectedReturnDate ? (l.expectedReturnDate | date: 'd MMM yyyy') : '-' }}</td>
+        <td mat-cell *matCellDef="let l" data-label="กำหนดคืน">{{ l.expectedReturnDate ? (l.expectedReturnDate | khdDate) : '-' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="status">
@@ -106,13 +93,13 @@
               <button
                 *khdHasPermission="'asset:loan'"
                 (click)="returnLoan(l)"
-                class="appearance-none inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60 text-xs font-medium px-3 py-1 transition-colors"
+                class="khd-row-action"
               >
                 <khd-icon name="check-circle" [size]="14" />
                 คืนอุปกรณ์
               </button>
             } @else {
-              <span class="text-xs text-neutral-400">คืนเมื่อ {{ l.actualReturnDate | date: 'd MMM yyyy' }}</span>
+              <span class="text-xs text-neutral-400">คืนเมื่อ {{ l.actualReturnDate | khdDate }}</span>
             }
             <button mat-icon-button *khdHasPermission="'asset:loan'" [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
               <khd-icon name="chevron-down" [size]="18" />
@@ -133,13 +120,13 @@
       <tr
         mat-row
         *matRowDef="let row; columns: displayedColumns"
-        class="hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer"
+        class=" cursor-pointer"
         (click)="goToDetail(row)"
       ></tr>
     </table>
 
     @if (!loading() && loans().length === 0) {
-      <p class="text-center text-sm text-neutral-400 py-10">ไม่พบรายการยืม-คืนที่ตรงกับเงื่อนไข</p>
+      <khd-empty-state [compact]="true" title="ไม่พบรายการยืม-คืนที่ตรงกับเงื่อนไข" />
     }
 
     <mat-paginator

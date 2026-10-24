@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -17,6 +16,7 @@ import {
 import { environment } from '../../../../environments/environment';
 import type { IRepairTicketDetail } from '../../../core/models/repair-ticket.model';
 import { KhdNumberPipe } from '../../pipes/khd-number.pipe';
+import { KhdDatePipe } from '../../pipes/khd-date.pipe';
 
 const REPAIR_REQUEST_TEMPLATE_CODE = 'REPAIR_REQUEST';
 
@@ -52,7 +52,7 @@ const UNCHECKED = '☐';
   selector: 'khd-ticket-print-preview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, MatDialogModule, MatButtonModule, IconComponent, KhdNumberPipe],
+  imports: [ MatDialogModule, MatButtonModule, IconComponent, KhdNumberPipe, KhdDatePipe],
   templateUrl: './ticket-print-preview.component.html',
   styleUrl: './ticket-print-preview.component.scss',
 })
