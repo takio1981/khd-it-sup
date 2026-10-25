@@ -26,12 +26,14 @@ rule above), as part of the same commit:
 1. Add a dated entry to `CHANGELOG.md` (newest date at the top, new date section
    if today doesn't have one yet) — one or two short Thai bullet points
    describing what changed and why, not a copy of the commit message.
-2. If the change alters a business process, workflow step, or data flow that is
-   already depicted in
-   `frontend/src/app/features/workflows/workflow-diagrams.component.ts` (the
-   "ผังการทำงานระบบ (SOP)" page), update the affected Mermaid diagram(s) in
-   that file so the SOP page stays accurate. Rebuild the frontend and check the
-   diagram still renders correctly before committing.
+2. If the change alters a business process, workflow step, data flow, SLA,
+   schedule, or responsible role that is depicted on the "ผังการทำงานระบบ (SOP)"
+   page, update the affected Mermaid diagram(s), SOP step tables, and the data
+   exchange table in
+   `frontend/src/app/features/workflows/workflow-diagrams.data.ts` (content
+   only; rendering lives in `workflow-diagrams.component.ts`) so the SOP page
+   stays accurate. Rebuild the frontend and check the diagram still renders
+   correctly before committing.
 
 Not every change touches the SOP diagrams (e.g. a pure UI styling tweak) — only
 update them when the underlying process/workflow they depict actually changed.

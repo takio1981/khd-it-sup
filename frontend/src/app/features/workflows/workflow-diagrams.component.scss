@@ -1,18 +1,9 @@
 /**
- * สไตล์ผัง mermaid ที่ฉีดเข้ามาผ่าน [innerHTML] — ต้องใช้ ::ng-deep เจาะ view encapsulation
- * เพราะ Angular ไม่ใส่ scope attribute ให้กับ markup ที่แทรกด้วย innerHTML โดยตรง
- * ขอบเขตจำกัดอยู่แค่ใต้ .khd-mermaid-diagram ของ component นี้เท่านั้น ไม่รั่วไปหน้าอื่น
- *
- * เส้นเชื่อมที่ไหล (เส้นประวิ่ง) ใช้ฟีเจอร์ animate ของ mermaid เองผ่าน edge metadata
- * (`eN@{ animate: true }` ในนิยามผังแต่ละอัน) — แต่ "ความเร็ว" ไม่ได้ fix ไว้ที่นี่แล้ว เพราะผู้ใช้ปรับสไลเดอร์
- * ความเร็วเองได้ (มุมบนขวาของหน้า) ทาง TS จะเซ็ต animation-duration เป็น inline style ให้แต่ละเส้นสด ๆ ทุกครั้งที่
- * ค่าเปลี่ยน (ดู enhanceSvg()/flowSpeedSec ใน .ts) — ที่นี่คุมแค่ "สี" กับพฤติกรรมอื่นที่ไม่ต้องปรับสดเท่านั้น
- *
- * จุดกระพริบเคลื่อนที่ (.khd-flow-dot) เป็น SVG <circle>+<animateMotion> ที่ฉีดเข้ามาทาง TS
- * (ดู enhanceSvg() ใน .ts) เกาะไปตามเส้นจริงของแต่ละเส้นเชื่อม ให้เห็นทิศทาง "การเดินทางของข้อมูล" ชัดเจนกว่าเส้นไหลเฉยๆ
+ * สไตล์ผัง mermaid ที่ฉีดผ่าน [innerHTML] — ต้องใช้ ::ng-deep เพราะ Angular ไม่ใส่ scope ให้ markup ที่แทรกด้วย innerHTML
+ * ขอบเขตจำกัดอยู่ใต้ .khd-mermaid-diagram / .khd-diagram-frame ของ component นี้เท่านั้น
+ * ความเร็วเส้นไหลตั้งเป็น inline style จาก TS (ผู้ใช้ปรับสไลเดอร์ได้) — ที่นี่คุมแค่สี รูปทรง และพฤติกรรมคงที่
  */
 
-/* เส้นตัวอย่างในคำอธิบายสัญลักษณ์ด้านบนผัง — เป็น markup ของ component เอง (ไม่ใช่ innerHTML) จึงไม่ต้องใช้ ::ng-deep */
 @keyframes khd-legend-flow {
   to {
     stroke-dashoffset: -14;
@@ -24,46 +15,78 @@
   animation: khd-legend-flow 2.2s linear infinite;
 }
 
+/* กรอบผัง — พื้นจุดตารางจางๆ แบบกระดานออกแบบ เลื่อนแนวนอนได้เมื่อจอแคบ */
+.khd-diagram-frame {
+  overflow-x: auto;
+  border: 1px solid rgb(var(--khd-border));
+  border-radius: 1rem;
+  padding: 1rem;
+  background-color: rgb(var(--khd-surface));
+  background-image: radial-gradient(rgb(var(--khd-muted) / 0.18) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
 ::ng-deep .khd-mermaid-diagram {
+  display: flex;
+  justify-content: center;
+
+  /* mermaid ตั้ง width:100% + max-width = ขนาดจริงของผังไว้แล้ว — ผังแคบจึงไม่ถูกขยายจนตัวอักษรใหญ่เกิน */
   svg {
     display: block;
+    height: auto;
   }
 
-  /* เส้นลำดับขั้นตอนหลักที่ตั้ง animate:true ไว้ — เปลี่ยนเป็นสีน้ำเงินให้ตัดกับโหนด/เส้นสีเขียวของผังอย่างชัดเจน
-   * (ตามที่ขอ "เห็นเส้นชัดเจนขึ้น") บวกเส้นหนาขึ้น + เรืองแสงเบาๆ — !important เพราะต้องชนะทั้ง <style> ที่ mermaid
-   * ฝังมาในตัว SVG เอง และกัน conflict กับ linkStyle สีแดงของเส้น "ถูกบล็อก" (ใน buildDecisionColorSuffix ก็ใส่
-   * !important เหมือนกัน อินไลน์ !important ชนะเสมอไม่ว่าลำดับจะมาก่อนหรือหลัง) */
+  /* กล่องขั้นตอนมุมโค้ง + กลุ่ม (subgraph) มุมโค้งกว่า */
+  .node rect {
+    rx: 10px;
+    ry: 10px;
+  }
+  .cluster rect {
+    rx: 16px;
+    ry: 16px;
+    stroke-dasharray: 4 4;
+  }
+  .cluster-label,
+  .cluster .nodeLabel {
+    font-weight: 600;
+  }
+
+  .nodeLabel {
+    line-height: 1.45;
+  }
+
+  /* เส้นลำดับขั้นตอนหลัก — สีน้ำเงินแบรนด์ หนาขึ้น เรืองแสงเบาๆ (!important ชนะ <style> ที่ mermaid ฝังมาเอง) */
   .edge-animation-fast {
-    stroke: #3b82f6 !important;
-    stroke-width: 2.5px !important;
-    filter: drop-shadow(0 0 1.5px rgba(59, 130, 246, 0.6));
+    stroke: #2a76d8 !important;
+    stroke-width: 2.25px !important;
+    filter: drop-shadow(0 0 1.5px rgba(42, 118, 216, 0.5));
   }
 
-  /* ป้ายกำกับเส้น (ข้อความบนเส้นเชื่อม) — เพิ่มพื้นหลังโค้งมนอ่านง่ายขึ้นเวลาเส้นไขว้กัน */
-  .edgeLabel .labelBkg {
-    border-radius: 4px;
+  .edgeLabel {
+    font-size: 12.5px;
+
+    .labelBkg,
+    p {
+      border-radius: 6px;
+    }
   }
 
-  /* จุดกระพริบเคลื่อนที่ไปตามเส้นลำดับขั้นตอนหลัก — สีส้ม/เหลืองให้ตัดกับเส้นน้ำเงินชัดเจนทั้งสองธีม พร้อมแสงเรืองเบาๆ */
   .khd-flow-dot {
     fill: #f59e0b;
     filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.85));
   }
 
-  /* จุดกระพริบบนเส้นผลข้างเคียง/แจ้งเตือน — สีม่วง (คนละสีกับจุดของเส้นหลักชัดเจนตามที่ขอ) เล็กกว่าและจางกว่าเล็กน้อย
-   * (ขนาด/จังหวะกระพริบต่างกันตั้งไว้ทาง TS แล้ว) เพื่อให้ยังแยกออกจากจุดของเส้นลำดับหลักได้ทั้งจากสีและจากลักษณะ */
   .khd-flow-dot-secondary {
     fill: #8b5cf6;
     filter: drop-shadow(0 0 2px rgba(139, 92, 246, 0.6));
   }
 
-  /* การ์ดโหนดแต่ละขั้นตอน — ทยอยปรากฏครั้งเดียวตอนโหลดหน้าจริง (เพิ่มคลาส .khd-in ทาง TS หลัง paint รอบแรก)
-   * ใช้ transition ที่ trigger จากคลาสแทน CSS `animation` ตรงๆ โดยตั้งใจ — เพราะ `animation` จะรีสตาร์ทเองทุกครั้งที่
-   * mat-tab-body สลับ display ทำให้สลับแท็บแล้วโหนดกระพริบ/กระตุกเหมือนโหลดใหม่ทุกรอบ (เป็นบั๊กที่เจอและแก้ไปแล้ว)
-   * ส่วน transition ที่ค่าสุดท้ายไม่เปลี่ยนอีกหลัง .khd-in ติดค้างถาวร จะไม่มีอะไรให้เล่นซ้ำตอนสลับแท็บอีก */
+  /* โหนดค่อยๆ ปรากฏครั้งเดียว (เติม .khd-in ทาง TS) — ใช้ transition แทน animation เพื่อไม่ให้เล่นซ้ำทุกครั้งที่สลับแท็บ */
   .node {
     opacity: 0;
-    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.15s ease;
+    transition:
+      opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+      filter 0.15s ease;
 
     &.khd-in {
       opacity: 1;
@@ -71,11 +94,8 @@
   }
 
   @media (hover: hover) {
-    .node {
-      cursor: default;
-    }
     .node:hover {
-      filter: drop-shadow(0 6px 14px rgba(0, 108, 69, 0.35));
+      filter: drop-shadow(0 6px 14px rgba(11, 37, 69, 0.25));
     }
   }
 
@@ -84,15 +104,12 @@
     .edge-animation-slow {
       animation: none !important;
     }
-    /* .khd-flow-dot เป็น <circle> ที่มี <animateMotion>/<animate> แบบ SMIL อยู่ข้างใน — CSS สั่งปิด SMIL โดยตรงไม่ได้
-     * แต่ซ่อนตัว <circle> ทั้งก้อนด้วย display:none ก็เพียงพอ ไม่มีอะไรให้เห็นเคลื่อนไหวอีกต่อไป */
     .khd-flow-dot {
       display: none;
     }
     .node {
       transition: none;
       opacity: 1;
-      transform: none;
     }
   }
 }

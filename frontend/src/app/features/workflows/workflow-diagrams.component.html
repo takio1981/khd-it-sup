@@ -1,14 +1,35 @@
 <div class="space-y-4 pb-6">
-  <khd-page-header title="ผังการทำงานระบบ (SOP)" subtitle="แผนผังกระบวนการทำงานและการส่งข้อมูลของแต่ละระบบ ตามมาตรฐานผังงาน (Flowchart) — เลือกหัวข้อด้านล่างเพื่อดูรายละเอียด"></khd-page-header>
+  <khd-page-header
+    title="ผังการทำงานระบบ (SOP)"
+    subtitle="ขั้นตอนการทำงาน ผู้รับผิดชอบ และการรับ-ส่งข้อมูลของทุกระบบงาน — เลือกระบบงานด้านล่างเพื่อดูผังและขั้นตอนโดยละเอียด"
+  />
 
-  <div class="khd-card">
-    <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
-      <h2 class="text-sm font-medium flex items-center gap-2">
-        <khd-icon name="clipboard-document-list" [size]="16" class="text-neutral-400" />
-        คำอธิบายสัญลักษณ์
-      </h2>
-      <div class="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-        <khd-icon name="adjustments-horizontal" [size]="14" class="text-neutral-400 shrink-0" />
+  <section class="khd-card">
+    <h2 class="m-0 mb-3 text-base font-semibold">ระบบงานทั้งหมด ({{ sections.length }})</h2>
+    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7">
+      @for (s of sections; track s.key; let i = $index) {
+        <button
+          type="button"
+          (click)="openSection(i)"
+          class="flex items-start gap-2.5 rounded-xl border border-solid p-3 text-left transition-colors hover:border-brand-primary/40 hover:bg-brand-primary/[0.04]"
+          [class]="selectedIndex() === i ? 'border-brand-primary/50 bg-brand-primary/[0.06]' : 'border-line bg-surface'"
+        >
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
+            <khd-icon [name]="s.icon" [size]="18" />
+          </span>
+          <span class="min-w-0">
+            <span class="block text-[13px] font-semibold leading-snug text-ink">{{ s.title }}</span>
+            <span class="block truncate text-[11.5px] text-muted">{{ s.short }}</span>
+          </span>
+        </button>
+      }
+    </div>
+  </section>
+
+  <section class="khd-card">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="m-0 text-base font-semibold">คำอธิบายสัญลักษณ์</h2>
+      <div class="flex items-center gap-2 text-xs text-muted">
         <label for="khd-flow-speed" class="whitespace-nowrap">ความเร็วการไหลของข้อมูล</label>
         <input
           id="khd-flow-speed"
@@ -19,109 +40,211 @@
           [value]="flowSpeedDisplay()"
           (input)="onSpeedInput($any($event.target).valueAsNumber)"
           (change)="onSpeedChange($any($event.target).valueAsNumber)"
-          class="w-24 sm:w-32 accent-brand-primary"
+          class="w-24 accent-brand-primary sm:w-32"
         />
-        <span class="tabular-nums w-10 text-right shrink-0">{{ flowSpeedDisplay() }} วิ</span>
+        <span class="w-10 shrink-0 text-right tabular-nums">{{ flowSpeedDisplay() }} วิ</span>
       </div>
     </div>
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs text-neutral-600 dark:text-neutral-400">
+
+    <p class="m-0 mb-2 text-xs font-semibold text-muted">สีของกล่อง = ผู้รับผิดชอบ</p>
+    <div class="mb-4 flex flex-wrap gap-2">
+      @for (a of actorLegend; track a.actor) {
+        <span
+          class="inline-flex items-center rounded-lg border border-solid px-2.5 py-1 text-xs font-medium"
+          [style.background-color]="colorOf(a.actor).fill"
+          [style.border-color]="colorOf(a.actor).stroke"
+          [style.color]="colorOf(a.actor).text"
+          [style.border-style]="a.actor === 'ext' ? 'dashed' : 'solid'"
+        >
+          {{ a.label }}
+        </span>
+      }
+    </div>
+
+    <p class="m-0 mb-2 text-xs font-semibold text-muted">รูปทรงและเส้น</p>
+    <div class="grid grid-cols-1 gap-x-4 gap-y-2 text-xs text-muted sm:grid-cols-2 lg:grid-cols-4">
       <div class="flex items-center gap-2">
-        <span class="inline-block h-4 w-7 rounded-full border-solid border-2 border-brand-primary bg-[#E3F2E9] dark:bg-[#0f3d2c] shrink-0"></span>
+        <span class="inline-block h-4 w-8 shrink-0 rounded-full bg-[#0B2545] dark:bg-[#7AACFF]"></span>
         จุดเริ่มต้น/สิ้นสุด
       </div>
       <div class="flex items-center gap-2">
-        <span class="inline-block h-4 w-7 border-solid border-2 border-brand-primary bg-[#E3F2E9] dark:bg-[#0f3d2c] shrink-0"></span>
+        <span class="inline-block h-4 w-8 shrink-0 rounded-md border-2 border-solid border-neutral-400"></span>
         ขั้นตอน/การดำเนินการ
       </div>
       <div class="flex items-center gap-2">
-        <span class="inline-block h-4 w-4 rotate-45 border-solid border-2 border-brand-primary bg-[#E3F2E9] dark:bg-[#0f3d2c] shrink-0"></span>
+        <span class="ml-2 mr-1.5 inline-block h-3.5 w-3.5 shrink-0 rotate-45 border-2 border-solid border-amber-600"></span>
         จุดตัดสินใจ
       </div>
       <div class="flex items-center gap-2">
-        <span class="inline-block h-4 w-7 border-solid border-2 border-brand-primary bg-[#E3F2E9] dark:bg-[#0f3d2c] shrink-0" style="clip-path: polygon(15% 0, 100% 0, 85% 100%, 0 100%)"></span>
-        ข้อมูลเข้า/ออก
+        <span class="inline-block h-4 w-8 shrink-0 border-2 border-solid border-neutral-400" style="clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%)"></span>
+        ผู้ใช้กรอก/เลือกข้อมูล
       </div>
-      <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-        <svg width="28" height="8" viewBox="0 0 28 8" class="shrink-0" aria-hidden="true">
-          <line x1="1" y1="4" x2="27" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="khd-legend-flow-line" />
+      <div class="flex items-center gap-2">
+        <svg width="32" height="18" viewBox="0 0 32 18" class="shrink-0 text-violet-600 dark:text-violet-300" aria-hidden="true">
+          <ellipse cx="16" cy="4" rx="14" ry="3" fill="none" stroke="currentColor" stroke-width="1.6" />
+          <path d="M2 4v10c0 1.7 6.3 3 14 3s14-1.3 14-3V4" fill="none" stroke="currentColor" stroke-width="1.6" />
         </svg>
-        <span class="text-neutral-600 dark:text-neutral-400">ลำดับขั้นตอนหลัก (จุดกระพริบ = ทิศทางข้อมูลเดินทางจริง)</span>
+        ฐานข้อมูล/ที่เก็บข้อมูล
       </div>
       <div class="flex items-center gap-2">
-        <span class="inline-block h-0 w-7 border-t-2 border-dashed border-brand-primary shrink-0"></span>
-        ผลข้างเคียง/แจ้งเตือน
+        <span class="inline-block h-4 w-8 shrink-0 border-2 border-x-[5px] border-dashed border-pink-600"></span>
+        ระบบภายนอก / ผังอื่นที่เชื่อมต่อ
       </div>
       <div class="flex items-center gap-2">
-        <span class="inline-block h-1 w-7 bg-brand-primary shrink-0"></span>
-        เงื่อนไขผ่าน (ดำเนินการต่อ)
+        <svg width="32" height="8" viewBox="0 0 32 8" class="shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true">
+          <line x1="1" y1="4" x2="31" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="khd-legend-flow-line" />
+        </svg>
+        ลำดับขั้นตอนหลัก (จุดเคลื่อนที่ = ทิศทางข้อมูล)
       </div>
       <div class="flex items-center gap-2">
-        <span class="inline-block h-1 w-7 bg-rose-600 dark:bg-rose-400 shrink-0"></span>
+        <span class="inline-block h-0 w-8 shrink-0 border-0 border-t-2 border-dashed border-neutral-400"></span>
+        ผลข้างเคียง / แจ้งเตือน / ทางเลือก
+      </div>
+      <div class="flex items-center gap-2">
+        <svg width="32" height="10" viewBox="0 0 32 10" class="shrink-0 text-neutral-400" aria-hidden="true">
+          <path d="M4 5h24M6 1 2 5l4 4M26 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        รับ-ส่งข้อมูลสองทาง
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-block h-1 w-8 shrink-0 rounded bg-red-600 dark:bg-red-400"></span>
         เงื่อนไขไม่ผ่าน (ถูกบล็อก/ปฏิเสธ)
       </div>
     </div>
-  </div>
+  </section>
 
   @if (loading()) {
-    <div class="khd-card flex items-center justify-center gap-3 py-10 text-sm text-neutral-500">
-      <mat-spinner diameter="22" />
-      กำลังสร้างผังการทำงาน...
-    </div>
+    <div class="khd-card"><khd-loading-state label="กำลังสร้างผังการทำงาน…" /></div>
   } @else if (renderError(); as err) {
-    <div class="khd-card flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400 py-6 justify-center">
+    <div class="khd-card flex items-center justify-center gap-2 py-6 text-sm text-red-600 dark:text-red-400">
       <khd-icon name="exclamation-triangle" [size]="18" />
       {{ err }}
     </div>
   } @else {
-    <div class="khd-card">
-      <h2 class="m-0 mb-1 text-base font-semibold">{{ overview.title }}</h2>
-      <p class="text-xs text-neutral-500 mb-3">{{ overview.description }}</p>
-      <div class="overflow-x-auto rounded-xl bg-white dark:bg-neutral-900 border border-black/5 dark:border-white/10 p-3">
-        <div class="khd-mermaid-diagram min-w-[720px] flex justify-center [&_svg]:max-w-none" [innerHTML]="svgFor(overview.key)"></div>
+    <section class="khd-card space-y-4">
+      <ng-container *ngTemplateOutlet="diagramHead; context: { $implicit: overview.architecture }" />
+      <div class="khd-diagram-frame">
+        <div class="khd-mermaid-diagram min-w-[940px]" [innerHTML]="svgFor('architecture')"></div>
       </div>
-      @if (overview.notes.length > 0) {
-        <ul class="list-disc list-inside space-y-1 text-xs text-neutral-500 mt-3">
-          @for (note of overview.notes; track note) {
-            <li>{{ note }}</li>
-          }
-        </ul>
-      }
-    </div>
 
-    <div class="khd-card !p-0 overflow-hidden">
-      <mat-tab-group animationDuration="150ms" class="khd-workflow-tabs">
+      <div>
+        <h3 class="m-0 mb-2 text-sm font-semibold">ตารางการรับ-ส่งข้อมูลระหว่างระบบ</h3>
+        <div class="overflow-x-auto rounded-xl border border-solid border-line">
+          <table class="khd-table-responsive w-full min-w-[760px] border-collapse text-left text-[13px]">
+            <thead class="bg-surface-2 text-muted">
+              <tr>
+                <th class="px-3 py-2 font-semibold">ต้นทาง</th>
+                <th class="px-3 py-2 font-semibold">ปลายทาง</th>
+                <th class="px-3 py-2 font-semibold">ข้อมูลที่ส่ง</th>
+                <th class="px-3 py-2 font-semibold">ช่องทาง/รูปแบบ</th>
+                <th class="px-3 py-2 font-semibold">เมื่อใด</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of dataExchange; track r.from + r.to + r.data) {
+                <tr class="border-0 border-t border-solid border-line">
+                  <td class="px-3 py-2 font-medium" data-label="ต้นทาง">{{ r.from }}</td>
+                  <td class="px-3 py-2 font-medium" data-label="ปลายทาง">{{ r.to }}</td>
+                  <td class="px-3 py-2" data-label="ข้อมูลที่ส่ง">{{ r.data }}</td>
+                  <td class="px-3 py-2 text-muted" data-label="ช่องทาง/รูปแบบ">{{ r.channel }}</td>
+                  <td class="whitespace-nowrap px-3 py-2 text-muted" data-label="เมื่อใด">{{ r.when }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="khd-card space-y-4">
+      <ng-container *ngTemplateOutlet="diagramHead; context: { $implicit: overview.modules }" />
+      <div class="khd-diagram-frame">
+        <div class="khd-mermaid-diagram min-w-[760px]" [innerHTML]="svgFor('modules')"></div>
+      </div>
+    </section>
+
+    <section #tabsAnchor class="khd-card scroll-mt-20 overflow-hidden !p-0">
+      <mat-tab-group
+        animationDuration="150ms"
+        [selectedIndex]="selectedIndex()"
+        (selectedIndexChange)="selectedIndex.set($event)"
+        mat-stretch-tabs="false"
+        mat-align-tabs="start"
+      >
         @for (section of sections; track section.key) {
           <mat-tab>
             <ng-template mat-tab-label>
-              <khd-icon [name]="section.icon" [size]="16" [class]="section.iconColor" class="!mr-1.5" />
+              <khd-icon [name]="section.icon" [size]="16" class="mr-1.5" />
               {{ section.title }}
             </ng-template>
 
-            <div class="p-4 space-y-3">
-              <p class="text-xs text-neutral-500">{{ section.description }}</p>
-
+            <div class="space-y-4 p-4 md:p-5">
               @if (section.definition) {
-                <div class="overflow-x-auto rounded-xl bg-white dark:bg-neutral-900 border border-black/5 dark:border-white/10 p-3">
-                  <div class="khd-mermaid-diagram min-w-[640px] flex justify-center [&_svg]:max-w-none" [innerHTML]="svgFor(section.key)"></div>
+                <ng-container *ngTemplateOutlet="diagramHead; context: { $implicit: section }" />
+                <div class="khd-diagram-frame">
+                  <div class="khd-mermaid-diagram min-w-[680px]" [innerHTML]="svgFor(section.key)"></div>
                 </div>
-              } @else if (section.key === 'roles') {
-                <div class="overflow-x-auto rounded-xl border border-black/5 dark:border-white/10">
-                  <table class="w-full text-xs text-left border-collapse min-w-[560px] khd-table-responsive">
-                    <thead class="bg-black/[0.03] dark:bg-white/[0.06] text-neutral-500">
+              } @else {
+                <p class="m-0 text-sm text-muted">{{ section.description }}</p>
+              }
+
+              @if (section.steps?.length) {
+                <div>
+                  <h3 class="m-0 mb-2 text-sm font-semibold">ขั้นตอนปฏิบัติงาน (SOP)</h3>
+                  <div class="overflow-x-auto rounded-xl border border-solid border-line">
+                    <table class="khd-table-responsive w-full min-w-[720px] border-collapse text-left text-[13px]">
+                      <thead class="bg-surface-2 text-muted">
+                        <tr>
+                          <th class="w-12 px-3 py-2 font-semibold">ลำดับ</th>
+                          <th class="px-3 py-2 font-semibold">ผู้รับผิดชอบ</th>
+                          <th class="px-3 py-2 font-semibold">การดำเนินการ</th>
+                          <th class="px-3 py-2 font-semibold">ผลลัพธ์/ข้อมูลที่ได้</th>
+                          <th class="px-3 py-2 font-semibold">ระยะเวลา</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (st of section.steps; track $index; let i = $index) {
+                          <tr class="border-0 border-t border-solid border-line">
+                            <td class="px-3 py-2 tabular-nums text-muted" data-label="ลำดับ">{{ i + 1 }}</td>
+                            <td class="px-3 py-2" data-label="ผู้รับผิดชอบ">
+                              <span
+                                class="inline-flex whitespace-nowrap rounded-md border border-solid px-2 py-0.5 text-xs font-medium"
+                                [style.background-color]="colorOf(st.actor).fill"
+                                [style.border-color]="colorOf(st.actor).stroke"
+                                [style.color]="colorOf(st.actor).text"
+                              >
+                                {{ st.who }}
+                              </span>
+                            </td>
+                            <td class="px-3 py-2" data-label="การดำเนินการ">{{ st.action }}</td>
+                            <td class="px-3 py-2 text-muted" data-label="ผลลัพธ์/ข้อมูลที่ได้">{{ st.output }}</td>
+                            <td class="whitespace-nowrap px-3 py-2 text-muted" data-label="ระยะเวลา">{{ st.sla ?? '—' }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              }
+
+              @if (section.key === 'roles') {
+                <div class="overflow-x-auto rounded-xl border border-solid border-line">
+                  <table class="khd-table-responsive w-full min-w-[640px] border-collapse text-left text-[13px]">
+                    <thead class="bg-surface-2 text-muted">
                       <tr>
-                        <th class="px-3 py-2 font-medium">บทบาท</th>
-                        <th class="px-3 py-2 font-medium">เห็นงานแจ้งซ่อม</th>
-                        <th class="px-3 py-2 font-medium">แก้ไขสถานะ/ผลตรวจ/สรุปผล</th>
-                        <th class="px-3 py-2 font-medium">จัดการผู้ใช้/ตั้งค่าระบบ</th>
+                        <th class="px-3 py-2 font-semibold">บทบาท</th>
+                        <th class="px-3 py-2 font-semibold">เห็นงานแจ้งซ่อม</th>
+                        <th class="px-3 py-2 font-semibold">เปลี่ยนขั้นตอน/บันทึกผลตรวจ/สรุปผล</th>
+                        <th class="px-3 py-2 font-semibold">เมนูบริหารจัดการ</th>
                       </tr>
                     </thead>
                     <tbody>
                       @for (row of roleMatrix; track row.role) {
-                        <tr class="border-t border-black/5 dark:border-white/10">
-                          <td class="px-3 py-2 font-medium whitespace-nowrap" data-label="บทบาท">{{ row.role }}</td>
-                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300" data-label="เห็นงานแจ้งซ่อม">{{ row.viewTickets }}</td>
-                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300" data-label="แก้ไขสถานะ/ผลตรวจ/สรุปผล">{{ row.editTickets }}</td>
-                          <td class="px-3 py-2 text-neutral-600 dark:text-neutral-300" data-label="จัดการผู้ใช้/ตั้งค่าระบบ">{{ row.adminAccess }}</td>
+                        <tr class="border-0 border-t border-solid border-line">
+                          <td class="whitespace-nowrap px-3 py-2 font-medium" data-label="บทบาท">{{ row.role }}</td>
+                          <td class="px-3 py-2" data-label="เห็นงานแจ้งซ่อม">{{ row.viewTickets }}</td>
+                          <td class="px-3 py-2" data-label="เปลี่ยนขั้นตอน/บันทึกผลตรวจ/สรุปผล">{{ row.editTickets }}</td>
+                          <td class="px-3 py-2 text-muted" data-label="เมนูบริหารจัดการ">{{ row.adminAccess }}</td>
                         </tr>
                       }
                     </tbody>
@@ -130,7 +253,7 @@
               }
 
               @if (section.notes.length > 0) {
-                <ul class="list-disc list-inside space-y-1 text-xs text-neutral-500">
+                <ul class="m-0 space-y-1.5 rounded-xl bg-surface-2 py-3 pl-8 pr-4 text-[13px] text-muted">
                   @for (note of section.notes; track note) {
                     <li>{{ note }}</li>
                   }
@@ -140,6 +263,20 @@
           </mat-tab>
         }
       </mat-tab-group>
-    </div>
+    </section>
   }
 </div>
+
+<ng-template #diagramHead let-d>
+  <div class="flex flex-wrap items-start justify-between gap-2">
+    <div class="min-w-0">
+      <h2 class="m-0 text-base font-semibold">{{ d.title }}</h2>
+      <p class="m-0 mt-1 max-w-3xl text-[13px] text-muted">{{ d.description }}</p>
+      <p class="m-0 mt-1 text-xs text-muted sm:hidden">เลื่อนผังซ้าย-ขวาเพื่อดูทั้งหมด หรือกด "ดาวน์โหลดผัง"</p>
+    </div>
+    <button mat-stroked-button type="button" (click)="downloadSvg(d.key, d.title)" matTooltip="บันทึกผังเป็นไฟล์ภาพ SVG สำหรับแนบเอกสาร">
+      <khd-icon name="arrow-down-tray" [size]="16" class="mr-1.5" />
+      ดาวน์โหลดผัง
+    </button>
+  </div>
+</ng-template>
